@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Light theme (black icon) -->
+  <link rel="icon" href="/images/favicon-grey.png" media="(prefers-color-scheme: light)" type="image/png">
+
+  <!-- Dark theme (white icon) -->
+  <link rel="icon" href="/images/favicon-grey.png" media="(prefers-color-scheme: dark)" type="image/png">
+
+  <!-- Fallback favicon -->
+  <link rel="icon" href="images/favicon-grey.png" type="image/png">
+  
+  <!-- Enhanced SEO Meta Tags -->
+  <title>Find LIFEGATE Community Near Me | LIFEGATE Community Directory</title>
+  <meta name="description" content="Search Denver church small groups by location, day, and audience. Find Bible study groups, men's groups, women's groups, and spiritual growth communities near you at LIFEGATE Denver.">
+  <meta name="keywords" content="find a small group Denver, small group Bible study Denver, church groups near me, Bible study near me, men's small group Denver, women's church group Denver, join a small group Denver, Denver church home groups, Christian small groups Denver">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="LIFEGATE Denver">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://www.lifegatecommunity.com/find-comm.html">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.lifegatecommunity.com/find-comm.html">
+  <meta property="og:title" content="Find Denver Church Small Groups Near Me | LIFEGATE Community Directory">
+  <meta property="og:description" content="Search Denver church small groups by location, day, and audience. Find Bible study groups, spiritual growth communities near you.">
+  <meta property="og:image" content="https://www.lifegatecommunity.com/images/bible_study.jpg">
+  <meta property="og:site_name" content="LIFEGATE Denver">
+  <meta property="og:locale" content="en_US">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://www.lifegatecommunity.com/find-comm.html">
+  <meta property="twitter:title" content="Find Denver Church Small Groups Near Me | LIFEGATE Community Directory">
+  <meta property="twitter:description" content="Search Denver church small groups by location, day, and audience. Find Bible study groups, spiritual growth communities near you.">
+  <meta property="twitter:image" content="https://www.lifegatecommunity.com/images/bible_study.jpg">
+  
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://maps.googleapis.com">
+  <link rel="preconnect" href="https://cdn.emailjs.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  
+  <!-- Structured Data for SEO -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Find Denver Church Small Groups",
+    "description": "Search and find church small groups in Denver. Browse Bible study groups, spiritual growth communities, and faith-based groups by location and schedule.",
+    "url": "https://www.lifegatecommunity.com/find-comm.html",
+    "mainEntity": {
+      "@type": "ItemList",
+      "name": "Denver Church Small Groups Directory",
+      "description": "Complete directory of small groups and Bible study communities at LIFEGATE Denver"
+    },
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://www.lifegatecommunity.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Find Small Groups",
+          "item": "https://www.lifegatecommunity.com/find-comm.html"
+        }
+      ]
+    },
+    "provider": {
+      "@type": "Organization",
+      "name": "LIFEGATE Denver",
+      "url": "https://lifegatedenver.com"
+    }
+  }
+  </script>
+  
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SearchResultsPage",
+    "name": "Denver Church Small Groups Search",
+    "description": "Find church small groups in Denver by location, day of the week, audience, and age group.",
+    "url": "https://www.lifegatecommunity.com/find-comm.html",
+    "mainEntity": {
+      "@type": "WebSite",
+      "url": "https://www.lifegatecommunity.com/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://www.lifegatecommunity.com/find-comm.html?location={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+  }
+  </script>
+  
+  <!-- EmailJS (keeping your original setup) -->
+  <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    (function () {
+      emailjs.init("vXc5-Hh3C7fIob-j5"); // Replace with your actual public key
+    })();
+  </script>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <div class="header-logo">
+        <a href="https://lifegatedenver.com/"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
+      </div>
+      <div class="header-content">
+        <h1>LIFEGATE Community</h1>
+        <p>Find and connect with church community</p>
+      </div>
+      <div class="header-actions">
+        <a href="add-group.html" class="add-group-btn">Add My Community</a>
+      </div>
+    </header>
+
+    <main>
+      <!-- Search, Filter and Map Section -->
+      <section class="main-content">
+        <div class="search-sidebar">
+          <div class="search-group">
+            <label for="location-search">📍 Location Search:</label>
+            <input type="text" id="location-search" placeholder="Enter zip code">
+            <button id="search-location-btn">Search</button>
+          </div>
+
+          <div class="filter-group">
+            <label for="day-filter">Day:</label>
+            <select id="day-filter">
+              <option value="">All Days</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="audience-filter">Audience:</label>
+            <select id="audience-filter">
+              <option value="">All</option>
+              <option value="Men">Men</option>
+              <option value="Women">Women</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="age-filter">Age Group:</label>
+            <select id="age-filter">
+              <option value="">All Ages</option>
+              <option value="Kids">Kids</option>
+              <option value="Teens">Teens</option>
+              <option value="Adult">Adult</option>
+            </select>
+          </div>
+
+          <div class="filter-buttons">
+            <button id="apply-filters">Apply Filters</button>
+            <button id="clear-filters">Clear Filters</button>
+          </div>
+        </div>
+
+        <div class="map-container">
+          <div id="map" style="height: 500px; width: 100%;"></div>
+        </div>
+      </section>
+
+      <!-- Groups Listing Section -->
+      <section class="groups-section">
+        <h2>Communities (<span id="group-count">0</span>)</h2>
+        <div id="groups-container"></div>
+      </section>
+    </main>
+
+    <footer>
+      <div><h4>Questions or suggestions about this site or about LIFEGATE Community?</h4></div>
+      <div class="msg-church">
+        <h4 id="open-church-modal">Click here to message the church</h4>
+      </div>
+    </footer>
+
+    <!-- Full Description Modal -->
+    <div id="info-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-info">&times;</span>
+        <h3 id="info-title"></h3>
+        <p id="info-description"></p>
+        <p><strong>Day:</strong> <span id="info-day"></span></p>
+        <p><strong>Time:</strong> <span id="info-time"></span></p>
+        <p><strong>Audience:</strong> <span id="info-audience"></span></p>
+        <p><strong>Age Group:</strong> <span id="info-age-group"></span></p>
+      </div>
+    </div>
+
+    <!-- Contact Form Modal -->
+    <div id="contact-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-contact">&times;</span>
+        <h3>Contact Leader</h3>
+        <form id="contact-form">
+          <input type="hidden" id="contact-group-id">
+          <div class="form-group">
+            <label for="contact-name">Name:</label>
+            <input type="text" id="contact-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="contact-phone">Phone:</label>
+            <input type="text" id="contact-phone" name="phone" placeholder="(555) 123-4567" maxlength="14">
+          </div>
+          <div class="form-group">
+            <label for="contact-email">Email:</label>
+            <input type="email" id="contact-email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="contact-message">Message:</label>
+            <textarea id="contact-message" rows="4" name="message" required></textarea>
+          </div>
+          <button type="submit">Send Message</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="groupmsg-confirmation-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-groupmsg-confirmation">&times;</span>
+        <h3 id="info-title">Your message has been sent!</h3>
+        <p id="groupmsg-description-text">
+          You should hear back from the community leader in the next few days. Please keep an eye on your junk folder as messages often end up there.
+          <br><br>Thank you for reaching out!
+        </p>
+      </div>
+    </div>
+
+        <!-- Contact Church Modal -->
+    <div id="contact-church" class="modal">
+      <div class="modal-content">
+        <span class="close-contact">&times;</span>
+        <h3>Contact the Church</h3>
+        <form id="contact-church-form">
+          <div class="form-group">
+            <label for="contact-church-name">Name:</label>
+            <input type="text" id="contact-church-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="contact-church-phone">Phone:</label>
+            <input type="text" id="contact-church-phone" name="phone" placeholder="(555) 123-4567" maxlength="14">
+          </div>
+          <div class="form-group">
+            <label for="contact-church-email">Email:</label>
+            <input type="email" id="contact-church-email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="contact-church-message">Message:</label>
+            <textarea id="contact-church-message" rows="4" name="message" required></textarea>
+          </div>
+          <button type="submit">Send Message</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="groupmsg-confirmation-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-groupmsg-confirmation">&times;</span>
+        <h3 id="info-title">Your message has been sent!</h3>
+        <p id="groupmsg-description-text">
+          You should hear back from the community leader in the next few days. Please keep an eye on your junk folder as messages often end up there.
+          <br><br>Thank you for reaching out!
+        </p>
+      </div>
+    </div>
+
+    <!-- Load Google Maps dynamically and init map -->
+    <script type="module">
+      import { initMap } from './script.js';
+
+      function loadGoogleMaps() {
+        return new Promise((resolve, reject) => {
+          if (window.google && window.google.maps) {
+            return resolve();
+          }
+
+          const script = document.createElement("script");
+          script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyBaD2QPffJ15fk2E3VtQjDMRZStj1dMAlg&libraries=marker";
+          script.async = true;
+          script.defer = true;
+
+          script.onload = resolve;
+          script.onerror = reject;
+
+          document.head.appendChild(script);
+        });
+      }
+
+      loadGoogleMaps()
+        .then(() => {
+          initMap();
+        })
+        .catch((error) => {
+          console.error("Failed to load Google Maps:", error);
+          alert("Map failed to load. Please try again later.");
+        });
+    </script>
+  </div>
+</body>
+</html>

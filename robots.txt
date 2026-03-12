@@ -1,0 +1,36 @@
+# robots.txt for LIFEGATE Denver Community Directory
+# https://www.lifegatecommunity.com
+
+User-agent: *
+Allow: /
+
+# Allow important pages
+Allow: /index.html
+Allow: /find-comm.html
+Allow: /add-group.html
+
+# Disallow technical files that shouldn't appear in search results
+Disallow: /*.css$
+Disallow: /*.js$
+Disallow: /script.js
+Disallow: /splash-script.js
+Disallow: /style.css
+Disallow: /splash-style.css
+
+# Disallow any admin or private directories (if they exist)
+Disallow: /admin/
+Disallow: /private/
+Disallow: /temp/
+
+# Allow images for search engines
+Allow: /images/
+Allow: /*.svg$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+
+# Point search engines to your sitemap
+Sitemap: https://www.lifegatecommunity.com/sitemap.xml
+
+# Crawl delay (optional - gives your server a break between requests)
+Crawl-delay: 1
