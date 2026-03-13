@@ -1,6 +1,8 @@
 const form = document.getElementById('groupForm');
 const phoneInput = document.getElementById("contact-phone");
 const submitButton = form.querySelector('button[type="submit"]');
+const submitLabel = submitButton.querySelector('.submit-label');
+const submitStatus = document.getElementById("submit-status");
 const FUNCTION_URL = "https://us-central1-socialgroupsapp-a8fed.cloudfunctions.net/submitGroup";
 
 function formatPhoneNumber(rawDigits) {
@@ -61,7 +63,9 @@ form.addEventListener('submit', async (e) => {
   };
 
   submitButton.disabled = true;
-  submitButton.textContent = "Submitting...";
+  submitButton.classList.add("is-loading");
+  submitLabel.textContent = "Submitting Group";
+  submitStatus.textContent = "Submitting your community and verifying reCAPTCHA. Please wait...";
 
   try {
     const response = await fetch(FUNCTION_URL, {
@@ -83,9 +87,11 @@ form.addEventListener('submit', async (e) => {
     console.error("Group submission failed:", err);
     alert(err.message || "Something went wrong. Please try again.");
     window.grecaptcha.reset();
+    submitStatus.textContent = "Your submission did not go through. Please review the form and try again.";
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = "Submit Group";
+    submitButton.classList.remove("is-loading");
+    submitLabel.textContent = "Submit Group";
   }
 });
 

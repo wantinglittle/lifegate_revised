@@ -224,10 +224,47 @@
   background: var(--black-color);
   color: white;
   border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
 .btn-primary:hover {
   background: #5a6268;
+}
+
+.btn-primary:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.submit-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: none;
+}
+
+.btn-primary.is-loading .submit-spinner {
+  display: inline-block;
+}
+
+.submit-status {
+  margin-top: 1rem;
+  min-height: 1.5rem;
+  text-align: center;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-secondary {
@@ -387,8 +424,12 @@
 
         <div class="form-actions">
           <a href="index.html" class="btn-secondary">Back to Home</a>
-          <button type="submit" class="btn-primary">Submit Group</button>
+          <button type="submit" class="btn-primary">
+            <span class="submit-spinner" aria-hidden="true"></span>
+            <span class="submit-label">Submit Group</span>
+          </button>
         </div>
+        <div class="submit-status" id="submit-status" aria-live="polite"></div>
 
       </form>
     </div>
