@@ -1,23 +1,47 @@
-import { db } from './firebase.js';
-import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
 const form = document.getElementById('groupForm');
 const phoneInput = document.getElementById("contact-phone");
+const submitButton = form.querySelector('button[type="submit"]');
+const FUNCTION_URL = "https://us-central1-socialgroupsapp-a8fed.cloudfunctions.net/submitGroup";
+
+function formatPhoneNumber(rawDigits) {
+  if (rawDigits.length > 10) rawDigits = rawDigits.slice(0, 10);
+
+  if (rawDigits.length > 6) {
+    return `(${rawDigits.slice(0, 3)}) ${rawDigits.slice(3, 6)}-${rawDigits.slice(6)}`;
+  }
+  if (rawDigits.length > 3) {
+    return `(${rawDigits.slice(0, 3)}) ${rawDigits.slice(3)}`;
+  }
+  if (rawDigits.length > 0) {
+    return `(${rawDigits}`;
+  }
+
+  return "";
+}
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  // Validate phone number
   const rawPhone = phoneInput.value.replace(/\D/g, "");
   if (rawPhone.length !== 10) {
     alert("Phone number must be exactly 10 digits.");
     return;
   }
 
-  // Collect and format form data
+  if (!window.grecaptcha) {
+    alert("reCAPTCHA is still loading. Please wait a moment and try again.");
+    return;
+  }
+
+  const recaptchaToken = window.grecaptcha.getResponse();
+  if (!recaptchaToken) {
+    alert("Please complete the reCAPTCHA check before submitting.");
+    return;
+  }
+
   const formData = new FormData(form);
   const data = Object.fromEntries(formData);
-  const submission = {
+  const payload = {
     title: (data.title || "").trim(),
     description: (data.description || "").trim(),
     contactName: (data.contactName || "").trim(),
@@ -33,51 +57,39 @@ form.addEventListener('submit', async (e) => {
     zipCode: (data.zipCode || "").trim(),
     crossStreets: (data.crossStreets || "").trim(),
     additionalInfo: (data.additionalInfo || "").trim(),
-    hidden: "yes",
-    status: "pending",
-    submittedAt: serverTimestamp()
+    recaptchaToken
   };
 
-  try {
-    // Public submissions are always created as pending.
-    await addDoc(collection(db, 'groups'), submission);
+  submitButton.disabled = true;
+  submitButton.textContent = "Submitting...";
 
-    // Send Email via EmailJS
-    await emailjs.send("service_o23istn", "template_u76tvma", {
-      title: submission.title,
-      description: submission.description,
-      contactName: submission.contactName,
-      contactEmail: submission.contactEmail,
-      contactPhone: submission.contactPhone,
-      meetingDay: submission.day,
-      meetingTime: `${submission.hour}:${submission.minute} ${submission.ampm}`,
-      audience: submission.audience,
-      ageGroup: submission.ageGroup,
-      zipCode: submission.zipCode,
-      crossStreets: submission.crossStreets,
-      additionalInfo: submission.additionalInfo
+  try {
+    const response = await fetch(FUNCTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
     });
 
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || "Submission failed.");
+    }
+
+    window.grecaptcha.reset();
     window.location.href = "confirmation.html";
   } catch (err) {
-    console.error("Error adding document or sending email:", err);
-    alert("Something went wrong. Please try again.");
+    console.error("Group submission failed:", err);
+    alert(err.message || "Something went wrong. Please try again.");
+    window.grecaptcha.reset();
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Submit Group";
   }
 });
 
-// Auto-format phone number while typing
 phoneInput.addEventListener("input", (e) => {
-  let digits = e.target.value.replace(/\D/g, "");
-  if (digits.length > 10) digits = digits.slice(0, 10);
-
-  let formatted = digits;
-  if (digits.length > 6) {
-    formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  } else if (digits.length > 3) {
-    formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  } else if (digits.length > 0) {
-    formatted = `(${digits}`;
-  }
-
-  e.target.value = formatted;
+  const digits = e.target.value.replace(/\D/g, "");
+  e.target.value = formatPhoneNumber(digits);
 });
