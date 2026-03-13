@@ -213,10 +213,18 @@ export const submitGroup = onRequest(
         return;
       }
 
-      await db.collection("groups").add(submission);
-      await sendNotificationEmail(submission);
+      const createdDoc = await db.collection("groups").add(submission);
 
-      res.status(200).json({ ok: true });
+      try {
+        await sendNotificationEmail(submission);
+      } catch (emailError) {
+        console.error("Notification email failed", {
+          documentId: createdDoc.id,
+          error: emailError
+        });
+      }
+
+      res.status(200).json({ ok: true, id: createdDoc.id });
     } catch (err) {
       console.error("submitGroup failed", err);
       sendError(res, 500, "Unable to submit group right now.");
