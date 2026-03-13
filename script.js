@@ -46,7 +46,8 @@ async function fetchGroupsWithCoords() {
 
   for (const doc of snapshot.docs) {
     const group = doc.data();
-    if (group.hidden !== "no") continue;
+    const isPublished = group.hidden === "no" || group.status === "approved";
+    if (!isPublished) continue;
     if (!group.crossStreets || !group.zipCode) continue;
 
     const fullAddress = `${group.crossStreets}, ${group.zipCode}`;

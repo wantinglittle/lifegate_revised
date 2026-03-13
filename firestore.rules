@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function isValidAudience(value) {
+      return value in ['All', 'Men', 'Women'];
+    }
+
+    function isValidAgeGroup(value) {
+      return value in ['All-ages', 'Kids', 'Teens', 'Adult'];
+    }
+
+    function isValidDay(value) {
+      return value in ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    }
+
+    function isValidHour(value) {
+      return value in ['', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+    }
+
+    function isValidMinute(value) {
+      return value in ['', '00', '15', '30', '45'];
+    }
+
+    function isValidAmPm(value) {
+      return value in ['', 'AM', 'PM'];
+    }
+
+    function isValidGroupCreate() {
+      return request.resource.data.keys().hasOnly([
+          'title',
+          'description',
+          'contactName',
+          'contactEmail',
+          'contactPhone',
+          'day',
+          'hour',
+          'minute',
+          'ampm',
+          'audience',
+          'ageGroup',
+          'city',
+          'zipCode',
+          'crossStreets',
+          'additionalInfo',
+          'hidden',
+          'status',
+          'submittedAt'
+        ]) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.title.size() <= 120 &&
+        request.resource.data.description is string &&
+        request.resource.data.description.size() > 0 &&
+        request.resource.data.description.size() <= 500 &&
+        request.resource.data.contactName is string &&
+        request.resource.data.contactName.size() > 0 &&
+        request.resource.data.contactName.size() <= 120 &&
+        request.resource.data.contactEmail is string &&
+        request.resource.data.contactEmail.size() > 0 &&
+        request.resource.data.contactEmail.size() <= 254 &&
+        request.resource.data.contactPhone is string &&
+        request.resource.data.contactPhone.matches('^\\([0-9]{3}\\) [0-9]{3}-[0-9]{4}$') &&
+        request.resource.data.day is string &&
+        isValidDay(request.resource.data.day) &&
+        request.resource.data.hour is string &&
+        isValidHour(request.resource.data.hour) &&
+        request.resource.data.minute is string &&
+        isValidMinute(request.resource.data.minute) &&
+        request.resource.data.ampm is string &&
+        isValidAmPm(request.resource.data.ampm) &&
+        request.resource.data.audience is string &&
+        isValidAudience(request.resource.data.audience) &&
+        request.resource.data.ageGroup is string &&
+        isValidAgeGroup(request.resource.data.ageGroup) &&
+        request.resource.data.city is string &&
+        request.resource.data.city.size() > 0 &&
+        request.resource.data.city.size() <= 120 &&
+        request.resource.data.zipCode is string &&
+        request.resource.data.zipCode.matches('^[0-9]{5}$') &&
+        request.resource.data.crossStreets is string &&
+        request.resource.data.crossStreets.size() > 0 &&
+        request.resource.data.crossStreets.size() <= 200 &&
+        request.resource.data.additionalInfo is string &&
+        request.resource.data.additionalInfo.size() <= 500 &&
+        request.resource.data.hidden == 'yes' &&
+        request.resource.data.status == 'pending';
+    }
+
+    function isPublishedGroup() {
+      return resource.data.hidden == 'no' ||
+        ('status' in resource.data && resource.data.status == 'approved');
+    }
+
+    match /groups/{groupId} {
+      allow read: if isPublishedGroup() || isAdmin();
+      allow create: if isValidGroupCreate();
+      allow update, delete: if isAdmin();
+    }
+  }
+}
