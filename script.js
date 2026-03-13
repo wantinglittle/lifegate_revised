@@ -1,6 +1,6 @@
 // Firebase SDK imports
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // Firebase config
 const firebaseConfig = {
@@ -41,13 +41,19 @@ export async function initMap() {
 }
 
 async function fetchGroupsWithCoords() {
-  const snapshot = await getDocs(collection(db, "groups"));
+  const groupsRef = collection(db, "groups");
+  const [legacyPublishedSnapshot, approvedSnapshot] = await Promise.all([
+    getDocs(query(groupsRef, where("hidden", "==", "no"))),
+    getDocs(query(groupsRef, where("status", "==", "approved")))
+  ]);
   const groups = [];
+  const seenIds = new Set();
 
-  for (const doc of snapshot.docs) {
+  for (const doc of [...legacyPublishedSnapshot.docs, ...approvedSnapshot.docs]) {
+    if (seenIds.has(doc.id)) continue;
+    seenIds.add(doc.id);
+
     const group = doc.data();
-    const isPublished = group.hidden === "no" || group.status === "approved";
-    if (!isPublished) continue;
     if (!group.crossStreets || !group.zipCode) continue;
 
     const fullAddress = `${group.crossStreets}, ${group.zipCode}`;
