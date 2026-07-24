@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Signing In | LifeGate Dashboard</title>
+  <script>
+    (function () {
+      var destination = "https://lifegatecommunity.com/portal-callback.html" +
+        window.location.search +
+        window.location.hash;
+      window.location.replace(destination);
+    })();
+  </script>
   <link rel="icon" href="images/favicon-grey.png" type="image/png">
   <link href="style.css" rel="stylesheet" type="text/css" />
   <link href="portal.css" rel="stylesheet" type="text/css" />
