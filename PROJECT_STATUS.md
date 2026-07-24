@@ -32,7 +32,7 @@ Target:
 
 # Current Phase
 
-Public read migration from Firebase to Supabase.
+Server-side submission migration from Firebase Functions to Supabase Edge Functions.
 
 # Completed
 
@@ -59,15 +59,16 @@ The public-read cutover has passed local validation: `get_public_groups` returne
 
 # Current Task
 
-Prepare the locally validated Supabase public-read cutover for deployment review.
+Create the Supabase `submit-group` Edge Function for shadow-site testing while leaving the live add-group form pointed at Firebase.
 
 # Upcoming Tasks
 
-1. Deploy public-read cutover
-2. Replace Firebase Function
-3. Implement location privacy and automatic geocoding
-4. Remove Firebase
-5. Build admin dashboard
+1. Test the Supabase `submit-group` Edge Function on the shadow site
+2. Switch add-group submissions from Firebase Function to Supabase Edge Function
+3. Deploy public-read and submission cutovers
+4. Implement location privacy and automatic geocoding
+5. Remove Firebase
+6. Build admin dashboard
 
 # Important Decisions
 
@@ -80,6 +81,8 @@ Prepare the locally validated Supabase public-read cutover for deployment review
 - Public listings use the Supabase `get_public_groups()` RPC in development.
 - The live site has not yet been deployed with the public-read cutover.
 - Add-group submissions still use the existing Firebase Function.
+- The Supabase `submit-group` Edge Function is being built as a feature-parity replacement before the frontend is switched.
+- New Supabase group submissions must be inserted server-side as `pending` and must not accept browser-supplied publication status or coordinates.
 - Browser geocoding remains temporarily in place until the privacy-safe location phase.
 - Firebase remains production until the migration is complete.
 - Treat every submitted meeting location as private.

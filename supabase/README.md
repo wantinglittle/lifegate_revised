@@ -75,6 +75,63 @@ export const SUPABASE_ANON_KEY = "your-publishable-anon-key";
 
 These are public browser values. Security relies on the locked-down table permissions and narrow RPC output.
 
+## Submit Group Edge Function
+
+`supabase/functions/submit-group/index.ts` is the shadow Supabase replacement for the current Firebase `submitGroup` Cloud Function. It accepts browser `POST` submissions, handles harmless `OPTIONS` preflight requests, verifies reCAPTCHA server-side, validates the same form fields, inserts one pending row into `public.groups`, and then attempts the EmailJS notification.
+
+The live `add-group.js` form still points to the Firebase Function until the Supabase endpoint is deployed and explicitly wired in. Firebase remains unchanged during this testing phase.
+
+Required Edge Function secrets:
+
+- `RECAPTCHA_SECRET_KEY`
+- `EMAILJS_PUBLIC_KEY`
+- `EMAILJS_PRIVATE_KEY`
+- `EMAILJS_SERVICE_ID`
+- `EMAILJS_TEMPLATE_ID`
+
+Supabase provides the server-side project URL and service-role credentials to Edge Functions. The browser must use only the publishable key in `supabase-config.js`; elevated credentials stay inside the Edge Function environment and must never be committed.
+
+Hosted Supabase automatically provides `SUPABASE_SECRET_KEYS`, a JSON object of named elevated keys. The `submit-group` function uses its default key when available. For local development, configure `SUPABASE_SECRET_KEY` in a local env file. The legacy `SUPABASE_SERVICE_ROLE_KEY` remains a fallback for projects still using JWT-formatted service-role keys.
+
+When the resolved key begins with `sb_secret_`, the function sends it only as the `apikey` header. Legacy JWT service-role keys are sent as both `apikey` and `Authorization: Bearer <key>`. None of these elevated values should ever be exposed to browser code, committed to Git, or placed in `supabase-config.js`.
+
+The function is intentionally public in `supabase/config.toml`:
+
+```toml
+[functions.submit-group]
+verify_jwt = false
+```
+
+Unauthenticated browser visitors need to submit the public form, so protection comes from exact CORS allow-listing, reCAPTCHA, server-side validation, and trusted server-side inserts. The function allows `https://wantinglittle.github.io` and local `localhost`/`127.0.0.1` origins for testing. It does not use wildcard production CORS.
+
+Local serve, if Docker and the Supabase CLI are already available:
+
+```powershell
+supabase functions serve submit-group --env-file .\supabase\functions\.env
+```
+
+Deploy later, only after review:
+
+```powershell
+supabase functions deploy submit-group
+```
+
+The deployed function URL format will be:
+
+```text
+https://your-project-ref.supabase.co/functions/v1/submit-group
+```
+
+Harmless preflight test after local serve:
+
+```powershell
+Invoke-WebRequest -Method OPTIONS `
+  -Uri "http://127.0.0.1:54321/functions/v1/submit-group" `
+  -Headers @{ Origin = "http://localhost:5500" }
+```
+
+Do not run an apply submission test against production credentials until the frontend cutover plan is approved.
+
 ## Schema Summary
 
 The migration creates `public.groups` as the permanent relational table for community groups.
