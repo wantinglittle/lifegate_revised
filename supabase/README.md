@@ -2,7 +2,7 @@
 
 This directory contains the reviewable PostgreSQL schema design for migrating `lifegatecommunity.com` from Firebase Cloud Firestore to Supabase PostgreSQL.
 
-The current application remains unchanged during this phase. The public website still reads Firestore directly, and the add-group form still submits to the Firebase Cloud Function until a later implementation task replaces those paths.
+The shadow application now reads approved public groups from Supabase and submits new groups through the Supabase `submit-group` Edge Function. The live Firebase project remains intact as the production rollback/reference system until parity testing and deployment are complete.
 
 ## Migration File
 
@@ -45,7 +45,7 @@ Apply, only after review:
 
 ```powershell
 $env:SUPABASE_URL="https://your-project-ref.supabase.co"
-$env:SUPABASE_SECRET_KEY="sb_secret_your-elevated-supabase-secret-key"
+$env:SUPABASE_SECRET_KEY="<your-elevated-supabase-secret-key>"
 node .\scripts\import-groups-to-supabase.mjs --apply --confirm=IMPORT_22_LIFEGATE_GROUPS
 ```
 
@@ -79,7 +79,7 @@ These are public browser values. Security relies on the locked-down table permis
 
 `supabase/functions/submit-group/index.ts` is the shadow Supabase replacement for the current Firebase `submitGroup` Cloud Function. It accepts browser `POST` submissions, handles harmless `OPTIONS` preflight requests, verifies reCAPTCHA server-side, validates the same form fields, inserts one pending row into `public.groups`, and then attempts the EmailJS notification.
 
-The live `add-group.js` form still points to the Firebase Function until the Supabase endpoint is deployed and explicitly wired in. Firebase remains unchanged during this testing phase.
+The shadow `add-group.js` form points to the deployed Supabase Edge Function. Firebase remains unchanged during this testing phase and the legacy Firebase Function should stay available for rollback until parity testing is complete.
 
 Required Edge Function secrets:
 

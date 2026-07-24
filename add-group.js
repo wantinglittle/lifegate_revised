@@ -3,7 +3,7 @@ const phoneInput = document.getElementById("contact-phone");
 const submitButton = form.querySelector('button[type="submit"]');
 const submitLabel = submitButton.querySelector('.submit-label');
 const submitStatus = document.getElementById("submit-status");
-const FUNCTION_URL = "https://us-central1-socialgroupsapp-a8fed.cloudfunctions.net/submitGroup";
+const FUNCTION_URL = "https://dsrilmjpgpgdxzvzwyqw.supabase.co/functions/v1/submit-group";
 
 function formatPhoneNumber(rawDigits) {
   if (rawDigits.length > 10) rawDigits = rawDigits.slice(0, 10);

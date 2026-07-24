@@ -52,19 +52,23 @@ Server-side submission migration from Firebase Functions to Supabase Edge Functi
 - Supabase import verification completed
 - Public-read cutover implementation completed
 - Public-read cutover locally validated
+- Supabase `submit-group` Edge Function deployed and basic preflight/error handling validated
+- Shadow add-group form endpoint updated to target Supabase Edge Function
 
 Supabase now contains all 22 migrated group records. Existing Firestore document IDs were preserved. The verified imported status totals are 17 approved, 5 pending, 0 rejected, and 0 archived.
 
 The public-read cutover has passed local validation: `get_public_groups` returned 17 approved groups, 17 group cards rendered, 17 map markers rendered through the existing geocoding fallback, filters worked, AM/PM meeting times displayed correctly, and null meeting times displayed as `N/A`.
 
+The deployed Supabase `submit-group` Edge Function has passed shadow-site OPTIONS preflight and invalid empty POST validation without writing data. The shadow add-group form now targets the Supabase Edge Function, but it has not yet been tested with a successful real submission.
+
 # Current Task
 
-Create the Supabase `submit-group` Edge Function for shadow-site testing while leaving the live add-group form pointed at Firebase.
+Test a successful real shadow add-group submission through the Supabase `submit-group` Edge Function.
 
 # Upcoming Tasks
 
-1. Test the Supabase `submit-group` Edge Function on the shadow site
-2. Switch add-group submissions from Firebase Function to Supabase Edge Function
+1. Verify successful shadow add-group submission through Supabase
+2. Review inserted pending submission
 3. Deploy public-read and submission cutovers
 4. Implement location privacy and automatic geocoding
 5. Remove Firebase
@@ -80,8 +84,8 @@ Create the Supabase `submit-group` Edge Function for shadow-site testing while l
 - The public website should use RPC instead of direct table access.
 - Public listings use the Supabase `get_public_groups()` RPC in development.
 - The live site has not yet been deployed with the public-read cutover.
-- Add-group submissions still use the existing Firebase Function.
-- The Supabase `submit-group` Edge Function is being built as a feature-parity replacement before the frontend is switched.
+- Shadow add-group submissions now target the Supabase `submit-group` Edge Function.
+- The Supabase `submit-group` Edge Function is a feature-parity replacement for the Firebase Function, but successful real submission testing is still pending.
 - New Supabase group submissions must be inserted server-side as `pending` and must not accept browser-supplied publication status or coordinates.
 - Browser geocoding remains temporarily in place until the privacy-safe location phase.
 - Firebase remains production until the migration is complete.

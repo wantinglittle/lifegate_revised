@@ -1,6 +1,6 @@
-# Firebase Functions Setup
+# Legacy Firebase Functions Setup
 
-This backend verifies reCAPTCHA server-side before writing a new group to Firestore.
+This legacy backend verifies reCAPTCHA server-side before writing a new group to Firestore. It is retained as rollback/reference material while the shadow site uses Supabase for public reads and new submissions.
 
 ## What This Does
 
@@ -45,11 +45,11 @@ From the project root:
 
 ## After Deploy
 
-The frontend is already configured to call:
+The production rollback/reference frontend previously called:
 
 `https://us-central1-socialgroupsapp-a8fed.cloudfunctions.net/submitGroup`
 
-If you deploy the function in a different region or under a different project, update `FUNCTION_URL` in `add-group.js`.
+The shadow `add-group.js` now calls the Supabase `submit-group` Edge Function. Do not re-point it to Firebase unless intentionally rolling back.
 
 ## Firestore Rules
 
