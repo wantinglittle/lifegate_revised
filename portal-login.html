@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LifeGate Community Portal Login</title>
+  <link rel="icon" href="images/favicon-grey.png" type="image/png">
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <link href="portal.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+  <div class="wrapper portal-wrapper">
+    <header class="portal-header">
+      <div class="header-logo">
+        <a href="index.html"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
+      </div>
+      <div class="header-content">
+        <h1>LifeGate Community Portal</h1>
+        <p>Secure access for community leaders</p>
+      </div>
+      <div class="header-actions">
+        <a href="index.html" class="add-group-btn">Back to Site</a>
+      </div>
+    </header>
+
+    <main class="portal-main">
+      <section class="portal-card portal-login-card" aria-labelledby="portal-login-title">
+        <h2 id="portal-login-title">Sign In</h2>
+        <p class="portal-muted">Enter your portal email address and we will send a secure sign-in link.</p>
+
+        <form id="portal-login-form" class="portal-form">
+          <div class="form-group">
+            <label for="portal-email">Email address</label>
+            <input id="portal-email" name="email" type="email" autocomplete="email" inputmode="email" required />
+          </div>
+
+          <button id="portal-login-submit" type="submit" class="portal-primary-btn">Send Sign-In Link</button>
+        </form>
+
+        <p id="portal-login-status" class="portal-status" aria-live="polite"></p>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="portal-login.js"></script>
+</body>
+</html>

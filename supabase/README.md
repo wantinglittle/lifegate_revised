@@ -240,6 +240,26 @@ Missing coordinates and empty `additionalInfo` are informational and should not 
 
 The future LifeGate Portal uses Supabase email OTP as the initial login method. Password login is not required. Phone/SMS OTP is deferred. OTP requests must set `shouldCreateUser: false`, because arbitrary visitors must not be able to create portal accounts. Portal users are provisioned ahead of time in `public.portal_users`.
 
+The static portal frontend uses Supabase magic links through Resend custom SMTP:
+
+- `portal-login.html` requests the sign-in link with `shouldCreateUser: false`.
+- `portal-callback.html` handles the magic-link callback and redirects to the protected shell.
+- `portal.html` requires an authenticated session, displays the signed-in email, supports logout, calls `get_my_communities()` for every user, and calls `get_admin_groups()` to render the administrator dashboard when allowed.
+- Administrators see all communities as responsive cards with status badges, open/closed availability, schedule, public-safe location summary, and contact fields.
+- Administrator search is client-side against already-loaded `get_admin_groups()` data and matches title, city, cross streets, contact name, contact email, and contact phone.
+- Administrator status filters support All, Pending, Active, and Inactive counts and combine with search.
+- `portal-edit.html` is a protected placeholder page for selected communities. It resolves the title through authorized portal RPC data, does not expose the group ID visibly, and does not include edit/submit controls yet.
+- Unknown emails must not create Auth users. The UI uses a generic success/error response and does not intentionally reveal whether an email address is provisioned.
+- Full edit forms and update submissions are not implemented yet.
+
+For hosted GitHub Pages testing, add this redirect URL in Supabase Dashboard -> Authentication -> URL Configuration -> Redirect URLs:
+
+```text
+https://wantinglittle.github.io/lifegate_revised/portal-callback.html
+```
+
+The browser code derives the callback URL from the current page location so local and repository-subdirectory paths continue to work. Six-digit OTP emails remain future work.
+
 Group ownership is controlled by `groups.owner_user_id`, which references `auth.users.id`. It is independent from `contact_email`; changing a group's contact email does not transfer ownership. One user may own multiple groups, and an administrator may also own groups as an ordinary contact.
 
 Portal authorization uses narrow authenticated RPCs rather than broad direct table grants:
