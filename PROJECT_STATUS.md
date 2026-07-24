@@ -60,6 +60,7 @@ LifeGate Dashboard database and authorization foundation.
 - First usable portal admin dashboard created: administrators can view all communities as responsive cards with status and open/closed badges, client-side search, status filters, and edit navigation.
 - Full authenticated portal edit form implemented for contact-owned communities and administrator-managed communities. Updates use changed-only JSON patch payloads through the protected portal RPCs.
 - Public Find a Community cards and marker-click details now show open/closed availability for active communities.
+- Dashboard user profile-field migration drafted for `public.portal_users` with nullable display names and synchronized normalized email.
 
 Supabase now contains all 22 migrated group records. Existing Firestore document IDs were preserved. The verified imported status totals are 17 approved, 5 pending, 0 rejected, and 0 archived.
 
@@ -100,6 +101,9 @@ Review and test the authenticated LifeGate Dashboard edit form on the shadow sit
 - Current development portal login uses magic links through Resend custom SMTP; six-digit OTP emails remain future work.
 - Dashboard OTP requests must use `shouldCreateUser: false`; arbitrary visitors must not be able to create dashboard accounts.
 - Dashboard users must be provisioned before login.
+- `public.portal_users` stores nullable `first_name` and `last_name` display fields plus normalized `email` copied from `auth.users`.
+- Dashboard email is kept synchronized from `auth.users.email`; passwords, private keys, and authentication secrets are not stored in `public.portal_users`.
+- Dashboard display names are managed in `public.portal_users`; Auth metadata is used only for initial backfill when names are blank.
 - The GitHub Pages redirect URL `https://wantinglittle.github.io/lifegate_revised/portal-callback.html` must be added to Supabase Auth redirect URLs before hosted magic-link testing.
 - One portal user may manage multiple groups.
 - Administrators may also own groups as ordinary group contacts.
@@ -123,7 +127,7 @@ Review and test the authenticated LifeGate Dashboard edit form on the shadow sit
 - Pending communities show Pending Review for contacts and keep the visibility control disabled until approval.
 - Administrators may edit status, coordinates, and owner UUID in addition to normal community fields.
 - Dashboard edit saves send JSON patch payloads containing only changed fields through either `update_my_community(text, jsonb)` or `update_admin_group(text, jsonb)`.
-- Owner search and account provisioning remain future work.
+- Dashboard user-management UI, owner search, and account provisioning remain future work.
 - Public Find a Community cards and marker-click details display open/closed availability; closed active groups remain visible.
 - No public open/closed filter exists yet.
 - `private.is_portal_admin()` is an internal helper and is not directly callable by browser roles.

@@ -75,6 +75,13 @@ header p {
     margin: 0;
 }
 
+.public-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
 .add-group-btn {
     background: var(--black-color);
     color: var(--white-color);
@@ -248,17 +255,21 @@ main {
 #groups-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    align-items: stretch;
     gap: 1.5rem;
 }
 
 .group-card {
     background: var(--blue-color);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1.35rem;
     box-shadow: 0 4px 6px var(--grey-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 360px;
     opacity: 0;
     transform: translateY(10px);
-    transition: opacity 1.0s ease, transform 1.0s ease;
+    transition: opacity 0.45s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .group-card.show {
@@ -269,25 +280,28 @@ main {
 .group-card.fade-out {
     opacity: 0;
     transform: translateY(10px);
-    transition: opacity 1.0s ease, transform 1.0s ease;
+    transition: opacity 0.3s ease, transform 0.2s ease;
 }
 
 .group-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px var(--grey-color);
+    box-shadow: 0 6px 14px var(--grey-color);
 }
 
 .group-card-heading {
-    align-items: flex-start;
+    align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
+    gap: 0.75rem;
     justify-content: space-between;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .group-card-heading h3 {
     color: var(--black-color);
+    flex: 1 1 190px;
+    font-size: 1.35rem;
+    line-height: 1.2;
     margin: 0;
     overflow-wrap: anywhere;
 }
@@ -310,6 +324,54 @@ main {
 .availability-closed {
     background: #ececec;
     color: #333;
+}
+
+.group-card-description {
+    color: var(--black-color);
+    display: -webkit-box;
+    line-height: 1.45;
+    margin: 0 0 1.15rem;
+    min-height: 4.3em;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.group-card-meta {
+    border-top: 1px solid rgba(25, 25, 25, 0.18);
+    display: grid;
+    gap: 0.55rem 0.9rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 1rem;
+    padding-top: 1rem;
+}
+
+.group-card-meta-item {
+    color: #2f2f2f;
+    font-size: 0.95rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.group-card-location {
+    margin-bottom: 1.25rem;
+}
+
+.group-card-city {
+    color: var(--black-color);
+    font-weight: 650;
+    margin: 0;
+}
+
+.group-card-near {
+    color: #3f3f3f;
+    font-size: 0.9rem;
+    margin: 0.15rem 0 0;
+    overflow-wrap: anywhere;
+}
+
+.group-card-near-label {
+    font-weight: 650;
 }
 
 .group-title {
@@ -365,6 +427,22 @@ main {
 .group-actions {
     display: flex;
     gap: 1rem;
+}
+
+.group-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: auto;
+}
+
+.group-card-actions .contact-btn,
+.group-card-actions .view-on-map-btn,
+.group-card-actions .more-info-btn {
+    flex: 1 1 92px;
+    margin-top: 0;
+    min-width: 86px;
+    padding: 0.5rem 0.9rem;
 }
 
 .contact-btn, .view-map-btn, .more-info-btn {
@@ -587,6 +665,16 @@ main {
         flex-direction: column;
     }
 
+    .group-card {
+        min-height: 0;
+    }
+
+    .group-card-actions .contact-btn,
+    .group-card-actions .view-on-map-btn,
+    .group-card-actions .more-info-btn {
+        flex: 1 1 120px;
+    }
+
     .modal-content {
         margin: 10% auto;
         width: 95%;
@@ -616,6 +704,15 @@ main {
 
     .group-card {
         padding: 1rem;
+    }
+
+    .group-card-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .group-card-meta {
+        grid-template-columns: 1fr;
     }
 
     .group-details {

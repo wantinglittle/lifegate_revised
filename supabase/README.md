@@ -7,7 +7,10 @@ The shadow application now reads approved public groups from Supabase and submit
 ## Migration File
 
 - `supabase/migrations/20260723_001_create_groups_schema.sql`
-- `supabase/migrations/20260724_003_create_portal_foundation.sql`
+- `supabase/migrations/20260724090000_grant_groups_import_permissions.sql`
+- `supabase/migrations/20260724144000_create_portal_foundation.sql`
+- `supabase/migrations/20260724150000_add_is_closed_to_groups.sql`
+- `supabase/migrations/20260724170000_add_portal_user_profile_fields.sql`
 
 ## Firestore Export
 
@@ -143,6 +146,8 @@ The migration creates `public.groups` as the permanent relational table for comm
 - Publication uses one canonical `status` field with `pending`, `active`, and `inactive`.
 - Dashboard ownership uses nullable `groups.owner_user_id`, which references `auth.users.id`; existing migrated rows remain unassigned until explicitly mapped.
 - `groups.is_closed` is a non-null boolean that defaults to `false`.
+- `portal_users.first_name` and `portal_users.last_name` are nullable dashboard display-name fields.
+- `portal_users.email` stores a normalized copy of `auth.users.email` for dashboard user management and is kept synchronized from Auth.
 - Meeting time is normalized into one nullable `meeting_time` column.
 - Coordinates are stored as nullable `latitude` and `longitude` values without PostGIS.
 - Contact phone numbers are stored as text, not numeric values.
@@ -240,6 +245,14 @@ Missing coordinates and empty `additionalInfo` are informational and should not 
 
 The future LifeGate Dashboard uses Supabase email OTP as the initial login method. Password login is not required. Phone/SMS OTP is deferred. OTP requests must set `shouldCreateUser: false`, because arbitrary visitors must not be able to create dashboard accounts. Dashboard users are provisioned ahead of time in `public.portal_users`.
 
+`public.portal_users` stores dashboard profile fields in addition to the Auth user link and admin flag:
+
+- `first_name` and `last_name` are nullable display-name fields. They are initially backfilled from Auth metadata when available, then treated as managed dashboard data.
+- `email` is copied from `auth.users.email`, normalized with lowercase and trimmed whitespace, required after backfill, and protected by a case-insensitive uniqueness index.
+- A private trigger-only helper keeps `portal_users.email` synchronized when the matching Auth user's email changes.
+- No passwords, service-role keys, private keys, or authentication secrets are stored in `public.portal_users`.
+- Dashboard user-management UI, owner search, and account provisioning remain future work.
+
 The static dashboard frontend uses Supabase magic links through Resend custom SMTP:
 
 - `portal-login.html` requests the sign-in link with `shouldCreateUser: false`.
@@ -254,7 +267,7 @@ The static dashboard frontend uses Supabase magic links through Resend custom SM
 - Administrators edit any community returned by `get_admin_groups()` through `public.update_admin_group(text, jsonb)` and may update status, coordinates, and the owner UUID.
 - Edit saves compare the form to the originally loaded record and send JSON patch payloads containing only changed fields. Omitted properties remain unchanged, and JSON null is sent only for approved nullable fields intentionally cleared by the user.
 - Unknown emails must not create Auth users. The UI uses a generic success/error response and does not intentionally reveal whether an email address is provisioned.
-- Owner search and account provisioning remain future work. The public Find a Community page displays open/closed availability, but does not have an open/closed filter yet.
+- Dashboard user-management UI, owner search, and account provisioning remain future work. The public Find a Community page displays open/closed availability, but does not have an open/closed filter yet.
 
 For hosted GitHub Pages testing, add this redirect URL in Supabase Dashboard -> Authentication -> URL Configuration -> Redirect URLs:
 

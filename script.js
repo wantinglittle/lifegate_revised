@@ -167,11 +167,10 @@ function createElement(tagName, className, text) {
   return element;
 }
 
-function createDetail(label, value) {
-  const paragraph = document.createElement("p");
-  const strong = createElement("strong", "", `${label}:`);
-  paragraph.append(strong, document.createTextNode(` ${value || "N/A"}`));
-  return paragraph;
+function createMetaItem(label, value) {
+  const item = createElement("span", "group-card-meta-item", value || "N/A");
+  item.setAttribute("aria-label", `${label}: ${value || "N/A"}`);
+  return item;
 }
 
 function createButton(className, text) {
@@ -257,21 +256,41 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
       contactButton.dataset.title = group.title || "";
       contactButton.dataset.email = group.contactEmail || "";
 
-      const viewOnMapButton = createButton("view-on-map-btn", "View on Map");
+      const viewOnMapButton = createButton("view-on-map-btn", "Map");
       viewOnMapButton.dataset.id = group.id;
+
+      const description = createElement(
+        "p",
+        "group-card-description",
+        group.description || "No description available."
+      );
+
+      const details = createElement("div", "group-card-meta");
+      details.append(
+        createMetaItem("Day", group.day),
+        createMetaItem("Time", timeStr),
+        createMetaItem("Audience", group.audience),
+        createMetaItem("Age Group", group.ageGroup)
+      );
+
+      const location = createElement("div", "group-card-location");
+      const city = createElement("p", "group-card-city", group.city || "N/A");
+      const near = createElement("p", "group-card-near");
+      near.append(
+        createElement("span", "group-card-near-label", "Near:"),
+        document.createTextNode(` ${group.crossStreets || "N/A"}`)
+      );
+      location.append(city, near);
+
+      const actions = createElement("div", "group-card-actions");
+      actions.append(moreInfoButton, contactButton, viewOnMapButton);
 
       div.append(
         titleRow,
-        createElement("p", "", shortDesc),
-        createDetail("Availability", availability),
-        createDetail("Day", group.day),
-        createDetail("Time", timeStr),
-        createDetail("Audience", group.audience),
-        createDetail("Age Group", group.ageGroup),
-        createDetail("City", group.city),
-        moreInfoButton,
-        contactButton,
-        viewOnMapButton
+        description,
+        details,
+        location,
+        actions
       );
       container.appendChild(div);
 
