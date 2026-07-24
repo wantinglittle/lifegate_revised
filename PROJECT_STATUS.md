@@ -63,6 +63,7 @@ LifeGate Dashboard database and authorization foundation.
 - Dashboard user profile-field migration drafted for `public.portal_users` with nullable display names and synchronized normalized email.
 - Community Host profile RPC migration and dashboard profile editor drafted for review.
 - Public Add My Community form now collects separate first and last names in local source, then sends both names plus combined contact name to the Supabase `submit-group` Edge Function.
+- Direct one-time Community Host backfill implementation prepared in `scripts/backfill-community-hosts.mjs`; it has not been executed.
 
 Supabase now contains all 22 migrated group records. Existing Firestore document IDs were preserved. The verified imported status totals are 17 approved, 5 pending, 0 rejected, and 0 archived.
 
@@ -74,7 +75,7 @@ The dashboard frontend is a static GitHub Pages-compatible experience. It uses S
 
 # Current Task
 
-Prepare Version 1.0 Internal Beta for publication.
+Prepare direct Community Host backfill implementation without executing it.
 
 # Upcoming Tasks
 
@@ -85,7 +86,7 @@ Prepare Version 1.0 Internal Beta for publication.
 5. Implement location privacy and automatic geocoding
 6. Remove Firebase
 7. Build owner search/provisioning and remaining portal administration workflows
-8. Design and review Community Host audit/backfill tooling before any ownership backfill
+8. Review and explicitly execute the direct Community Host backfill when approved
 
 # Important Decisions
 
@@ -116,8 +117,11 @@ Prepare Version 1.0 Internal Beta for publication.
 - Administrators will see both Admin and My Communities tabs.
 - Non-admin contacts will see only My Communities.
 - Contacts may see their own assigned groups in `pending`, `active`, and `inactive` statuses.
-- Future Community Host provisioning, Auth creation, owner assignment, invitation workflow, and existing-community ownership backfill are excluded from Version 1.0 Internal Beta.
-- Existing admins must remain admins during any future Community Host provisioning and backfill work.
+- The previously proposed Community Host audit phase is intentionally skipped.
+- Direct Community Host backfill is a one-time operator script, not a database migration and not browser-side logic.
+- Direct Community Host backfill must provision missing Auth users, create missing `portal_users` rows, preserve existing admins, and assign only null `groups.owner_user_id` values.
+- Direct Community Host backfill must not overwrite conflicting existing owners; conflicts are reported for manual review.
+- Direct Community Host backfill must send Dashboard invite/login email only to newly created Auth users and must not resend invitations to existing Auth users.
 - New public submissions collect `first_name` and `last_name` separately and store the group contact display as combined `groups.contact_name`.
 - Community Host profile names are stored on `public.portal_users`; existing nonblank profile names must not be overwritten by later group submissions.
 - Group contact information and Dashboard profile information are currently related but separately editable; profile edits do not rewrite historical `groups.contact_name` values.
