@@ -275,12 +275,7 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
 
       const location = createElement("div", "group-card-location");
       const city = createElement("p", "group-card-city", group.city || "N/A");
-      const near = createElement("p", "group-card-near");
-      near.append(
-        createElement("span", "group-card-near-label", "Near:"),
-        document.createTextNode(` ${group.crossStreets || "N/A"}`)
-      );
-      location.append(city, near);
+      location.append(city);
 
       const actions = createElement("div", "group-card-actions");
       actions.append(moreInfoButton, contactButton, viewOnMapButton);
