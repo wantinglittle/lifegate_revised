@@ -61,6 +61,8 @@ LifeGate Dashboard database and authorization foundation.
 - Full authenticated portal edit form implemented for contact-owned communities and administrator-managed communities. Updates use changed-only JSON patch payloads through the protected portal RPCs.
 - Public Find a Community cards and marker-click details now show open/closed availability for active communities.
 - Dashboard user profile-field migration drafted for `public.portal_users` with nullable display names and synchronized normalized email.
+- Community Host profile RPC migration and dashboard profile editor drafted for review.
+- Public Add My Community form now collects separate first and last names in local source, then sends both names plus combined contact name to the Supabase `submit-group` Edge Function.
 
 Supabase now contains all 22 migrated group records. Existing Firestore document IDs were preserved. The verified imported status totals are 17 approved, 5 pending, 0 rejected, and 0 archived.
 
@@ -72,7 +74,7 @@ The dashboard frontend is a static GitHub Pages-compatible experience. It uses S
 
 # Current Task
 
-Review and test the authenticated LifeGate Dashboard edit form on the shadow site.
+Prepare Version 1.0 Internal Beta for publication.
 
 # Upcoming Tasks
 
@@ -83,6 +85,7 @@ Review and test the authenticated LifeGate Dashboard edit form on the shadow sit
 5. Implement location privacy and automatic geocoding
 6. Remove Firebase
 7. Build owner search/provisioning and remaining portal administration workflows
+8. Design and review Community Host audit/backfill tooling before any ownership backfill
 
 # Important Decisions
 
@@ -101,6 +104,9 @@ Review and test the authenticated LifeGate Dashboard edit form on the shadow sit
 - Current development portal login uses magic links through Resend custom SMTP; six-digit OTP emails remain future work.
 - Dashboard OTP requests must use `shouldCreateUser: false`; arbitrary visitors must not be able to create dashboard accounts.
 - Dashboard users must be provisioned before login.
+- Admin means a dashboard user with `public.portal_users.is_admin = true`.
+- Community Host means the single contact/login associated with one or more communities.
+- Each community has one Community Host for now, and one Community Host may own multiple communities.
 - `public.portal_users` stores nullable `first_name` and `last_name` display fields plus normalized `email` copied from `auth.users`.
 - Dashboard email is kept synchronized from `auth.users.email`; passwords, private keys, and authentication secrets are not stored in `public.portal_users`.
 - Dashboard display names are managed in `public.portal_users`; Auth metadata is used only for initial backfill when names are blank.
@@ -110,6 +116,18 @@ Review and test the authenticated LifeGate Dashboard edit form on the shadow sit
 - Administrators will see both Admin and My Communities tabs.
 - Non-admin contacts will see only My Communities.
 - Contacts may see their own assigned groups in `pending`, `active`, and `inactive` statuses.
+- Future Community Host provisioning, Auth creation, owner assignment, invitation workflow, and existing-community ownership backfill are excluded from Version 1.0 Internal Beta.
+- Existing admins must remain admins during any future Community Host provisioning and backfill work.
+- New public submissions collect `first_name` and `last_name` separately and store the group contact display as combined `groups.contact_name`.
+- Community Host profile names are stored on `public.portal_users`; existing nonblank profile names must not be overwritten by later group submissions.
+- Group contact information and Dashboard profile information are currently related but separately editable; profile edits do not rewrite historical `groups.contact_name` values.
+- Every signed-in Dashboard user may view and edit their own first name, last name, and email workflow regardless of Admin status.
+- Personal profile settings cannot edit `is_admin`.
+- Dashboard email changes use Supabase Auth email verification through the authenticated client; `portal_users.email` is not directly forced from the browser.
+- `update_my_profile(jsonb)` updates only first and last name; it rejects email so pending/unconfirmed email values cannot be written into `portal_users`.
+- `portal_users.email` changes only after Supabase Auth confirms the new login email and the Auth-to-portal_users trigger copies the confirmed value.
+- A profile save can partially succeed: name changes may be saved even when the email-change request fails.
+- Existing profile names may remain null until manually populated or edited through the Dashboard.
 - Contacts cannot approve pending groups, set groups to `pending`, or change ownership.
 - Contacts may toggle owned groups between `active` and `inactive`.
 - Dashboard update RPCs use JSON patch semantics: omitted properties remain unchanged, and JSON null clears only nullable fields.

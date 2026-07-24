@@ -67,6 +67,15 @@ export async function getCurrentSession() {
   return data.session;
 }
 
+export async function getCurrentUser() {
+  ensureSupabaseConfig();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    throw error;
+  }
+  return data.user;
+}
+
 export async function signOutPortalUser() {
   const { error } = await supabase.auth.signOut();
   if (error) {
@@ -88,6 +97,34 @@ export async function getAdminGroups() {
     throw error;
   }
   return Array.isArray(data) ? data : [];
+}
+
+export async function getMyProfile() {
+  const { data, error } = await supabase.rpc("get_my_profile");
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data[0] : data;
+}
+
+export async function updateMyProfile(changes) {
+  const { data, error } = await supabase.rpc("update_my_profile", {
+    p_changes: changes
+  });
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data[0] : data;
+}
+
+export async function requestUserEmailChange(email) {
+  const { data, error } = await supabase.auth.updateUser({
+    email: normalizeEmail(email)
+  });
+  if (error) {
+    throw error;
+  }
+  return data;
 }
 
 export async function updateMyCommunity(groupId, changes) {

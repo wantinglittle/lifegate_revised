@@ -1,12 +1,18 @@
 import {
   getAdminGroups,
   getCurrentSession,
+  getCurrentUser,
+  getMyProfile,
   getMyCommunities,
   isExpectedNonAdminError,
+  looksLikeEmail,
+  normalizeEmail,
   PORTAL_LOGIN_PAGE,
   redirectTo,
+  requestUserEmailChange,
   signOutPortalUser,
-  supabase
+  supabase,
+  updateMyProfile
 } from './portal-auth.js';
 
 const STATUS_LABELS = {
@@ -46,10 +52,25 @@ const adminList = document.getElementById("portal-admin-list");
 const adminSearch = document.getElementById("portal-admin-search");
 const clearSearchButton = document.getElementById("portal-clear-search");
 const filterButtons = Array.from(document.querySelectorAll(".portal-filter-btn"));
+const profileView = document.getElementById("portal-profile-view");
+const profileForm = document.getElementById("portal-profile-form");
+const profileFirstName = document.getElementById("portal-profile-first-name");
+const profileLastName = document.getElementById("portal-profile-last-name");
+const profileEmail = document.getElementById("portal-profile-email");
+const profileEditButton = document.getElementById("portal-profile-edit");
+const profileFirstInput = document.getElementById("portal-profile-first-input");
+const profileLastInput = document.getElementById("portal-profile-last-input");
+const profileEmailInput = document.getElementById("portal-profile-email-input");
+const profileSaveButton = document.getElementById("portal-profile-save");
+const profileCancelButton = document.getElementById("portal-profile-cancel");
+const profileStatus = document.getElementById("portal-profile-status");
 
 let authSubscription;
 let adminGroups = [];
 let currentAdminFilter = "all";
+let currentProfile = null;
+let currentConfirmedEmail = "";
+let isProfileSaving = false;
 
 function setStatus(message, tone = "info") {
   statusMessage.textContent = message;
@@ -59,6 +80,191 @@ function setStatus(message, tone = "info") {
 function clearStatus() {
   statusMessage.textContent = "";
   delete statusMessage.dataset.tone;
+}
+
+function setProfileStatus(message, tone = "info") {
+  profileStatus.textContent = message;
+  profileStatus.dataset.tone = tone;
+}
+
+function clearProfileStatus() {
+  profileStatus.textContent = "";
+  delete profileStatus.dataset.tone;
+}
+
+function profileDisplayValue(value) {
+  const text = String(value || "").trim();
+  return text || "Not set";
+}
+
+function setProfileFieldError(input, message) {
+  const errorElement = document.getElementById(`${input.id.replace("-input", "")}-error`);
+  input.setAttribute("aria-invalid", message ? "true" : "false");
+  if (errorElement) {
+    errorElement.textContent = message;
+  }
+}
+
+function validateProfileText(input, label) {
+  const value = input.value.trim();
+  if (!value) {
+    setProfileFieldError(input, `${label} is required.`);
+    return null;
+  }
+  if (value.length > 80) {
+    setProfileFieldError(input, `${label} must be 80 characters or fewer.`);
+    return null;
+  }
+
+  setProfileFieldError(input, "");
+  return value;
+}
+
+function validateProfileEmail() {
+  const value = normalizeEmail(profileEmailInput.value);
+  if (!value || !looksLikeEmail(value)) {
+    setProfileFieldError(profileEmailInput, "Enter a valid email address.");
+    return null;
+  }
+
+  setProfileFieldError(profileEmailInput, "");
+  return value;
+}
+
+function renderProfile(profile, fallbackEmail = "") {
+  const confirmedEmail = normalizeEmail(fallbackEmail || currentConfirmedEmail);
+  currentProfile = profile || {
+    first_name: "",
+    last_name: "",
+    email: confirmedEmail,
+    is_admin: false
+  };
+  currentConfirmedEmail = confirmedEmail || normalizeEmail(currentProfile.email);
+
+  profileFirstName.textContent = profileDisplayValue(currentProfile.first_name);
+  profileLastName.textContent = profileDisplayValue(currentProfile.last_name);
+  profileEmail.textContent = profileDisplayValue(currentConfirmedEmail);
+  userEmail.textContent = currentConfirmedEmail || "Signed-in dashboard user";
+}
+
+async function refreshProfileFromServer(fallbackEmail = currentConfirmedEmail) {
+  const profile = await getMyProfile();
+  renderProfile(profile, fallbackEmail);
+  return profile;
+}
+
+function showProfileEditor() {
+  profileFirstInput.value = currentProfile?.first_name || "";
+  profileLastInput.value = currentProfile?.last_name || "";
+  profileEmailInput.value = currentConfirmedEmail || currentProfile?.email || userEmail.textContent || "";
+  [profileFirstInput, profileLastInput, profileEmailInput].forEach((input) => {
+    setProfileFieldError(input, "");
+  });
+  clearProfileStatus();
+  profileView.hidden = true;
+  profileForm.hidden = false;
+  profileFirstInput.focus();
+}
+
+function hideProfileEditor() {
+  profileForm.hidden = true;
+  profileView.hidden = false;
+  isProfileSaving = false;
+  profileSaveButton.disabled = false;
+  profileCancelButton.disabled = false;
+}
+
+async function saveProfile(event) {
+  event.preventDefault();
+  if (isProfileSaving) return;
+
+  const firstName = validateProfileText(profileFirstInput, "First name");
+  const lastName = validateProfileText(profileLastInput, "Last name");
+  const requestedEmail = validateProfileEmail();
+  if (!firstName || !lastName || !requestedEmail) {
+    setProfileStatus("Please fix the highlighted fields.", "error");
+    return;
+  }
+
+  const currentEmail = normalizeEmail(currentConfirmedEmail || currentProfile?.email || userEmail.textContent);
+  const changes = {};
+  if (firstName !== (currentProfile?.first_name || "")) {
+    changes.first_name = firstName;
+  }
+  if (lastName !== (currentProfile?.last_name || "")) {
+    changes.last_name = lastName;
+  }
+
+  const emailChanged = requestedEmail !== currentEmail;
+  if (Object.keys(changes).length === 0 && !emailChanged) {
+    setProfileStatus("No profile changes to save.", "info");
+    return;
+  }
+
+  isProfileSaving = true;
+  profileSaveButton.disabled = true;
+  profileCancelButton.disabled = true;
+  setProfileStatus("Saving profile...", "info");
+
+  let updatedProfile = currentProfile;
+  let namesSaved = false;
+
+  try {
+    if (Object.keys(changes).length > 0) {
+      updatedProfile = await updateMyProfile(changes);
+      namesSaved = true;
+      renderProfile(updatedProfile, currentEmail);
+    }
+  } catch (error) {
+    console.error("Profile name update failed:", error);
+    setProfileStatus(error.message || "Profile names could not be updated.", "error");
+    return;
+  }
+
+  try {
+    if (emailChanged) {
+      const authResult = await requestUserEmailChange(requestedEmail);
+      const confirmedAuthEmail = normalizeEmail(authResult?.user?.email);
+
+      if (confirmedAuthEmail === requestedEmail) {
+        currentConfirmedEmail = confirmedAuthEmail;
+        try {
+          updatedProfile = await refreshProfileFromServer(confirmedAuthEmail);
+        } catch (profileError) {
+          console.error("Profile reload after email update failed:", profileError);
+          renderProfile(updatedProfile, confirmedAuthEmail);
+        }
+        setStatus(namesSaved ? "Profile updated and email changed." : "Email changed.", "success");
+      } else {
+        renderProfile(updatedProfile, currentEmail);
+        setStatus(
+          namesSaved
+            ? "Profile names saved. A confirmation email has been sent. Your dashboard email will update after the change is confirmed."
+            : "A confirmation email has been sent. Your dashboard email will update after the change is confirmed.",
+          "success"
+        );
+      }
+    } else {
+      setStatus("Profile updated.", "success");
+    }
+
+    hideProfileEditor();
+  } catch (error) {
+    console.error("Email change request failed:", error);
+    if (namesSaved) {
+      renderProfile(updatedProfile, currentEmail);
+      setProfileStatus(
+        "Profile names were saved, but the email change could not be requested. Your login email was not changed.",
+        "error"
+      );
+    } else {
+      setProfileStatus(error.message || "Email change could not be requested.", "error");
+    }
+  } finally {
+    isProfileSaving = false;
+    profileSaveButton.disabled = false;
+    profileCancelButton.disabled = false;
+  }
 }
 
 function activateTab(tabName) {
@@ -337,13 +543,23 @@ async function loadPortal() {
     return;
   }
 
-  userEmail.textContent = session.user?.email || "Signed-in dashboard user";
+  currentConfirmedEmail = normalizeEmail(session.user?.email || "");
+  userEmail.textContent = currentConfirmedEmail || "Signed-in dashboard user";
   setStatus("Loading communities...", "info");
 
-  const [myCommunities, adminResult] = await Promise.allSettled([
+  const [profileResult, myCommunities, adminResult] = await Promise.allSettled([
+    getMyProfile(),
     getMyCommunities(),
     getAdminGroups()
   ]);
+
+  if (profileResult.status === "fulfilled" && profileResult.value) {
+    renderProfile(profileResult.value, currentConfirmedEmail);
+  } else {
+    console.error("Profile failed to load:", profileResult.status === "rejected" ? profileResult.reason : "No profile returned");
+    renderProfile(null, currentConfirmedEmail);
+    setStatus("Your profile could not be loaded. Please refresh and try again.", "error");
+  }
 
   if (myCommunities.status === "rejected") {
     console.error("My communities failed to load:", myCommunities.reason);
@@ -384,9 +600,40 @@ logoutButton.addEventListener("click", async () => {
   }
 });
 
+profileEditButton.addEventListener("click", showProfileEditor);
+profileCancelButton.addEventListener("click", hideProfileEditor);
+profileForm.addEventListener("submit", saveProfile);
+
+[profileFirstInput, profileLastInput].forEach((input) => {
+  input.addEventListener("input", () => {
+    if (input.getAttribute("aria-invalid") === "true") {
+      validateProfileText(input, input === profileFirstInput ? "First name" : "Last name");
+    }
+  });
+});
+
+profileEmailInput.addEventListener("input", () => {
+  if (profileEmailInput.getAttribute("aria-invalid") === "true") {
+    validateProfileEmail();
+  }
+});
+
 authSubscription = supabase.auth.onAuthStateChange((event, session) => {
   if (event === "SIGNED_OUT" || !session) {
     redirectTo(PORTAL_LOGIN_PAGE);
+    return;
+  }
+
+  if (event === "USER_UPDATED" || event === "TOKEN_REFRESHED") {
+    window.setTimeout(async () => {
+      try {
+        const user = await getCurrentUser();
+        currentConfirmedEmail = normalizeEmail(user?.email || session.user?.email || currentConfirmedEmail);
+        await refreshProfileFromServer(currentConfirmedEmail);
+      } catch (error) {
+        console.error("Profile reload after auth state change failed:", error);
+      }
+    }, 0);
   }
 }).data.subscription;
 

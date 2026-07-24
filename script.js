@@ -168,15 +168,70 @@ function createElement(tagName, className, text) {
 }
 
 function createMetaItem(label, value) {
-  const item = createElement("span", "group-card-meta-item", value || "N/A");
+  const item = createElement("div", "group-card-meta-item");
   item.setAttribute("aria-label", `${label}: ${value || "N/A"}`);
+  item.append(
+    createIcon(iconNameForDetail(label)),
+    createElement("span", "group-card-meta-label", label),
+    createElement("strong", "group-card-meta-value", value || "N/A")
+  );
   return item;
 }
 
 function createButton(className, text) {
-  const button = createElement("button", className, text);
+  const button = createElement("button", className);
   button.type = "button";
+  button.append(createIcon(iconNameForAction(text)), createElement("span", "", text));
   return button;
+}
+
+function iconNameForDetail(label) {
+  const names = {
+    Day: "calendar",
+    Time: "clock",
+    Who: "people",
+    Ages: "person"
+  };
+  return names[label] || "info";
+}
+
+function iconNameForAction(label) {
+  const names = {
+    "More Info": "info",
+    Contact: "mail",
+    Map: "map"
+  };
+  return names[label] || "info";
+}
+
+function createIcon(name) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", `card-icon card-icon-${name}`);
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  path.setAttribute("stroke-width", "2");
+
+  const paths = {
+    location: "M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+    calendar: "M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z",
+    clock: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z M12 6v6l4 2",
+    people: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
+    person: "M20 21a8 8 0 1 0-16 0 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
+    info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z M12 16v-4 M12 8h.01",
+    mail: "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z M22 6l-10 7L2 6",
+    map: "M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3Z M9 3v15 M15 6v15"
+  };
+
+  path.setAttribute("d", paths[name] || paths.info);
+  svg.append(path);
+  return svg;
 }
 
 function showGroupsLoadError() {
@@ -243,11 +298,20 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
       const div = document.createElement("div");
       div.className = "group-card";
 
-      const titleRow = createElement("div", "group-card-heading");
-      titleRow.append(
-        createElement("h3", "", group.title || "No Title"),
-        createElement("span", `availability-badge ${group.isClosed === true ? "availability-closed" : "availability-open"}`, availability)
+      const topRow = createElement("div", "group-card-top");
+      const location = createElement("p", "group-card-city");
+      location.append(
+        createIcon("location"),
+        createElement("span", "", group.city || "N/A")
       );
+      const availabilityTab = createElement(
+        "span",
+        `availability-badge ${group.isClosed === true ? "availability-closed" : "availability-open"}`,
+        availability
+      );
+      topRow.append(location, availabilityTab);
+
+      const title = createElement("h3", "group-card-title", group.title || "No Title");
 
       const moreInfoButton = createButton("more-info-btn", "More Info");
       moreInfoButton.dataset.index = String(index);
@@ -269,22 +333,18 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
       details.append(
         createMetaItem("Day", group.day),
         createMetaItem("Time", timeStr),
-        createMetaItem("Audience", group.audience),
-        createMetaItem("Age Group", group.ageGroup)
+        createMetaItem("Who", group.audience),
+        createMetaItem("Ages", group.ageGroup)
       );
-
-      const location = createElement("div", "group-card-location");
-      const city = createElement("p", "group-card-city", group.city || "N/A");
-      location.append(city);
 
       const actions = createElement("div", "group-card-actions");
       actions.append(moreInfoButton, contactButton, viewOnMapButton);
 
       div.append(
-        titleRow,
+        topRow,
+        title,
         description,
         details,
-        location,
         actions
       );
       container.appendChild(div);

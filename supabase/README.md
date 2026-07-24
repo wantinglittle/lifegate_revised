@@ -11,6 +11,7 @@ The shadow application now reads approved public groups from Supabase and submit
 - `supabase/migrations/20260724144000_create_portal_foundation.sql`
 - `supabase/migrations/20260724150000_add_is_closed_to_groups.sql`
 - `supabase/migrations/20260724170000_add_portal_user_profile_fields.sql`
+- `supabase/migrations/20260724183000_add_my_profile_rpcs.sql`
 
 ## Firestore Export
 
@@ -136,6 +137,45 @@ Invoke-WebRequest -Method OPTIONS `
 
 Do not run an apply submission test against production credentials until the frontend cutover plan is approved.
 
+### Community Host submission behavior
+
+Version 1.0 Internal Beta keeps the deployed `submit-group` flow as the submission boundary: public visitors submit a community, the Edge Function validates the request, and the new group is inserted as `pending` for admin review. The beta does not automatically create Auth users, assign owners, backfill Community Hosts, or send Dashboard invitations.
+
+Admin means a dashboard user with `public.portal_users.is_admin = true`. Community Host means the single contact/login associated with one or more communities.
+
+Submission payload shape:
+
+- Previous browser payload sent a single `contactName` field.
+- Current browser payload sends `first_name`, `last_name`, and a combined `contactName`.
+- The group still stores the combined display value in `public.groups.contact_name`.
+- The Community Host profile stores separate names in `public.portal_users.first_name` and `public.portal_users.last_name`.
+
+Future required flow:
+
+1. Normalize `contactEmail` with lowercase and trimmed whitespace.
+2. Look for an existing Auth user by normalized email using trusted server-side Admin API access.
+3. If found, reuse that Auth user ID and ensure a `public.portal_users` row exists without downgrading `is_admin = true`.
+4. If not found, create or invite the Auth user through server-side Admin API tooling and create `public.portal_users` with `is_admin = false`.
+5. Insert the group as `pending` with `groups.owner_user_id` set to the resolved Auth user ID.
+6. Send dashboard-access email immediately.
+
+The dashboard-access email should explain that the community was received, is pending review, the Community Host may sign in to view and edit it, the Dashboard URL is available, and approval controls remain admin-only. New Community Hosts receive an Auth invite/access email. Existing Community Hosts should not receive repeated invitation emails for every later submission; use a normal informational email only when helpful.
+
+Existing Auth/portal user behavior:
+
+- reuse the existing user ID;
+- preserve `is_admin` exactly as-is;
+- assign the submitted group to that user;
+- do not overwrite nonblank `first_name` or `last_name`;
+- fill `first_name` or `last_name` only when the existing value is null or blank;
+- keep `portal_users.email` normalized to the Auth email.
+
+Existing Auth user without `portal_users` behavior:
+
+- preserve the Auth user;
+- create the missing `portal_users` row with submitted first and last names;
+- use `is_admin = false` unless a trusted source explicitly says otherwise.
+
 ## Schema Summary
 
 The migration creates `public.groups` as the permanent relational table for community groups.
@@ -253,6 +293,18 @@ The future LifeGate Dashboard uses Supabase email OTP as the initial login metho
 - No passwords, service-role keys, private keys, or authentication secrets are stored in `public.portal_users`.
 - Dashboard user-management UI, owner search, and account provisioning remain future work.
 
+Name handling is intentionally conservative. Do not split `contact_name` into `first_name` and `last_name` automatically, because values such as `Larry and Amy Knepp`, `Ministry Team`, or unusual multi-part names can be corrupted. Email is backfilled automatically from Auth; first and last names use Auth metadata when available and otherwise remain nullable until edited through future admin user-management tools.
+
+Community Host ownership rules:
+
+- One Community Host/login is associated with one or more communities.
+- One community has one Community Host for now.
+- Pending, active, and inactive owned communities appear in the Community Host's Dashboard.
+- Ownership is stored in `groups.owner_user_id`, never permanently inferred from email.
+- Contact email is used only by trusted server-side code to locate or provision the Auth user.
+- Existing admins must remain admins if they are also Community Hosts.
+- Contacts cannot choose or update `owner_user_id` from the browser.
+
 The static dashboard frontend uses Supabase magic links through Resend custom SMTP:
 
 - `portal-login.html` requests the sign-in link with `shouldCreateUser: false`.
@@ -286,6 +338,8 @@ Dashboard authorization uses narrow authenticated RPCs rather than broad direct 
 - `public.get_admin_groups()` returns all groups only when `private.is_portal_admin()` is true.
 - `public.update_my_community(p_group_id text, p_changes jsonb)` patch-updates contact-editable fields, `is_closed`, and active/inactive status for a group owned by the authenticated user. It does not accept ownership, IDs, timestamps, or coordinates, and contacts cannot set `pending`.
 - `public.update_admin_group(p_group_id text, p_changes jsonb)` requires administrator permission and can patch normal group fields, `is_closed`, coordinates, status, and owner assignment.
+- `public.get_my_profile()` returns only the authenticated caller's `portal_users` row: `user_id`, `first_name`, `last_name`, `email`, and `is_admin`.
+- `public.update_my_profile(p_changes jsonb)` patch-updates the authenticated caller's first and last name. The only allowed keys are `first_name` and `last_name`; `email`, `is_admin`, IDs, and timestamps are rejected. Login email changes must go through Supabase Auth verification.
 
 The base `public.groups` table remains locked down for `anon` and `authenticated`, so contacts cannot bypass column restrictions with direct updates. Direct table `DELETE` is not granted. This RPC shape is safer than plain row-level `UPDATE` policies because PostgreSQL RLS filters rows but does not, by itself, provide ergonomic per-column update restrictions for browser clients.
 
@@ -303,6 +357,28 @@ Dashboard update RPCs use JSON patch semantics:
 - Admins may clear only `day`, `meeting_time`, `additional_info`, `latitude`, `longitude`, and `owner_user_id`.
 - Admin coordinate patches require `latitude` and `longitude` together; both may be numbers or both may be JSON null.
 
+Personal profile update semantics:
+
+- `p_changes` must be a non-empty JSON object.
+- Omitted properties remain unchanged.
+- Unknown keys are rejected.
+- `first_name` and `last_name` must be nonblank strings of at most 80 characters after update.
+- `email` is not accepted by `update_my_profile()`.
+- Login email changes are requested by the authenticated browser client with `supabase.auth.updateUser({ email: normalizedEmail })`.
+- `portal_users.email` changes only after Supabase Auth confirms and writes the new `auth.users.email`; the Auth-to-portal_users trigger then copies the confirmed normalized email.
+- Failed or abandoned email confirmation leaves the original confirmed login email intact.
+- Partial success is possible: profile names may save successfully even if the email-change request fails.
+- `is_admin` cannot be edited through personal profile settings.
+
+Dashboard profile UI:
+
+- every signed-in Dashboard user, Admin or Community Host, can view first name, last name, and email;
+- every signed-in Dashboard user can edit first and last name through `update_my_profile()`;
+- email changes are requested through Supabase Auth verification and may require confirmation before the displayed login email changes;
+- the dashboard keeps the currently confirmed login email visible until Auth reports the change as completed and the profile reloads;
+- the Auth UUID is not displayed;
+- changing profile names does not rewrite historical `groups.contact_name` values in this phase.
+
 Public visibility and open/closed meaning:
 
 - `active` determines whether a group appears publicly through `public.get_public_groups()`.
@@ -310,6 +386,12 @@ Public visibility and open/closed meaning:
 - `is_closed` indicates whether an active group is currently accepting new members.
 - Public cards and marker-click details display `Open to New Members` or `Currently Closed`.
 - Closed active groups remain visible publicly; no public open/closed filter exists yet.
+
+## Future Community Host Ownership Work
+
+Automatic Community Host provisioning, Auth creation, invitation delivery, owner assignment, and existing-community ownership backfill remain future work outside Version 1.0 Internal Beta. No audit or backfill tool is included in the beta publication set.
+
+Future ownership work should preserve admins, avoid overwriting nonblank profile names, use normalized Auth email only as a controlled matching input, and store permanent ownership in `groups.owner_user_id`.
 
 ## Security Notes
 
@@ -320,3 +402,5 @@ The public RPC function `public.get_public_groups()` returns only active records
 The function intentionally returns `contact_email` because the current public website needs it for the contact button. That email address is visible to browser clients and may later be replaced by a server-side contact relay.
 
 Public submissions are performed by the Supabase `submit-group` Edge Function. Dashboard operations are designed as authenticated RPCs. Future high-risk administrative workflows may still move behind Edge Functions if server-side auditing, rate limiting, or richer validation becomes necessary.
+
+Auth user creation, invitation, and ownership assignment must remain server-side only. No service-role key, secret key, private key, database password, or Admin API capability may appear in browser JavaScript. The public `submit-group` endpoint can remain callable by anonymous visitors, but privileged work must stay inside the Edge Function. Portal login must keep `shouldCreateUser: false`, and browser roles must not receive direct access to `auth.users`.

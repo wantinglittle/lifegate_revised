@@ -1,9 +1,12 @@
 const form = document.getElementById('groupForm');
+const firstNameInput = document.getElementById("first-name");
+const lastNameInput = document.getElementById("last-name");
 const phoneInput = document.getElementById("contact-phone");
 const submitButton = form.querySelector('button[type="submit"]');
 const submitLabel = submitButton.querySelector('.submit-label');
 const submitStatus = document.getElementById("submit-status");
 const FUNCTION_URL = "https://dsrilmjpgpgdxzvzwyqw.supabase.co/functions/v1/submit-group";
+const NAME_MAX_LENGTH = 80;
 
 function formatPhoneNumber(rawDigits) {
   if (rawDigits.length > 10) rawDigits = rawDigits.slice(0, 10);
@@ -21,8 +24,38 @@ function formatPhoneNumber(rawDigits) {
   return "";
 }
 
+function setFieldError(input, message) {
+  const errorElement = document.getElementById(`${input.id}-error`);
+  input.setAttribute("aria-invalid", message ? "true" : "false");
+  if (errorElement) {
+    errorElement.textContent = message;
+  }
+}
+
+function validateNameField(input, label) {
+  const value = input.value.trim();
+  if (!value) {
+    setFieldError(input, `${label} is required.`);
+    return null;
+  }
+  if (value.length > NAME_MAX_LENGTH) {
+    setFieldError(input, `${label} must be ${NAME_MAX_LENGTH} characters or fewer.`);
+    return null;
+  }
+
+  setFieldError(input, "");
+  return value;
+}
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
+
+  const firstName = validateNameField(firstNameInput, "First name");
+  const lastName = validateNameField(lastNameInput, "Last name");
+  if (!firstName || !lastName) {
+    submitStatus.textContent = "Please complete the required name fields.";
+    return;
+  }
 
   const rawPhone = phoneInput.value.replace(/\D/g, "");
   if (rawPhone.length !== 10) {
@@ -43,10 +76,13 @@ form.addEventListener('submit', async (e) => {
 
   const formData = new FormData(form);
   const data = Object.fromEntries(formData);
+  const contactName = `${firstName} ${lastName}`.trim();
   const payload = {
     title: (data.title || "").trim(),
     description: (data.description || "").trim(),
-    contactName: (data.contactName || "").trim(),
+    first_name: firstName,
+    last_name: lastName,
+    contactName,
     contactEmail: (data.contactEmail || "").trim(),
     contactPhone: `(${rawPhone.slice(0, 3)}) ${rawPhone.slice(3, 6)}-${rawPhone.slice(6)}`,
     day: data.day || "",
@@ -98,4 +134,12 @@ form.addEventListener('submit', async (e) => {
 phoneInput.addEventListener("input", (e) => {
   const digits = e.target.value.replace(/\D/g, "");
   e.target.value = formatPhoneNumber(digits);
+});
+
+[firstNameInput, lastNameInput].forEach((input) => {
+  input.addEventListener("input", () => {
+    if (input.getAttribute("aria-invalid") === "true") {
+      validateNameField(input, input === firstNameInput ? "First name" : "Last name");
+    }
+  });
 });
