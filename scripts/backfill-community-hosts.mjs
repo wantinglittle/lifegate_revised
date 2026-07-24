@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const REPORT_RELATIVE_PATH = 'migration-data/community-host-backfill-report.md';
 const APPLY_CONFIRMATION = 'BACKFILL_COMMUNITY_HOSTS_APPLY';
 const PLAN_CONFIRMATION = 'BACKFILL_COMMUNITY_HOSTS_PLAN';
-const DEFAULT_DASHBOARD_REDIRECT_URL = 'https://wantinglittle.github.io/lifegate_revised/portal-callback.html';
+const DEFAULT_DASHBOARD_REDIRECT_URL = 'https://lifegatecommunity.com/portal-callback.html';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PAGE_SIZE = 1000;
 
@@ -109,6 +109,37 @@ function createDetails() {
     portalConflicts: [],
     errors: [],
   };
+}
+
+function createResult() {
+  return {
+    summary: createSummary(),
+    details: createDetails(),
+    groupCount: 0,
+    authUserCount: 0,
+    portalUserCount: 0,
+    failed: false,
+    failingGroup: null,
+    errorMessage: null,
+  };
+}
+
+function sanitizeErrorMessage(message) {
+  return String(message ?? '')
+    .replace(EMAIL_PATTERN, '[redacted-email]')
+    .replace(/sb_secret_[A-Za-z0-9_]+/g, '[redacted-secret-key]')
+    .replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[redacted-jwt]');
+}
+
+function markFailure(result, group, error) {
+  const errorMessage = sanitizeErrorMessage(error?.message ?? error);
+  result.failed = true;
+  result.failingGroup = group ? publicLabel(group) : null;
+  result.errorMessage = errorMessage;
+  result.details.errors.push([
+    result.failingGroup || '(before group processing)',
+    errorMessage,
+  ]);
 }
 
 function deriveNameParts(group) {
@@ -482,63 +513,70 @@ function summarizeSkippedGroup(group, summary, details) {
 }
 
 async function backfill({ context, mode }) {
-  const summary = createSummary();
-  const details = createDetails();
+  const result = createResult();
+  const { summary, details } = result;
+  let currentGroup = null;
+
   const groups = await fetchGroups(context);
+  result.groupCount = groups.length;
+
   const portalUsers = await fetchPortalUsers(context);
+  result.portalUserCount = portalUsers.length;
+
   const authUsers = await fetchAuthUsers(context);
+  result.authUserCount = authUsers.length;
+
   const authMaps = buildAuthUserMaps(authUsers);
   const portalMaps = buildPortalMaps(portalUsers);
   const hostCache = new Map();
 
-  for (const group of groups) {
-    if (summarizeSkippedGroup(group, summary, details)) continue;
+  try {
+    for (const group of groups) {
+      currentGroup = group;
+      if (summarizeSkippedGroup(group, summary, details)) continue;
 
-    const normalizedEmail = normalizeEmail(group.contact_email);
-    const host = await resolveHost({
-      context,
-      mode,
-      group,
-      normalizedEmail,
-      authMaps,
-      portalMaps,
-      hostCache,
-      summary,
-      details,
-    });
+      const normalizedEmail = normalizeEmail(group.contact_email);
+      const host = await resolveHost({
+        context,
+        mode,
+        group,
+        normalizedEmail,
+        authMaps,
+        portalMaps,
+        hostCache,
+        summary,
+        details,
+      });
 
-    if (!host.ok) {
-      summary.ownershipConflicts += 1;
-      details.ownershipConflicts.push([publicLabel(group), host.reason]);
-      continue;
-    }
-
-    if (!group.owner_user_id) {
-      if (mode === 'apply') {
-        await assignGroupOwner(context, group.id, host.userId);
+      if (!host.ok) {
+        summary.ownershipConflicts += 1;
+        details.ownershipConflicts.push([publicLabel(group), host.reason]);
+        continue;
       }
-      summary.groupsAssigned += 1;
-      details.assignedGroups.push([publicLabel(group), host.userId]);
-    } else if (String(group.owner_user_id) === String(host.userId)) {
-      summary.groupsAlreadyAssigned += 1;
-      details.alreadyAssignedGroups.push([publicLabel(group), host.userId]);
-    } else {
-      summary.ownershipConflicts += 1;
-      details.ownershipConflicts.push([publicLabel(group), `existing owner ${group.owner_user_id} differs from resolved owner ${host.userId}`]);
+
+      if (!group.owner_user_id) {
+        if (mode === 'apply') {
+          await assignGroupOwner(context, group.id, host.userId);
+        }
+        summary.groupsAssigned += 1;
+        details.assignedGroups.push([publicLabel(group), host.userId]);
+      } else if (String(group.owner_user_id) === String(host.userId)) {
+        summary.groupsAlreadyAssigned += 1;
+        details.alreadyAssignedGroups.push([publicLabel(group), host.userId]);
+      } else {
+        summary.ownershipConflicts += 1;
+        details.ownershipConflicts.push([publicLabel(group), `existing owner ${group.owner_user_id} differs from resolved owner ${host.userId}`]);
+      }
     }
+  } catch (error) {
+    markFailure(result, currentGroup, error);
   }
 
-  return {
-    summary,
-    details,
-    groupCount: groups.length,
-    authUserCount: authUsers.length,
-    portalUserCount: portalUsers.length,
-  };
+  return result;
 }
 
 function buildReport({ mode, timestamp, supabaseHost, result }) {
-  const { summary, details, groupCount, authUserCount, portalUserCount } = result;
+  const { summary, details, groupCount, authUserCount, portalUserCount, failed, failingGroup, errorMessage } = result;
   const rows = Object.entries(summary).map(([key, value]) => [key, value]);
   let report = '# Community Host Backfill Report\n\n';
   report += `- Execution mode: ${mode}\n`;
@@ -547,6 +585,9 @@ function buildReport({ mode, timestamp, supabaseHost, result }) {
   report += `- Groups inspected: ${groupCount}\n`;
   report += `- Auth users inspected: ${authUserCount}\n`;
   report += `- Portal users inspected: ${portalUserCount}\n`;
+  report += `- Final status: ${failed ? 'failed after partial progress' : 'completed'}\n`;
+  report += `- Failing group: ${failingGroup || 'not applicable'}\n`;
+  report += `- Error message: ${errorMessage || 'not applicable'}\n`;
   report += '- Contact emails are not included in this report.\n';
   report += '- Firebase was not modified.\n\n';
 
@@ -572,6 +613,8 @@ function buildReport({ mode, timestamp, supabaseHost, result }) {
   report += `${table(['Source group', 'Auth user IDs'], details.authConflicts.map((item) => [item.sourceGroup, item.userIds.join(', ')]))}\n`;
   report += 'Portal email conflicts:\n\n';
   report += `${table(['Source group', 'Resolved auth user_id', 'Existing portal user_id'], details.portalConflicts.map((item) => [item.sourceGroup, item.authUserId, item.portalUserId]))}\n`;
+  report += 'Runtime errors:\n\n';
+  report += `${table(['Group', 'Error'], details.errors)}\n`;
 
   report += '## Other Details\n\n';
   report += 'Reused Auth users:\n\n';
@@ -593,6 +636,11 @@ function printSummary(result, mode) {
   console.log(`Groups inspected: ${result.groupCount}`);
   console.log(`Auth users inspected: ${result.authUserCount}`);
   console.log(`Portal users inspected: ${result.portalUserCount}`);
+  console.log(`Final status: ${result.failed ? 'failed after partial progress' : 'completed'}`);
+  if (result.failed) {
+    console.log(`Failing group: ${result.failingGroup || 'not applicable'}`);
+    console.log(`Error message: ${result.errorMessage || 'not applicable'}`);
+  }
   for (const [key, value] of Object.entries(result.summary)) {
     console.log(`${key}: ${value}`);
   }
@@ -645,7 +693,7 @@ async function main() {
   printSummary(result, mode);
   console.log(`Report written: ${reportPath}`);
 
-  if (result.summary.ownershipConflicts > 0 || result.details.authConflicts.length > 0 || result.details.portalConflicts.length > 0) {
+  if (result.failed || result.summary.ownershipConflicts > 0 || result.details.authConflicts.length > 0 || result.details.portalConflicts.length > 0) {
     process.exitCode = 1;
   }
 }

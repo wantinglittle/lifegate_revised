@@ -77,6 +77,11 @@ function setStatus(message, tone = "info") {
   statusMessage.dataset.tone = tone;
 }
 
+function clearStatus() {
+  statusMessage.textContent = "";
+  delete statusMessage.dataset.tone;
+}
+
 function selectedGroupId() {
   const params = new URLSearchParams(window.location.search);
   return params.get("id") || "";
@@ -408,7 +413,7 @@ async function loadEditableCommunity() {
   communityName.textContent = originalRecord.title || "Untitled community";
   form.hidden = false;
   clearErrors();
-  setStatus("Community loaded.", "success");
+  clearStatus();
 }
 
 async function saveChanges() {

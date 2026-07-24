@@ -63,7 +63,9 @@ LifeGate Dashboard database and authorization foundation.
 - Dashboard user profile-field migration drafted for `public.portal_users` with nullable display names and synchronized normalized email.
 - Community Host profile RPC migration and dashboard profile editor drafted for review.
 - Public Add My Community form now collects separate first and last names in local source, then sends both names plus combined contact name to the Supabase `submit-group` Edge Function.
-- Direct one-time Community Host backfill implementation prepared in `scripts/backfill-community-hosts.mjs`; it has not been executed.
+- Direct one-time Community Host backfill implementation prepared in `scripts/backfill-community-hosts.mjs`.
+- Backfill apply attempt hit a `service_role` permission gap updating `groups.owner_user_id`; a narrow permission-fix migration and improved partial-failure report handling are prepared for review.
+- Production-domain cutover source changes prepared for `lifegate_revised`: root-domain CNAME, root canonical/sitemap URLs, production Dashboard callback defaults, and production `submit-group` CORS source allow-list updates.
 
 Supabase now contains all 22 migrated group records. Existing Firestore document IDs were preserved. The verified imported status totals are 17 approved, 5 pending, 0 rejected, and 0 archived.
 
@@ -75,7 +77,7 @@ The dashboard frontend is a static GitHub Pages-compatible experience. It uses S
 
 # Current Task
 
-Prepare direct Community Host backfill implementation without executing it.
+Cut over the revised Supabase-based GitHub Pages site to `https://lifegatecommunity.com` without rerunning backfill, sending invitations, changing DNS, or modifying Supabase data/Auth users.
 
 # Upcoming Tasks
 
@@ -111,7 +113,8 @@ Prepare direct Community Host backfill implementation without executing it.
 - `public.portal_users` stores nullable `first_name` and `last_name` display fields plus normalized `email` copied from `auth.users`.
 - Dashboard email is kept synchronized from `auth.users.email`; passwords, private keys, and authentication secrets are not stored in `public.portal_users`.
 - Dashboard display names are managed in `public.portal_users`; Auth metadata is used only for initial backfill when names are blank.
-- The GitHub Pages redirect URL `https://wantinglittle.github.io/lifegate_revised/portal-callback.html` must be added to Supabase Auth redirect URLs before hosted magic-link testing.
+- The production Dashboard redirect URL `https://lifegatecommunity.com/portal-callback.html` must be added to Supabase Auth redirect URLs before production magic-link testing.
+- The shadow redirect URL `https://wantinglittle.github.io/lifegate_revised/portal-callback.html` may remain authorized during the transition if shadow testing is still needed.
 - One portal user may manage multiple groups.
 - Administrators may also own groups as ordinary group contacts.
 - Administrators will see both Admin and My Communities tabs.
@@ -171,10 +174,10 @@ Prepare direct Community Host backfill implementation without executing it.
 
 # Deployment Status
 
-Current Production
+Production target
 
-Firebase
+GitHub Pages from `wantinglittle/lifegate_revised`, using Supabase public RPCs and the Supabase `submit-group` Edge Function.
 
-Current Development
+Rollback/reference
 
-Supabase
+The old Firebase-backed `LIFEGATE-Community` repository and Firebase project remain intact until parity testing and rollback planning are complete.

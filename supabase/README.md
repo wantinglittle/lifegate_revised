@@ -2,7 +2,7 @@
 
 This directory contains the reviewable PostgreSQL schema design for migrating `lifegatecommunity.com` from Firebase Cloud Firestore to Supabase PostgreSQL.
 
-The shadow application now reads approved public groups from Supabase and submits new groups through the Supabase `submit-group` Edge Function. The live Firebase project remains intact as the production rollback/reference system until parity testing and deployment are complete.
+The revised application reads approved public groups from Supabase and submits new groups through the Supabase `submit-group` Edge Function. The old Firebase project remains intact as the production rollback/reference system until parity testing and Firebase retirement are complete.
 
 ## Migration File
 
@@ -107,7 +107,7 @@ The function is intentionally public in `supabase/config.toml`:
 verify_jwt = false
 ```
 
-Unauthenticated browser visitors need to submit the public form, so protection comes from exact CORS allow-listing, reCAPTCHA, server-side validation, and trusted server-side inserts. The function allows `https://wantinglittle.github.io` and local `localhost`/`127.0.0.1` origins for testing. It does not use wildcard production CORS.
+Unauthenticated browser visitors need to submit the public form, so protection comes from exact CORS allow-listing, reCAPTCHA, server-side validation, and trusted server-side inserts. The function source allows `https://lifegatecommunity.com`, `https://www.lifegatecommunity.com`, `https://wantinglittle.github.io`, and local `localhost`/`127.0.0.1` origins. It does not use wildcard production CORS.
 
 Local serve, if Docker and the Supabase CLI are already available:
 
@@ -321,13 +321,30 @@ The static dashboard frontend uses Supabase magic links through Resend custom SM
 - Unknown emails must not create Auth users. The UI uses a generic success/error response and does not intentionally reveal whether an email address is provisioned.
 - Dashboard user-management UI, owner search, and account provisioning remain future work. The public Find a Community page displays open/closed availability, but does not have an open/closed filter yet.
 
-For hosted GitHub Pages testing, add this redirect URL in Supabase Dashboard -> Authentication -> URL Configuration -> Redirect URLs:
+For production GitHub Pages, set these values in Supabase Dashboard -> Authentication -> URL Configuration:
+
+```text
+Site URL:
+https://lifegatecommunity.com
+
+Redirect URLs:
+https://lifegatecommunity.com/portal-callback.html
+```
+
+Keep this shadow redirect URL only while the GitHub Pages shadow site remains needed for transition testing:
 
 ```text
 https://wantinglittle.github.io/lifegate_revised/portal-callback.html
 ```
 
-The browser code derives the callback URL from the current page location so local and repository-subdirectory paths continue to work. Six-digit OTP emails remain future work.
+For local static testing, add these only if local magic-link callbacks need to be tested:
+
+```text
+http://localhost:5500/portal-callback.html
+http://127.0.0.1:5500/portal-callback.html
+```
+
+The browser code derives the callback URL from the current page location so production, local, and repository-subdirectory paths continue to work when the matching redirect URL is authorized. Six-digit OTP emails remain future work.
 
 Group ownership is controlled by `groups.owner_user_id`, which references `auth.users.id`. It is independent from `contact_email`; changing a group's contact email does not transfer ownership. One user may own multiple groups, and an administrator may also own groups as an ordinary contact.
 

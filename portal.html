@@ -16,7 +16,7 @@
       </div>
       <div class="header-content">
         <h1>LifeGate Community Dashboard</h1>
-        <p>Community leader tools</p>
+        <p>Community Host tools</p>
       </div>
       <div class="header-actions">
         <button id="portal-logout" type="button" class="add-group-btn">Logout</button>
@@ -69,33 +69,6 @@
             </div>
             <button id="portal-profile-edit" type="button" class="portal-secondary-btn">Edit</button>
           </div>
-
-          <form id="portal-profile-form" class="portal-profile-form" hidden novalidate>
-            <div class="portal-form-grid">
-              <div class="form-group">
-                <label for="portal-profile-first-input">First Name</label>
-                <input id="portal-profile-first-input" name="first_name" type="text" maxlength="80" autocomplete="given-name" aria-describedby="portal-profile-first-error" required />
-                <p id="portal-profile-first-error" class="portal-field-error" aria-live="polite"></p>
-              </div>
-              <div class="form-group">
-                <label for="portal-profile-last-input">Last Name</label>
-                <input id="portal-profile-last-input" name="last_name" type="text" maxlength="80" autocomplete="family-name" aria-describedby="portal-profile-last-error" required />
-                <p id="portal-profile-last-error" class="portal-field-error" aria-live="polite"></p>
-              </div>
-              <div class="form-group portal-wide-field">
-                <label for="portal-profile-email-input">Login Email</label>
-                <input id="portal-profile-email-input" name="email" type="email" autocomplete="email" aria-describedby="portal-profile-email-help portal-profile-email-error" required />
-                <p id="portal-profile-email-help" class="portal-help-text">Changing this email may require confirmation before it becomes your new login email.</p>
-                <p id="portal-profile-email-error" class="portal-field-error" aria-live="polite"></p>
-              </div>
-            </div>
-
-            <div class="portal-edit-actions">
-              <button id="portal-profile-save" type="submit" class="portal-primary-btn">Save Profile</button>
-              <button id="portal-profile-cancel" type="button" class="portal-secondary-btn">Cancel</button>
-            </div>
-            <p id="portal-profile-status" class="portal-status" aria-live="polite"></p>
-          </form>
         </section>
 
         <div class="portal-tabs" role="tablist" aria-label="Dashboard sections">
@@ -137,6 +110,42 @@
         </section>
       </section>
     </main>
+  </div>
+
+  <div id="portal-profile-modal" class="portal-modal" role="dialog" aria-modal="true" aria-labelledby="portal-profile-modal-title" hidden>
+    <div class="portal-modal-panel" role="document" tabindex="-1">
+      <form id="portal-profile-form" class="portal-profile-form" novalidate>
+        <div class="portal-modal-header">
+          <h3 id="portal-profile-modal-title">Edit My Profile</h3>
+        </div>
+
+        <div class="portal-form-grid">
+          <div class="form-group">
+            <label for="portal-profile-first-input">First Name</label>
+            <input id="portal-profile-first-input" name="first_name" type="text" maxlength="80" autocomplete="given-name" aria-describedby="portal-profile-first-error" required />
+            <p id="portal-profile-first-error" class="portal-field-error" aria-live="polite"></p>
+          </div>
+          <div class="form-group">
+            <label for="portal-profile-last-input">Last Name</label>
+            <input id="portal-profile-last-input" name="last_name" type="text" maxlength="80" autocomplete="family-name" aria-describedby="portal-profile-last-error" required />
+            <p id="portal-profile-last-error" class="portal-field-error" aria-live="polite"></p>
+          </div>
+          <div class="form-group portal-wide-field">
+            <label for="portal-profile-email-input">Login Email</label>
+            <input id="portal-profile-email-input" name="email" type="email" autocomplete="email" aria-describedby="portal-profile-email-help portal-profile-email-error" required />
+            <p id="portal-profile-email-help" class="portal-help-text">Changing this email may require confirmation before it becomes your new login email.</p>
+            <p id="portal-profile-email-error" class="portal-field-error" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <p id="portal-profile-status" class="portal-status" aria-live="polite"></p>
+
+        <div class="portal-edit-actions">
+          <button id="portal-profile-save" type="submit" class="portal-primary-btn">Save</button>
+          <button id="portal-profile-cancel" type="button" class="portal-secondary-btn">Cancel</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script type="module" src="portal.js"></script>

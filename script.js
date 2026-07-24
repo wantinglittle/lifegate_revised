@@ -363,7 +363,8 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
     // Attach event listeners
     document.querySelectorAll(".more-info-btn").forEach(btn => {
       btn.addEventListener("click", e => {
-        const i = parseInt(e.target.dataset.index);
+        const i = parseInt(e.currentTarget.dataset.index, 10);
+        if (Number.isNaN(i) || !groups[i]) return;
         showGroupModal(groups[i]);
       });
     });
@@ -380,7 +381,7 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
 
     document.querySelectorAll(".view-on-map-btn").forEach(btn => {
       btn.addEventListener("click", e => {
-        const groupId = e.target.dataset.id;
+        const groupId = e.currentTarget.dataset.id;
         const group = groups.find(g => g.id === groupId);
         if (!group) return;
 

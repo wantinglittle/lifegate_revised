@@ -53,6 +53,8 @@ const adminSearch = document.getElementById("portal-admin-search");
 const clearSearchButton = document.getElementById("portal-clear-search");
 const filterButtons = Array.from(document.querySelectorAll(".portal-filter-btn"));
 const profileView = document.getElementById("portal-profile-view");
+const profileModal = document.getElementById("portal-profile-modal");
+const profileModalPanel = profileModal.querySelector(".portal-modal-panel");
 const profileForm = document.getElementById("portal-profile-form");
 const profileFirstName = document.getElementById("portal-profile-first-name");
 const profileLastName = document.getElementById("portal-profile-last-name");
@@ -71,6 +73,7 @@ let currentAdminFilter = "all";
 let currentProfile = null;
 let currentConfirmedEmail = "";
 let isProfileSaving = false;
+let profileModalReturnFocus = null;
 
 function setStatus(message, tone = "info") {
   statusMessage.textContent = message;
@@ -154,6 +157,7 @@ async function refreshProfileFromServer(fallbackEmail = currentConfirmedEmail) {
 }
 
 function showProfileEditor() {
+  profileModalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : profileEditButton;
   profileFirstInput.value = currentProfile?.first_name || "";
   profileLastInput.value = currentProfile?.last_name || "";
   profileEmailInput.value = currentConfirmedEmail || currentProfile?.email || userEmail.textContent || "";
@@ -161,17 +165,61 @@ function showProfileEditor() {
     setProfileFieldError(input, "");
   });
   clearProfileStatus();
-  profileView.hidden = true;
-  profileForm.hidden = false;
+  profileModal.hidden = false;
   profileFirstInput.focus();
 }
 
-function hideProfileEditor() {
-  profileForm.hidden = true;
-  profileView.hidden = false;
+function hideProfileEditor({ restoreFocus = true } = {}) {
+  profileModal.hidden = true;
   isProfileSaving = false;
   profileSaveButton.disabled = false;
   profileCancelButton.disabled = false;
+  if (restoreFocus && profileModalReturnFocus) {
+    profileModalReturnFocus.focus();
+  }
+  profileModalReturnFocus = null;
+}
+
+function profileModalIsOpen() {
+  return !profileModal.hidden;
+}
+
+function focusableProfileModalElements() {
+  return Array.from(profileModal.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  )).filter((element) => !element.disabled && !element.hidden && element.offsetParent !== null);
+}
+
+function handleProfileModalKeydown(event) {
+  if (!profileModalIsOpen()) return;
+
+  if (event.key === "Escape") {
+    if (!isProfileSaving) {
+      event.preventDefault();
+      hideProfileEditor();
+    }
+    return;
+  }
+
+  if (event.key !== "Tab") return;
+
+  const focusableElements = focusableProfileModalElements();
+  if (focusableElements.length === 0) {
+    event.preventDefault();
+    profileModalPanel.focus();
+    return;
+  }
+
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+
+  if (event.shiftKey && document.activeElement === firstElement) {
+    event.preventDefault();
+    lastElement.focus();
+  } else if (!event.shiftKey && document.activeElement === lastElement) {
+    event.preventDefault();
+    firstElement.focus();
+  }
 }
 
 async function saveProfile(event) {
@@ -218,6 +266,9 @@ async function saveProfile(event) {
   } catch (error) {
     console.error("Profile name update failed:", error);
     setProfileStatus(error.message || "Profile names could not be updated.", "error");
+    isProfileSaving = false;
+    profileSaveButton.disabled = false;
+    profileCancelButton.disabled = false;
     return;
   }
 
@@ -245,6 +296,12 @@ async function saveProfile(event) {
         );
       }
     } else {
+      try {
+        updatedProfile = await refreshProfileFromServer(currentEmail);
+      } catch (profileError) {
+        console.error("Profile reload after profile save failed:", profileError);
+        renderProfile(updatedProfile, currentEmail);
+      }
       setStatus("Profile updated.", "success");
     }
 
@@ -520,14 +577,14 @@ function showAdminDashboard(groups) {
 }
 
 function showContactPortal() {
-  portalRole.textContent = "Community Leader";
+  portalRole.textContent = "Community Host";
   adminMetric.hidden = true;
   adminTab.hidden = true;
   adminPanel.hidden = true;
 }
 
 function showAdminLoadFailure() {
-  portalRole.textContent = "Community Leader";
+  portalRole.textContent = "Community Host";
   adminMetric.hidden = true;
   adminTab.hidden = false;
   adminPanel.hidden = true;
@@ -603,6 +660,12 @@ logoutButton.addEventListener("click", async () => {
 profileEditButton.addEventListener("click", showProfileEditor);
 profileCancelButton.addEventListener("click", hideProfileEditor);
 profileForm.addEventListener("submit", saveProfile);
+profileModal.addEventListener("click", (event) => {
+  if (event.target === profileModal && !isProfileSaving) {
+    hideProfileEditor();
+  }
+});
+document.addEventListener("keydown", handleProfileModalKeydown);
 
 [profileFirstInput, profileLastInput].forEach((input) => {
   input.addEventListener("input", () => {

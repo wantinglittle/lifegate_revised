@@ -6,7 +6,7 @@
 
   <!-- Home/Splash Page - Highest Priority -->
   <url>
-    <loc>https://www.lifegatecommunity.com/</loc>
+    <loc>https://lifegatecommunity.com/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
@@ -14,7 +14,7 @@
 
   <!-- Main Search/Directory Page - Very High Priority -->
   <url>
-    <loc>https://www.lifegatecommunity.com/find-comm.html</loc>
+    <loc>https://lifegatecommunity.com/find-comm.html</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
@@ -22,7 +22,7 @@
 
   <!-- Add Group Page - High Priority -->
   <url>
-    <loc>https://www.lifegatecommunity.com/add-group.html</loc>
+    <loc>https://lifegatecommunity.com/add-group.html</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -30,7 +30,7 @@
 
   <!-- Alternative URLs (if you have them) -->
   <url>
-    <loc>https://www.lifegatecommunity.com/index.html</loc>
+    <loc>https://lifegatecommunity.com/index.html</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
