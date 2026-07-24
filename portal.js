@@ -483,6 +483,22 @@ function addDetail(card, label, value) {
   card.append(detail);
 }
 
+function addEmailDetail(card, label, email) {
+  const detail = createElement("p", "portal-community-detail");
+  const labelElement = createElement("span", "portal-community-label", `${label}:`);
+  const normalizedEmail = String(email || "").trim();
+
+  detail.append(labelElement, document.createTextNode(" "));
+
+  if (normalizedEmail) {
+    const emailLink = createElement("a", "", normalizedEmail);
+    emailLink.href = `mailto:${normalizedEmail}`;
+    detail.append(emailLink);
+  }
+
+  card.append(detail);
+}
+
 function editUrl(group) {
   return `portal-edit.html?id=${encodeURIComponent(String(group.id || ""))}`;
 }
@@ -512,7 +528,7 @@ function renderCommunityCard(group, options = {}) {
 
   if (showContactDetails) {
     addDetail(card, "Contact Name", fieldValue(group.contact_name));
-    addDetail(card, "Contact Email", fieldValue(group.contact_email));
+    addEmailDetail(card, "Contact Email", group.contact_email);
     addDetail(card, "Contact Phone", fieldValue(group.contact_phone));
   }
 

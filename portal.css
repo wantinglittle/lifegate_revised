@@ -7,6 +7,18 @@
   cursor: pointer;
 }
 
+.portal-login-header {
+  min-height: 76px;
+}
+
+.portal-login-title-block {
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%);
+  width: min(520px, calc(100% - 18rem));
+}
+
 .portal-main {
   width: 100%;
   align-items: stretch;
@@ -547,6 +559,16 @@
 }
 
 @media (max-width: 768px) {
+  .portal-login-header {
+    min-height: 0;
+  }
+
+  .portal-login-title-block {
+    position: static;
+    transform: none;
+    width: auto;
+  }
+
   .portal-card,
   .portal-dashboard {
     padding: 1.25rem;
