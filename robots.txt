@@ -7,7 +7,7 @@ Allow: /
 # Allow important pages
 Allow: /index.html
 Allow: /find-comm.html
-Allow: /add-group.html
+Allow: /add-comm.html
 
 # Disallow technical files that shouldn't appear in search results
 Disallow: /*.css$

@@ -122,7 +122,7 @@ function handleExploreClick() {
 
 function handleAddCommunityClick() {
     console.log('Add Your Community clicked');
-    window.location.href = 'add-group.html';
+    window.location.href = 'add-comm.html';
 }
 
 // Smooth scrolling for internal links
