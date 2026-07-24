@@ -7,6 +7,7 @@ The shadow application now reads approved public groups from Supabase and submit
 ## Migration File
 
 - `supabase/migrations/20260723_001_create_groups_schema.sql`
+- `supabase/migrations/20260724_003_create_portal_foundation.sql`
 
 ## Firestore Export
 
@@ -64,7 +65,7 @@ Remove-Item Env:\SUPABASE_SECRET_KEY
 
 ## Public Read Cutover
 
-The static public listing reads approved groups through the `public.get_public_groups()` RPC. Browser code must never query `public.groups` directly and must never include a Supabase secret key or service-role key.
+The static public listing reads active groups through the `public.get_public_groups()` RPC. Browser code must never query `public.groups` directly and must never include a Supabase secret key or service-role key.
 
 Set the public browser configuration in `supabase-config.js` before deploying the read cutover:
 
@@ -139,12 +140,13 @@ The migration creates `public.groups` as the permanent relational table for comm
 - Firestore document IDs are preserved in `groups.id`.
 - New rows can receive a generated text ID by default without requiring PostgreSQL extensions.
 - The legacy Firestore `hidden` field is not stored permanently.
-- Publication uses one canonical `status` field with `pending`, `approved`, `rejected`, and `archived`.
+- Publication uses one canonical `status` field with `pending`, `active`, and `inactive`.
+- Portal ownership uses nullable `groups.owner_user_id`, which references `auth.users.id`; existing migrated rows remain unassigned until explicitly mapped.
 - Meeting time is normalized into one nullable `meeting_time` column.
 - Coordinates are stored as nullable `latitude` and `longitude` values without PostGIS.
 - Contact phone numbers are stored as text, not numeric values.
 
-Row Level Security is enabled. Browser roles do not receive direct table privileges. Public reads are intended to go through `public.get_public_groups()`, which returns only approved records and a limited column list.
+Row Level Security is enabled. Browser roles do not receive direct table privileges. Public reads are intended to go through `public.get_public_groups()`, which returns only active records and a limited column list.
 
 ## Firestore To PostgreSQL Field Mapping
 
@@ -189,7 +191,7 @@ The current public website treats a Firestore group as published when either:
 - `status == "approved"`, or
 - legacy `hidden == "no"`
 
-Use this import mapping:
+The import used this historical mapping:
 
 1. If `status` is exactly `"approved"`, map to `approved`.
 2. Otherwise, if legacy `hidden` is exactly `"no"`, map to `approved`.
@@ -198,6 +200,15 @@ Use this import mapping:
 5. Otherwise, map to `pending`.
 
 Records with conflicting values must be included in a migration exception report even though the mapping above determines the imported status.
+
+The portal foundation migration replaces the publication model with:
+
+- `approved` -> `active`
+- `pending` -> `pending`
+- `archived` -> `inactive`
+- `rejected` -> `inactive`
+
+The expected imported totals after conversion are 17 active, 5 pending, and 0 inactive. `public.get_public_groups()` now returns only `active` groups.
 
 Examples of conflicts to report:
 
@@ -224,12 +235,40 @@ The future import script must report these issues:
 
 Missing coordinates and empty `additionalInfo` are informational and should not normally block import.
 
+## Portal Authorization Architecture
+
+The future LifeGate Portal uses Supabase email OTP as the initial login method. Password login is not required. Phone/SMS OTP is deferred. OTP requests must set `shouldCreateUser: false`, because arbitrary visitors must not be able to create portal accounts. Portal users are provisioned ahead of time in `public.portal_users`.
+
+Group ownership is controlled by `groups.owner_user_id`, which references `auth.users.id`. It is independent from `contact_email`; changing a group's contact email does not transfer ownership. One user may own multiple groups, and an administrator may also own groups as an ordinary contact.
+
+Portal authorization uses narrow authenticated RPCs rather than broad direct table grants:
+
+- `private.is_portal_admin()` checks the authenticated user's `portal_users.is_admin` flag. It lives in the non-exposed `private` schema to keep helper implementation details out of the public API surface. Browser roles do not receive `USAGE` on the `private` schema and cannot call this helper directly.
+- `public.get_my_communities()` returns only groups where `owner_user_id = auth.uid()`, including pending, active, and inactive groups plus private contact fields.
+- `public.get_admin_groups()` returns all groups only when `private.is_portal_admin()` is true.
+- `public.update_my_community(p_group_id text, p_changes jsonb)` patch-updates only contact-editable fields for a group owned by the authenticated user. It does not accept status, ownership, IDs, timestamps, or coordinates.
+- `public.update_admin_group(p_group_id text, p_changes jsonb)` requires administrator permission and can patch normal group fields, coordinates, status, and owner assignment.
+
+The base `public.groups` table remains locked down for `anon` and `authenticated`, so contacts cannot bypass column restrictions with direct updates. Direct table `DELETE` is not granted. This RPC shape is safer than plain row-level `UPDATE` policies because PostgreSQL RLS filters rows but does not, by itself, provide ergonomic per-column update restrictions for browser clients.
+
+Portal update RPCs use JSON patch semantics:
+
+- `p_changes` must be a non-empty JSON object.
+- Omitted properties remain unchanged.
+- JSON null clears only nullable fields.
+- Required text fields reject JSON null, blank strings, and invalid values.
+- Contacts may update only `title`, `description`, `contact_name`, `contact_email`, `contact_phone`, `day`, `meeting_time`, `audience`, `age_group`, `city`, `zip_code`, `cross_streets`, and `additional_info`.
+- Contacts may clear only `day`, `meeting_time`, and `additional_info`.
+- Admins may also update `latitude`, `longitude`, `status`, and `owner_user_id`.
+- Admins may clear only `day`, `meeting_time`, `additional_info`, `latitude`, `longitude`, and `owner_user_id`.
+- Admin coordinate patches require `latitude` and `longitude` together; both may be numbers or both may be JSON null.
+
 ## Security Notes
 
 Anonymous and authenticated browser clients should not query `public.groups` directly. The migration revokes direct table privileges from `anon` and `authenticated` and does not create permissive insert, update, or delete policies.
 
-The public RPC function `public.get_public_groups()` returns only approved records and omits private/admin fields such as `contact_name`, `contact_phone`, `status`, `submitted_at`, `created_at`, and `updated_at`.
+The public RPC function `public.get_public_groups()` returns only active records and omits private/admin fields such as `owner_user_id`, `contact_name`, `contact_phone`, `status`, `submitted_at`, `created_at`, and `updated_at`.
 
 The function intentionally returns `contact_email` because the current public website needs it for the contact button. That email address is visible to browser clients and may later be replaced by a server-side contact relay.
 
-Future submissions and administrative operations should be performed by server-side code using Supabase service-role credentials or a purpose-built admin authentication system.
+Public submissions are performed by the Supabase `submit-group` Edge Function. Portal operations are designed as authenticated RPCs. Future high-risk administrative workflows may still move behind Edge Functions if server-side auditing, rate limiting, or richer validation becomes necessary.

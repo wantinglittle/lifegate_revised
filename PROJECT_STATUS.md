@@ -32,7 +32,7 @@ Target:
 
 # Current Phase
 
-Server-side submission migration from Firebase Functions to Supabase Edge Functions.
+LifeGate Portal database and authorization foundation.
 
 # Completed
 
@@ -63,16 +63,17 @@ The deployed Supabase `submit-group` Edge Function has passed shadow-site OPTION
 
 # Current Task
 
-Test a successful real shadow add-group submission through the Supabase `submit-group` Edge Function.
+Design the LifeGate Portal database and authorization foundation without deploying, executing SQL, connecting to Supabase, or changing the current public listing/submission flow.
 
 # Upcoming Tasks
 
-1. Verify successful shadow add-group submission through Supabase
-2. Review inserted pending submission
-3. Deploy public-read and submission cutovers
-4. Implement location privacy and automatic geocoding
-5. Remove Firebase
-6. Build admin dashboard
+1. Review and apply the portal foundation SQL migration
+2. Verify successful shadow add-group submission through Supabase
+3. Review inserted pending submission
+4. Deploy public-read and submission cutovers
+5. Implement location privacy and automatic geocoding
+6. Remove Firebase
+7. Build admin dashboard
 
 # Important Decisions
 
@@ -87,6 +88,21 @@ Test a successful real shadow add-group submission through the Supabase `submit-
 - Shadow add-group submissions now target the Supabase `submit-group` Edge Function.
 - The Supabase `submit-group` Edge Function is a feature-parity replacement for the Firebase Function, but successful real submission testing is still pending.
 - New Supabase group submissions must be inserted server-side as `pending` and must not accept browser-supplied publication status or coordinates.
+- Portal login will start with Supabase email OTP only; phone/SMS OTP is deferred.
+- Portal OTP requests must use `shouldCreateUser: false`; arbitrary visitors must not be able to create portal accounts.
+- Portal users must be provisioned before login.
+- One portal user may manage multiple groups.
+- Administrators may also own groups as ordinary group contacts.
+- Administrators will see both Admin and My Communities tabs.
+- Non-admin contacts will see only My Communities.
+- Contacts may see their own assigned groups in `pending`, `active`, and `inactive` statuses.
+- Contacts cannot approve groups, activate/deactivate groups, change status, or change ownership.
+- Portal update RPCs use JSON patch semantics: omitted properties remain unchanged, and JSON null clears only nullable fields.
+- Contacts cannot update status, ownership, or coordinates through portal RPCs.
+- Administrators can update group status and ownership through admin portal RPCs.
+- `private.is_portal_admin()` is an internal helper and is not directly callable by browser roles.
+- Group ownership uses `auth.users.id`, not `contact_email`.
+- Changing a group's contact email must not automatically transfer ownership.
 - Browser geocoding remains temporarily in place until the privacy-safe location phase.
 - Firebase remains production until the migration is complete.
 - Treat every submitted meeting location as private.
