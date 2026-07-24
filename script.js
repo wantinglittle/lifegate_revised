@@ -100,6 +100,7 @@ function mapSupabaseGroupToLegacyGroup(group) {
     crossStreets: group.cross_streets,
     additionalInfo: group.additional_info,
     contactEmail: group.contact_email,
+    isClosed: group.is_closed === true,
     hour: timeParts.hour,
     minute: timeParts.minute,
     ampm: timeParts.ampm,
@@ -151,6 +152,34 @@ function formatGroupTime(group) {
   return hour && ampm ? `${hour}:${minute} ${ampm}` : "N/A";
 }
 
+function availabilityLabel(group) {
+  return group.isClosed === true ? "Currently Closed" : "Open to New Members";
+}
+
+function createElement(tagName, className, text) {
+  const element = document.createElement(tagName);
+  if (className) {
+    element.className = className;
+  }
+  if (text !== undefined) {
+    element.textContent = text;
+  }
+  return element;
+}
+
+function createDetail(label, value) {
+  const paragraph = document.createElement("p");
+  const strong = createElement("strong", "", `${label}:`);
+  paragraph.append(strong, document.createTextNode(` ${value || "N/A"}`));
+  return paragraph;
+}
+
+function createButton(className, text) {
+  const button = createElement("button", className, text);
+  button.type = "button";
+  return button;
+}
+
 function showGroupsLoadError() {
   const container = document.getElementById("groups-container");
   if (container) {
@@ -192,6 +221,7 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
     // Add new cards
     groups.forEach((group, index) => {
       const timeStr = formatGroupTime(group);
+      const availability = availabilityLabel(group);
 
       const marker = new AdvancedMarkerElement({
         map,
@@ -213,18 +243,36 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
 
       const div = document.createElement("div");
       div.className = "group-card";
-      div.innerHTML = `
-        <h3>${group.title || "No Title"}</h3>
-        <p>${shortDesc}</p>
-        <p><strong>Day:</strong> ${group.day || "N/A"}</p>
-        <p><strong>Time:</strong> ${timeStr}</p>
-        <p><strong>Audience:</strong> ${group.audience || "N/A"}</p>
-        <p><strong>Age Group:</strong> ${group.ageGroup || "N/A"}</p>
-        <p><strong>City:</strong> ${group.city || "N/A"}</p>
-        <button class="more-info-btn" data-index="${index}">More Info</button>
-        <button class="contact-btn" data-title="${group.title || ""}" data-email="${group.contactEmail || ""}">Contact</button>
-        <button class="view-on-map-btn" data-id="${group.id}">View on Map</button>
-      `;
+
+      const titleRow = createElement("div", "group-card-heading");
+      titleRow.append(
+        createElement("h3", "", group.title || "No Title"),
+        createElement("span", `availability-badge ${group.isClosed === true ? "availability-closed" : "availability-open"}`, availability)
+      );
+
+      const moreInfoButton = createButton("more-info-btn", "More Info");
+      moreInfoButton.dataset.index = String(index);
+
+      const contactButton = createButton("contact-btn", "Contact");
+      contactButton.dataset.title = group.title || "";
+      contactButton.dataset.email = group.contactEmail || "";
+
+      const viewOnMapButton = createButton("view-on-map-btn", "View on Map");
+      viewOnMapButton.dataset.id = group.id;
+
+      div.append(
+        titleRow,
+        createElement("p", "", shortDesc),
+        createDetail("Availability", availability),
+        createDetail("Day", group.day),
+        createDetail("Time", timeStr),
+        createDetail("Audience", group.audience),
+        createDetail("Age Group", group.ageGroup),
+        createDetail("City", group.city),
+        moreInfoButton,
+        contactButton,
+        viewOnMapButton
+      );
       container.appendChild(div);
 
       // Trigger fade-in after a slightly longer delay
@@ -279,6 +327,7 @@ function showGroupModal(group) {
 
   document.getElementById("info-title").textContent = group.title || "No Title";
   document.getElementById("info-description").textContent = group.description || "No description available.";
+  document.getElementById("info-availability").textContent = availabilityLabel(group);
   document.getElementById("info-day").textContent = group.day || "N/A";
   document.getElementById("info-time").textContent = timeStr;
   document.getElementById("info-audience").textContent = group.audience || "N/A";

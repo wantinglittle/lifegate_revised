@@ -59,6 +59,7 @@ LifeGate Portal database and authorization foundation.
 - Resend custom SMTP tested successfully for portal authentication emails.
 - First usable portal admin dashboard created: administrators can view all communities as responsive cards with status and open/closed badges, client-side search, status filters, and edit navigation.
 - Full authenticated portal edit form implemented for contact-owned communities and administrator-managed communities. Updates use changed-only JSON patch payloads through the protected portal RPCs.
+- Public Find a Community cards and marker-click details now show open/closed availability for active communities.
 
 Supabase now contains all 22 migrated group records. Existing Firestore document IDs were preserved. The verified imported status totals are 17 approved, 5 pending, 0 rejected, and 0 archived.
 
@@ -114,7 +115,7 @@ Review and test the authenticated LifeGate Portal edit form on the shadow site.
 - `is_closed` indicates whether an active group is accepting new members.
 - Contacts and administrators may update `is_closed`.
 - Administrators can update group status and ownership through admin portal RPCs.
-- The public Find a Community page will later display open/closed status.
+- The public Find a Community page displays open/closed status for active communities.
 - Portal administrators can view all communities in responsive cards showing status, open/closed state, schedule, location summary, and contact fields.
 - Portal admin search runs client-side against already-loaded `get_admin_groups()` data and matches title, city, cross streets, contact name, contact email, and contact phone.
 - Portal admin status filters support All, Pending, Active, and Inactive counts and combine with search.
@@ -123,7 +124,8 @@ Review and test the authenticated LifeGate Portal edit form on the shadow site.
 - Administrators may edit status, coordinates, and owner UUID in addition to normal community fields.
 - Portal edit saves send JSON patch payloads containing only changed fields through either `update_my_community(text, jsonb)` or `update_admin_group(text, jsonb)`.
 - Owner search and account provisioning remain future work.
-- Public Find a Community open/closed display is still pending.
+- Public Find a Community cards and marker-click details display open/closed availability; closed active groups remain visible.
+- No public open/closed filter exists yet.
 - `private.is_portal_admin()` is an internal helper and is not directly callable by browser roles.
 - Group ownership uses `auth.users.id`, not `contact_email`.
 - Changing a group's contact email must not automatically transfer ownership.

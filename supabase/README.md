@@ -254,7 +254,7 @@ The static portal frontend uses Supabase magic links through Resend custom SMTP:
 - Administrators edit any community returned by `get_admin_groups()` through `public.update_admin_group(text, jsonb)` and may update status, coordinates, and the owner UUID.
 - Edit saves compare the form to the originally loaded record and send JSON patch payloads containing only changed fields. Omitted properties remain unchanged, and JSON null is sent only for approved nullable fields intentionally cleared by the user.
 - Unknown emails must not create Auth users. The UI uses a generic success/error response and does not intentionally reveal whether an email address is provisioned.
-- Owner search and account provisioning remain future work. The public Find a Community page still needs an open/closed display.
+- Owner search and account provisioning remain future work. The public Find a Community page displays open/closed availability, but does not have an open/closed filter yet.
 
 For hosted GitHub Pages testing, add this redirect URL in Supabase Dashboard -> Authentication -> URL Configuration -> Redirect URLs:
 
@@ -295,7 +295,8 @@ Public visibility and open/closed meaning:
 - `active` determines whether a group appears publicly through `public.get_public_groups()`.
 - `inactive` hides a group from the public listing.
 - `is_closed` indicates whether an active group is currently accepting new members.
-- The public Find a Community page will later display open/closed status.
+- Public cards and marker-click details display `Open to New Members` or `Currently Closed`.
+- Closed active groups remain visible publicly; no public open/closed filter exists yet.
 
 ## Security Notes
 
