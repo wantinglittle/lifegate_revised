@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Edit Community | LifeGate Community Portal</title>
+  <title>Edit Community | LifeGate Community Dashboard</title>
   <link rel="icon" href="images/favicon-grey.png" type="image/png">
   <link href="style.css" rel="stylesheet" type="text/css" />
   <link href="portal.css" rel="stylesheet" type="text/css" />
@@ -15,11 +15,11 @@
         <a href="index.html"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
       </div>
       <div class="header-content">
-        <h1>LifeGate Community Portal</h1>
+        <h1>LifeGate Community Dashboard</h1>
         <p>Update community details</p>
       </div>
       <div class="header-actions">
-        <a href="portal.html" class="add-group-btn">Back to Portal</a>
+        <a href="portal.html" class="add-group-btn">Back to Dashboard</a>
       </div>
     </header>
 
@@ -143,36 +143,28 @@
             </div>
           </fieldset>
 
-          <fieldset class="portal-edit-section">
+          <fieldset class="portal-edit-section portal-visibility-section">
             <legend>Website Visibility</legend>
 
-            <div id="contact-status-control" class="portal-check-row">
-              <input id="edit-visible" name="visible" type="checkbox" aria-describedby="edit-visible-help edit-visible-error" />
-              <div>
-                <label for="edit-visible">Visible on Website</label>
-                <p id="edit-visible-help" class="portal-help-text">Active communities appear on the Find a Community page. Inactive communities are hidden from the public website.</p>
-                <p id="edit-visible-pending" class="portal-help-text" hidden>Pending Review: visibility is disabled until this community is approved.</p>
-                <p id="edit-visible-error" class="portal-field-error"></p>
+            <div class="portal-visibility-grid">
+              <div id="status-control" class="form-group">
+                <label for="edit-status">Status</label>
+                <select id="edit-status" name="status" aria-describedby="edit-status-help edit-status-error">
+                  <option value="pending">Pending</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+                <p id="edit-status-help" class="portal-help-text">Pending is awaiting approval and hidden publicly. Active is visible on the public website. Inactive is hidden publicly.</p>
+                <p id="edit-status-error" class="portal-field-error"></p>
               </div>
-            </div>
 
-            <div id="admin-status-control" class="form-group" hidden>
-              <label for="edit-status">Status</label>
-              <select id="edit-status" name="status" aria-describedby="edit-status-help edit-status-error">
-                <option value="pending">Pending</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-              <p id="edit-status-help" class="portal-help-text">Pending is awaiting approval and hidden publicly. Active is visible on the public website. Inactive is hidden publicly.</p>
-              <p id="edit-status-error" class="portal-field-error"></p>
-            </div>
-
-            <div class="portal-check-row">
-              <input id="edit-is-closed" name="is_closed" type="checkbox" aria-describedby="edit-is-closed-help edit-is-closed-error" />
-              <div>
-                <label for="edit-is-closed">Group is Closed</label>
-                <p id="edit-is-closed-help" class="portal-help-text">Check this when the group is not accepting new members. If the community is visible on the website, visitors will see that it is currently closed. Closed status does not hide the group.</p>
-                <p id="edit-is-closed-error" class="portal-field-error"></p>
+              <div class="portal-check-row">
+                <input id="edit-is-closed" name="is_closed" type="checkbox" aria-describedby="edit-is-closed-help edit-is-closed-error" />
+                <div>
+                  <label for="edit-is-closed">Group is Closed</label>
+                  <p id="edit-is-closed-help" class="portal-help-text">Check this when the group is not accepting new members. If the community is visible on the website, visitors will see that it is currently closed. Closed status does not hide the group.</p>
+                  <p id="edit-is-closed-error" class="portal-field-error"></p>
+                </div>
               </div>
             </div>
           </fieldset>
@@ -206,7 +198,7 @@
           <div class="portal-edit-actions">
             <button id="portal-save-edit" type="submit" class="portal-primary-btn">Save Changes</button>
             <button id="portal-reset-edit" type="button" class="portal-secondary-btn">Cancel/Reset Changes</button>
-            <a class="portal-secondary-link" href="portal.html">Back to Portal</a>
+            <a class="portal-secondary-link" href="portal.html">Back to Dashboard</a>
           </div>
         </form>
       </section>

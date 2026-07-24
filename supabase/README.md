@@ -141,7 +141,7 @@ The migration creates `public.groups` as the permanent relational table for comm
 - New rows can receive a generated text ID by default without requiring PostgreSQL extensions.
 - The legacy Firestore `hidden` field is not stored permanently.
 - Publication uses one canonical `status` field with `pending`, `active`, and `inactive`.
-- Portal ownership uses nullable `groups.owner_user_id`, which references `auth.users.id`; existing migrated rows remain unassigned until explicitly mapped.
+- Dashboard ownership uses nullable `groups.owner_user_id`, which references `auth.users.id`; existing migrated rows remain unassigned until explicitly mapped.
 - `groups.is_closed` is a non-null boolean that defaults to `false`.
 - Meeting time is normalized into one nullable `meeting_time` column.
 - Coordinates are stored as nullable `latitude` and `longitude` values without PostGIS.
@@ -236,11 +236,11 @@ The future import script must report these issues:
 
 Missing coordinates and empty `additionalInfo` are informational and should not normally block import.
 
-## Portal Authorization Architecture
+## Dashboard Authorization Architecture
 
-The future LifeGate Portal uses Supabase email OTP as the initial login method. Password login is not required. Phone/SMS OTP is deferred. OTP requests must set `shouldCreateUser: false`, because arbitrary visitors must not be able to create portal accounts. Portal users are provisioned ahead of time in `public.portal_users`.
+The future LifeGate Dashboard uses Supabase email OTP as the initial login method. Password login is not required. Phone/SMS OTP is deferred. OTP requests must set `shouldCreateUser: false`, because arbitrary visitors must not be able to create dashboard accounts. Dashboard users are provisioned ahead of time in `public.portal_users`.
 
-The static portal frontend uses Supabase magic links through Resend custom SMTP:
+The static dashboard frontend uses Supabase magic links through Resend custom SMTP:
 
 - `portal-login.html` requests the sign-in link with `shouldCreateUser: false`.
 - `portal-callback.html` handles the magic-link callback and redirects to the protected shell.
@@ -266,7 +266,7 @@ The browser code derives the callback URL from the current page location so loca
 
 Group ownership is controlled by `groups.owner_user_id`, which references `auth.users.id`. It is independent from `contact_email`; changing a group's contact email does not transfer ownership. One user may own multiple groups, and an administrator may also own groups as an ordinary contact.
 
-Portal authorization uses narrow authenticated RPCs rather than broad direct table grants:
+Dashboard authorization uses narrow authenticated RPCs rather than broad direct table grants:
 
 - `private.is_portal_admin()` checks the authenticated user's `portal_users.is_admin` flag. It lives in the non-exposed `private` schema to keep helper implementation details out of the public API surface. Browser roles do not receive `USAGE` on the `private` schema and cannot call this helper directly.
 - `public.get_my_communities()` returns only groups where `owner_user_id = auth.uid()`, including pending, active, and inactive groups plus private contact fields.
@@ -276,7 +276,7 @@ Portal authorization uses narrow authenticated RPCs rather than broad direct tab
 
 The base `public.groups` table remains locked down for `anon` and `authenticated`, so contacts cannot bypass column restrictions with direct updates. Direct table `DELETE` is not granted. This RPC shape is safer than plain row-level `UPDATE` policies because PostgreSQL RLS filters rows but does not, by itself, provide ergonomic per-column update restrictions for browser clients.
 
-Portal update RPCs use JSON patch semantics:
+Dashboard update RPCs use JSON patch semantics:
 
 - `p_changes` must be a non-empty JSON object.
 - Omitted properties remain unchanged.
@@ -306,4 +306,4 @@ The public RPC function `public.get_public_groups()` returns only active records
 
 The function intentionally returns `contact_email` because the current public website needs it for the contact button. That email address is visible to browser clients and may later be replaced by a server-side contact relay.
 
-Public submissions are performed by the Supabase `submit-group` Edge Function. Portal operations are designed as authenticated RPCs. Future high-risk administrative workflows may still move behind Edge Functions if server-side auditing, rate limiting, or richer validation becomes necessary.
+Public submissions are performed by the Supabase `submit-group` Edge Function. Dashboard operations are designed as authenticated RPCs. Future high-risk administrative workflows may still move behind Edge Functions if server-side auditing, rate limiting, or richer validation becomes necessary.

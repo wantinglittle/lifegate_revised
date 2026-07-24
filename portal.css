@@ -414,6 +414,17 @@
   width: auto;
 }
 
+.portal-visibility-grid {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(220px, 0.75fr) minmax(260px, 1fr);
+}
+
+.portal-visibility-grid .portal-check-row {
+  margin-top: 0;
+}
+
 .portal-help-text {
   color: #555;
   font-size: 0.92rem;
@@ -476,6 +487,10 @@
   }
 
   .portal-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-visibility-grid {
     grid-template-columns: 1fr;
   }
 

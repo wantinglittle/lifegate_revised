@@ -24,9 +24,6 @@ const form = document.getElementById("portal-edit-form");
 const saveButton = document.getElementById("portal-save-edit");
 const resetButton = document.getElementById("portal-reset-edit");
 const adminFields = document.getElementById("portal-admin-fields");
-const contactStatusControl = document.getElementById("contact-status-control");
-const adminStatusControl = document.getElementById("admin-status-control");
-const pendingVisibilityHelp = document.getElementById("edit-visible-pending");
 
 const fields = {
   title: document.getElementById("edit-title"),
@@ -42,7 +39,6 @@ const fields = {
   zip_code: document.getElementById("edit-zip-code"),
   cross_streets: document.getElementById("edit-cross-streets"),
   additional_info: document.getElementById("edit-additional-info"),
-  visible: document.getElementById("edit-visible"),
   status: document.getElementById("edit-status"),
   is_closed: document.getElementById("edit-is-closed"),
   latitude: document.getElementById("edit-latitude"),
@@ -64,7 +60,6 @@ const errorFields = {
   zip_code: document.getElementById("edit-zip-code-error"),
   cross_streets: document.getElementById("edit-cross-streets-error"),
   additional_info: document.getElementById("edit-additional-info-error"),
-  visible: document.getElementById("edit-visible-error"),
   status: document.getElementById("edit-status-error"),
   is_closed: document.getElementById("edit-is-closed-error"),
   latitude: document.getElementById("edit-latitude-error"),
@@ -176,12 +171,10 @@ function populateForm(record) {
   fields.cross_streets.value = record.cross_streets;
   fields.additional_info.value = record.additional_info || "";
   fields.is_closed.checked = record.is_closed;
-
-  fields.visible.checked = record.status === "active";
-  fields.visible.disabled = record.status === "pending";
-  pendingVisibilityHelp.hidden = record.status !== "pending";
-
   fields.status.value = ADMIN_STATUSES.includes(record.status) ? record.status : "pending";
+  fields.status.disabled = editMode !== "admin" && record.status === "pending";
+  fields.status.querySelector('option[value="pending"]').disabled =
+    editMode !== "admin" && record.status !== "pending";
   fields.latitude.value = record.latitude === null ? "" : String(record.latitude);
   fields.longitude.value = record.longitude === null ? "" : String(record.longitude);
   fields.owner_user_id.value = record.owner_user_id || "";
@@ -190,8 +183,6 @@ function populateForm(record) {
 function configureMode(isAdmin) {
   editMode = isAdmin ? "admin" : "contact";
   adminFields.hidden = !isAdmin;
-  adminStatusControl.hidden = !isAdmin;
-  contactStatusControl.hidden = isAdmin;
 }
 
 function readRequiredText(fieldName, label, maxLength, errors) {
@@ -262,8 +253,9 @@ function readFormValues() {
     errors.meeting_time = "Enter a valid meeting time.";
   }
 
+  values.status = readRequiredSelect("status", ADMIN_STATUSES, "Status", errors);
+
   if (editMode === "admin") {
-    values.status = readRequiredSelect("status", ADMIN_STATUSES, "Status", errors);
     values.latitude = readNullableCoordinate("latitude", -90, 90, "Latitude", errors);
     values.longitude = readNullableCoordinate("longitude", -180, 180, "Longitude", errors);
     values.owner_user_id = normalizeNullableText(fields.owner_user_id.value);
@@ -278,12 +270,11 @@ function readFormValues() {
     if (values.owner_user_id && !UUID_PATTERN.test(values.owner_user_id)) {
       errors.owner_user_id = "Owner User ID must be a valid UUID.";
     }
-  } else if (originalRecord.status === "pending") {
-    values.status = "pending";
   } else {
-    values.status = fields.visible.checked ? "active" : "inactive";
-    if (!["active", "inactive"].includes(values.status)) {
-      errors.visible = "Website visibility must be active or inactive.";
+    if (originalRecord.status === "pending" && values.status !== "pending") {
+      errors.status = "Pending communities cannot change status until approval.";
+    } else if (originalRecord.status !== "pending" && values.status === "pending") {
+      errors.status = "Contacts cannot set status to Pending.";
     }
   }
 

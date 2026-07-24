@@ -337,7 +337,7 @@ async function loadPortal() {
     return;
   }
 
-  userEmail.textContent = session.user?.email || "Signed-in portal user";
+  userEmail.textContent = session.user?.email || "Signed-in dashboard user";
   setStatus("Loading communities...", "info");
 
   const [myCommunities, adminResult] = await Promise.allSettled([
@@ -348,7 +348,7 @@ async function loadPortal() {
   if (myCommunities.status === "rejected") {
     console.error("My communities failed to load:", myCommunities.reason);
     renderEmptyState(myList, "Your communities could not be loaded. Please refresh and try again.");
-    setStatus("Portal data could not be loaded. Please refresh and try again.", "error");
+    setStatus("Dashboard data could not be loaded. Please refresh and try again.", "error");
     return;
   }
 
