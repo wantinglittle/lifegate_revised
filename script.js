@@ -300,9 +300,10 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
 
       const topRow = createElement("div", "group-card-top");
       const location = createElement("p", "group-card-city");
+      const cityName = createElement("span", "group-card-city-name", group.city || "N/A");
       location.append(
         createIcon("location"),
-        createElement("span", "", group.city || "N/A")
+        cityName
       );
       const availabilityTab = createElement(
         "span",
@@ -311,7 +312,10 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
       );
       topRow.append(location, availabilityTab);
 
-      const title = createElement("h3", "group-card-title", group.title || "No Title");
+      const fullTitle = group.title || "No Title";
+      const title = createElement("h3", "group-card-title", fullTitle);
+      title.title = fullTitle;
+      title.setAttribute("aria-label", fullTitle);
 
       const moreInfoButton = createButton("more-info-btn", "More Info");
       moreInfoButton.dataset.index = String(index);

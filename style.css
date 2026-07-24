@@ -263,7 +263,7 @@ main {
     background: var(--blue-color);
     border-radius: 12px;
     padding: 1.45rem;
-    padding-top: 2.1rem;
+    padding-top: 0.95rem;
     box-shadow: 0 4px 6px var(--grey-color);
     display: flex;
     flex-direction: column;
@@ -296,17 +296,21 @@ main {
     display: flex;
     gap: 0.75rem;
     justify-content: space-between;
-    margin-bottom: 0.8rem;
-    min-height: 1.8rem;
-    padding-right: 9.4rem;
+    margin-bottom: 1.05rem;
+    min-height: 2rem;
+    padding-right: 10.25rem;
 }
 
 .group-card-title {
     color: var(--black-color);
-    font-size: 1.5rem;
-    line-height: 1.18;
-    margin: 0 0 0.85rem;
-    overflow-wrap: anywhere;
+    display: block;
+    font-size: 1.55rem;
+    line-height: 1.2;
+    margin: 0 0 1rem;
+    min-height: 1.2em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .availability-badge {
@@ -338,7 +342,7 @@ main {
     color: var(--black-color);
     display: -webkit-box;
     line-height: 1.45;
-    margin: 0 0 1.2rem;
+    margin: 0 0 1.25rem;
     min-height: 4.35em;
     overflow: hidden;
     -webkit-box-orient: vertical;
@@ -346,47 +350,56 @@ main {
 }
 
 .group-card-meta {
-    border: 1px solid rgba(25, 25, 25, 0.14);
-    border-radius: 10px;
+    background: #fbfaf7;
+    border-radius: 14px;
+    box-shadow: inset 0 0 0 1px rgba(28, 43, 60, 0.08), 0 4px 10px rgba(28, 43, 60, 0.08);
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.35rem;
     overflow: hidden;
+    padding: 0.85rem 0.55rem;
 }
 
 .group-card-meta-item {
     align-items: center;
-    color: #2f2f2f;
+    color: #1f3c5a;
     display: grid;
-    gap: 0.22rem;
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto;
+    gap: 0.24rem;
+    grid-template-columns: 1fr;
+    justify-items: center;
     min-width: 0;
-    padding: 0.7rem 0.55rem;
+    padding: 0.15rem 0.65rem;
     position: relative;
+    text-align: center;
 }
 
-.group-card-meta-item:not(:last-child) {
-    border-right: 1px solid rgba(25, 25, 25, 0.14);
-}
-
-.group-card-meta-item:nth-child(-n + 2) {
-    border-bottom: 0;
+.group-card-meta-item:not(:last-child)::after {
+    background: rgba(28, 43, 60, 0.16);
+    bottom: 0.45rem;
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0.45rem;
+    width: 1px;
 }
 
 .group-card-meta-label {
-    color: #2f2f2f;
-    font-size: 0.72rem;
-    font-weight: 500;
+    color: #586573;
+    font-size: 0.68rem;
+    font-weight: 700;
     line-height: 1.1;
+    text-transform: uppercase;
 }
 
 .group-card-meta-value {
-    color: var(--black-color);
-    font-size: 0.9rem;
-    grid-column: 1 / -1;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
+    color: #1f2933;
+    font-size: 0.92rem;
+    font-weight: 800;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .card-icon {
@@ -397,8 +410,10 @@ main {
 }
 
 .group-card-meta-item .card-icon {
-    height: 0.95rem;
-    width: 0.95rem;
+    color: #1f3c5a;
+    height: 1.2rem;
+    margin-bottom: 0.1rem;
+    width: 1.2rem;
 }
 
 .group-card-city {
@@ -410,8 +425,16 @@ main {
     font-weight: 700;
     line-height: 1.25;
     margin: 0;
+    max-width: 100%;
     min-width: 0;
-    overflow-wrap: anywhere;
+}
+
+.group-card-city-name {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .group-title {
@@ -714,7 +737,7 @@ main {
     }
 
     .group-card-top {
-        padding-right: 8.2rem;
+        padding-right: 8.6rem;
     }
 
     .availability-badge {
@@ -725,12 +748,8 @@ main {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .group-card-meta-item:nth-child(2) {
-        border-right: 0;
-    }
-
-    .group-card-meta-item:nth-child(-n + 2) {
-        border-bottom: 1px solid rgba(25, 25, 25, 0.14);
+    .group-card-meta-item::after {
+        display: none;
     }
 
     .group-card-actions .contact-btn,
@@ -768,16 +787,20 @@ main {
 
     .group-card {
         padding: 1rem;
-        padding-top: 2.4rem;
+        padding-top: 1rem;
     }
 
     .group-card-top {
-        align-items: flex-start;
+        align-items: center;
+        flex-wrap: wrap;
         padding-right: 0;
     }
 
     .availability-badge {
+        border-radius: 8px;
+        margin-left: auto;
         max-width: 70%;
+        position: static;
     }
 
     .group-details {
