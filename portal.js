@@ -56,6 +56,11 @@ function setStatus(message, tone = "info") {
   statusMessage.dataset.tone = tone;
 }
 
+function clearStatus() {
+  statusMessage.textContent = "";
+  delete statusMessage.dataset.tone;
+}
+
 function activateTab(tabName) {
   const showingAdmin = tabName === "admin";
   myTab.setAttribute("aria-selected", String(!showingAdmin));
@@ -351,17 +356,18 @@ async function loadPortal() {
 
   if (adminResult.status === "fulfilled") {
     showAdminDashboard(adminResult.value);
-    setStatus("Communities loaded.", "success");
+    clearStatus();
+    activateTab("admin");
   } else if (isExpectedNonAdminError(adminResult.reason)) {
     showContactPortal();
-    setStatus("Communities loaded.", "success");
+    clearStatus();
+    activateTab("my");
   } else {
     console.error("Admin communities failed to load:", adminResult.reason);
     showAdminLoadFailure();
     setStatus("Some community data could not be loaded.", "error");
+    activateTab("my");
   }
-
-  activateTab("my");
 }
 
 logoutButton.addEventListener("click", async () => {
