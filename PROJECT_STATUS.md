@@ -32,9 +32,7 @@ Target:
 
 # Current Phase
 
-Phase 2
-
-Preparing Firestore export.
+Public read migration from Firebase to Supabase.
 
 # Completed
 
@@ -47,22 +45,25 @@ Preparing Firestore export.
 - Supabase CLI configured
 - Git branch created
 - Firestore export utility created
+- Firestore export completed
+- Firestore audit completed
+- Firestore transformation completed
+- Supabase import completed
+- Supabase import verification completed
+
+Supabase now contains all 22 migrated group records. Existing Firestore document IDs were preserved. The verified imported status totals are 17 approved, 5 pending, 0 rejected, and 0 archived.
 
 # Current Task
 
-Generate a read-only export of the Firestore groups collection.
+Replace the public Firestore reads in `script.js` with the Supabase `get_public_groups()` RPC.
 
 # Upcoming Tasks
 
-1. Export Firestore
-2. Review exported JSON
-3. Build importer
-4. Import into Supabase
-5. Verify migrated data
-6. Replace Firestore reads
-7. Replace Firebase Function
-8. Remove Firebase
-9. Build admin dashboard
+1. Replace Firestore reads
+2. Replace Firebase Function
+3. Implement location privacy and automatic geocoding
+4. Remove Firebase
+5. Build admin dashboard
 
 # Important Decisions
 
@@ -73,6 +74,17 @@ Generate a read-only export of the Firestore groups collection.
 - Latitude and longitude are stored in the database.
 - The public website should use RPC instead of direct table access.
 - Firebase remains production until the migration is complete.
+- Treat every submitted meeting location as private.
+- Never expose or map the exact submitted location.
+- Public listings should use a nearby public-safe cross street or generalized area.
+- The original submitted location remains private and server-side only.
+- Location changes must automatically trigger regeneration of the public-safe map location.
+- Prefer a nearby valid intersection for the public-safe location.
+- If no reliable intersection can be determined, use a generalized city/ZIP location and flag it for review.
+- Do not use random coordinate offsets as the primary privacy method.
+- The browser must receive only public-safe labels and coordinates.
+- Leaders may include venue details such as "Starbucks" in the group description if desired.
+- Location privacy and automatic geocoding will be implemented after the initial public-read cutover.
 
 # Deployment Status
 

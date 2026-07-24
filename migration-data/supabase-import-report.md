@@ -1,14 +1,14 @@
 # Supabase Groups Import Report
 
-- Execution mode: dry run
-- Execution timestamp: 2026-07-24T03:42:58.551Z
+- Execution mode: apply
+- Execution timestamp: 2026-07-24T03:55:30.351Z
 - Source record count: 22
-- Target Supabase hostname: (not provided in dry run)
+- Target Supabase hostname: dsrilmjpgpgdxzvzwyqw.supabase.co
 - Local validation: passed
-- Pre-import conflict count: not checked
-- Inserted count: not applicable
-- Post-import verification: not applicable
-- Final status: DRY RUN VALIDATION PASSED
+- Pre-import conflict count: 0
+- Inserted count: 22
+- Post-import verification: passed
+- Final status: IMPORT SUCCEEDED AND VERIFIED
 - Firebase was not modified.
 
 ## Status Totals
@@ -26,11 +26,15 @@ Local validation passed. The transformed dataset matches the expected record cou
 
 ## Pre-Import Conflicts
 
-Not checked in dry-run mode.
+No existing rows matched the transformed IDs.
 
 ## Post-Import Verification
 
-Dry run completed local validation only. No network request was made.
+| Metric | Value |
+| --- | --- |
+| Returned IDs | 22 |
+| Missing IDs | 0 |
+| Status totals | approved=17, pending=5, rejected=0, archived=0 |
 
 ## Errors
 
@@ -41,4 +45,4 @@ None.
 - No keys were written to this report.
 - Contact emails and phone numbers are not included in this report.
 - Firebase was not modified.
-- Supabase was not contacted because this was a dry run.
+- Supabase was contacted only because both --apply and the exact confirmation argument were supplied.
