@@ -67,33 +67,6 @@ export async function getCurrentSession() {
   return data.session;
 }
 
-export async function completeMagicLinkCallback() {
-  ensureSupabaseConfig();
-
-  const url = new URL(window.location.href);
-  const params = new URLSearchParams(url.search);
-  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-  const callbackError =
-    params.get("error_description") ||
-    params.get("error") ||
-    hashParams.get("error_description") ||
-    hashParams.get("error");
-
-  if (callbackError) {
-    throw new Error(callbackError);
-  }
-
-  const code = params.get("code");
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
-      throw error;
-    }
-  }
-
-  return getCurrentSession();
-}
-
 export async function signOutPortalUser() {
   const { error } = await supabase.auth.signOut();
   if (error) {
