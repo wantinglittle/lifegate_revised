@@ -1,20 +1,8 @@
-// Firebase SDK imports
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from './supabase-config.js';
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyAuYODcjC2wO4q5KrO4HqBzvFEmu3rWjWM",
-  authDomain: "socialgroupsapp-a8fed.firebaseapp.com",
-  projectId: "socialgroupsapp-a8fed",
-  storageBucket: "socialgroupsapp-a8fed.appspot.com",
-  messagingSenderId: "1071260804262",
-  appId: "1:1071260804262:web:fa5925809d05135eef0067"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const SUPABASE_URL_PLACEHOLDER = "https://YOUR_PROJECT_REF.supabase.co";
+const SUPABASE_ANON_KEY_PLACEHOLDER = "YOUR_SUPABASE_ANON_KEY";
+const PUBLIC_GROUPS_RPC = "get_public_groups";
 
 let map;
 let markers = [];
@@ -35,37 +23,149 @@ export async function initMap() {
     mapId: "8f453e71c329ac123f8540c9"
   });
 
-  allGroups = await fetchGroupsWithCoords();
-  renderGroups(allGroups, map, AdvancedMarkerElement);
-  setupFilters(AdvancedMarkerElement);
+  try {
+    allGroups = await fetchGroupsWithCoords();
+    renderGroups(allGroups, map, AdvancedMarkerElement);
+    setupFilters(AdvancedMarkerElement);
+  } catch (error) {
+    console.error("Failed to load public groups:", error);
+    showGroupsLoadError();
+  }
 }
 
 async function fetchGroupsWithCoords() {
-  const groupsRef = collection(db, "groups");
-  const [legacyPublishedSnapshot, approvedSnapshot] = await Promise.all([
-    getDocs(query(groupsRef, where("hidden", "==", "no"))),
-    getDocs(query(groupsRef, where("status", "==", "approved")))
-  ]);
+  const rpcGroups = await fetchPublicGroupsFromSupabase();
   const groups = [];
-  const seenIds = new Set();
 
-  for (const doc of [...legacyPublishedSnapshot.docs, ...approvedSnapshot.docs]) {
-    if (seenIds.has(doc.id)) continue;
-    seenIds.add(doc.id);
-
-    const group = doc.data();
+  for (const group of rpcGroups.map(mapSupabaseGroupToLegacyGroup)) {
     if (!group.crossStreets || !group.zipCode) continue;
 
     const fullAddress = `${group.crossStreets}, ${group.zipCode}`;
     try {
-      const coords = await geocodeAddress(fullAddress);
-      groups.push({ ...group, coords, id: doc.id });
+      // TODO: Replace temporary browser geocoding with privacy-safe stored
+      // public intersection labels and coordinates after the read cutover.
+      const coords = hasStoredCoords(group) ? group.coords : await geocodeAddress(fullAddress);
+      groups.push({ ...group, coords, id: group.id });
     } catch (err) {
       console.warn(`Geocode failed for ${fullAddress}:`, err);
     }
   }
 
   return groups;
+}
+
+async function fetchPublicGroupsFromSupabase() {
+  if (
+    SUPABASE_URL === SUPABASE_URL_PLACEHOLDER ||
+    SUPABASE_ANON_KEY === SUPABASE_ANON_KEY_PLACEHOLDER
+  ) {
+    throw new Error("Supabase public configuration is missing.");
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${PUBLIC_GROUPS_RPC}`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({})
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase RPC ${PUBLIC_GROUPS_RPC} failed with status ${response.status}.`);
+  }
+
+  const groups = await response.json();
+  if (!Array.isArray(groups)) {
+    throw new Error(`Supabase RPC ${PUBLIC_GROUPS_RPC} returned an unexpected response.`);
+  }
+
+  return groups;
+}
+
+function mapSupabaseGroupToLegacyGroup(group) {
+  const timeParts = splitMeetingTime(group.meeting_time);
+  const coords = getCoords(group);
+
+  return {
+    id: group.id,
+    title: group.title,
+    description: group.description,
+    day: group.day,
+    audience: group.audience,
+    city: group.city,
+    ageGroup: group.age_group,
+    zipCode: group.zip_code,
+    crossStreets: group.cross_streets,
+    additionalInfo: group.additional_info,
+    contactEmail: group.contact_email,
+    hour: timeParts.hour,
+    minute: timeParts.minute,
+    ampm: timeParts.ampm,
+    coords
+  };
+}
+
+function splitMeetingTime(meetingTime) {
+  if (!meetingTime) {
+    return { hour: "", minute: "", ampm: "" };
+  }
+
+  const [hourText, minuteText] = meetingTime.split(":");
+  const hour24 = Number(hourText);
+  if (!Number.isInteger(hour24) || !minuteText) {
+    return { hour: "", minute: "", ampm: "" };
+  }
+
+  const ampm = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  return {
+    hour: String(hour12),
+    minute: minuteText.padStart(2, "0"),
+    ampm
+  };
+}
+
+function getCoords(group) {
+  if (typeof group.latitude !== "number" || typeof group.longitude !== "number") {
+    return null;
+  }
+
+  return {
+    lat: group.latitude,
+    lng: group.longitude
+  };
+}
+
+function hasStoredCoords(group) {
+  return group.coords &&
+    typeof group.coords.lat === "number" &&
+    typeof group.coords.lng === "number";
+}
+
+function formatGroupTime(group) {
+  const hour = group.hour || "";
+  const minute = (group.minute || "00").toString().padStart(2, "0");
+  const ampm = group.ampm || "";
+  return hour && ampm ? `${hour}:${minute} ${ampm}` : "N/A";
+}
+
+function showGroupsLoadError() {
+  const container = document.getElementById("groups-container");
+  if (container) {
+    container.innerHTML = `
+      <div class="group-card show">
+        <h3>Communities could not be loaded</h3>
+        <p>Please refresh the page or try again later.</p>
+      </div>
+    `;
+  }
+
+  const count = document.getElementById("group-count");
+  if (count) {
+    count.textContent = "0";
+  }
 }
 
 async function renderGroups(groups, map, AdvancedMarkerElement) {
@@ -91,10 +191,7 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
 
     // Add new cards
     groups.forEach((group, index) => {
-      const hour = group.hour || "";
-      const minute = (group.minute || "00").toString().padStart(2, "0");
-      const ampm = group.ampm || "";
-      const timeStr = hour && ampm ? `${hour}:${minute} ${ampm}` : "N/A";
+      const timeStr = formatGroupTime(group);
 
       const marker = new AdvancedMarkerElement({
         map,
@@ -178,10 +275,7 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
 }
 
 function showGroupModal(group) {
-  const hour = group.hour || "";
-  const minute = (group.minute || "00").toString().padStart(2, "0");
-  const ampm = group.ampm || "";
-  const timeStr = hour && ampm ? `${hour}:${minute} ${ampm}` : "N/A";
+  const timeStr = formatGroupTime(group);
 
   document.getElementById("info-title").textContent = group.title || "No Title";
   document.getElementById("info-description").textContent = group.description || "No description available.";

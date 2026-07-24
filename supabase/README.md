@@ -62,6 +62,19 @@ Remove-Item Env:\SUPABASE_URL
 Remove-Item Env:\SUPABASE_SECRET_KEY
 ```
 
+## Public Read Cutover
+
+The static public listing reads approved groups through the `public.get_public_groups()` RPC. Browser code must never query `public.groups` directly and must never include a Supabase secret key or service-role key.
+
+Set the public browser configuration in `supabase-config.js` before deploying the read cutover:
+
+```js
+export const SUPABASE_URL = "https://your-project-ref.supabase.co";
+export const SUPABASE_ANON_KEY = "your-publishable-anon-key";
+```
+
+These are public browser values. Security relies on the locked-down table permissions and narrow RPC output.
+
 ## Schema Summary
 
 The migration creates `public.groups` as the permanent relational table for community groups.

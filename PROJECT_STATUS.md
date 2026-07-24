@@ -50,16 +50,20 @@ Public read migration from Firebase to Supabase.
 - Firestore transformation completed
 - Supabase import completed
 - Supabase import verification completed
+- Public-read cutover implementation completed
+- Public-read cutover locally validated
 
 Supabase now contains all 22 migrated group records. Existing Firestore document IDs were preserved. The verified imported status totals are 17 approved, 5 pending, 0 rejected, and 0 archived.
 
+The public-read cutover has passed local validation: `get_public_groups` returned 17 approved groups, 17 group cards rendered, 17 map markers rendered through the existing geocoding fallback, filters worked, AM/PM meeting times displayed correctly, and null meeting times displayed as `N/A`.
+
 # Current Task
 
-Replace the public Firestore reads in `script.js` with the Supabase `get_public_groups()` RPC.
+Prepare the locally validated Supabase public-read cutover for deployment review.
 
 # Upcoming Tasks
 
-1. Replace Firestore reads
+1. Deploy public-read cutover
 2. Replace Firebase Function
 3. Implement location privacy and automatic geocoding
 4. Remove Firebase
@@ -73,6 +77,10 @@ Replace the public Firestore reads in `script.js` with the Supabase `get_public_
 - `meeting_time` replaces the separate `hour`, `minute`, and `ampm` fields.
 - Latitude and longitude are stored in the database.
 - The public website should use RPC instead of direct table access.
+- Public listings use the Supabase `get_public_groups()` RPC in development.
+- The live site has not yet been deployed with the public-read cutover.
+- Add-group submissions still use the existing Firebase Function.
+- Browser geocoding remains temporarily in place until the privacy-safe location phase.
 - Firebase remains production until the migration is complete.
 - Treat every submitted meeting location as private.
 - Never expose or map the exact submitted location.
