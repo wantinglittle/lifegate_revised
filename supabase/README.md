@@ -31,6 +31,37 @@ Remove-Item Env:\GOOGLE_APPLICATION_CREDENTIALS
 Remove-Item Env:\FIREBASE_PROJECT_ID
 ```
 
+## Supabase Import
+
+Use `scripts/import-groups-to-supabase.mjs` after reviewing `migration-data/firestore-groups-transformed.json` and `migration-data/firestore-transform-report.md`. The importer validates the local transformed JSON before any network access. Its default mode is a dry run and does not contact Supabase.
+
+Dry run:
+
+```powershell
+node .\scripts\import-groups-to-supabase.mjs
+```
+
+Apply, only after review:
+
+```powershell
+$env:SUPABASE_URL="https://your-project-ref.supabase.co"
+$env:SUPABASE_SECRET_KEY="sb_secret_your-elevated-supabase-secret-key"
+node .\scripts\import-groups-to-supabase.mjs --apply --confirm=IMPORT_22_LIFEGATE_GROUPS
+```
+
+Prefer `SUPABASE_SECRET_KEY` for current Supabase secret keys beginning with `sb_secret_`. The importer sends these keys only in the `apikey` header because they are not JWTs.
+
+For older JWT-formatted service-role keys, the importer also accepts `SUPABASE_SERVICE_ROLE_KEY` when `SUPABASE_SECRET_KEY` is absent. In that legacy mode it sends both `apikey` and `Authorization: Bearer <key>`.
+
+The script requires both `--apply` and `--confirm=IMPORT_22_LIFEGATE_GROUPS` before making any network request. It checks for existing rows by Firestore ID and stops without writing if any target IDs already exist. It does not update, overwrite, upsert, or delete rows.
+
+Never commit Supabase keys. After importing, clear the environment-variable values:
+
+```powershell
+Remove-Item Env:\SUPABASE_URL
+Remove-Item Env:\SUPABASE_SECRET_KEY
+```
+
 ## Schema Summary
 
 The migration creates `public.groups` as the permanent relational table for community groups.
