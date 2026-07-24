@@ -142,6 +142,7 @@ The migration creates `public.groups` as the permanent relational table for comm
 - The legacy Firestore `hidden` field is not stored permanently.
 - Publication uses one canonical `status` field with `pending`, `active`, and `inactive`.
 - Portal ownership uses nullable `groups.owner_user_id`, which references `auth.users.id`; existing migrated rows remain unassigned until explicitly mapped.
+- `groups.is_closed` is a non-null boolean that defaults to `false`.
 - Meeting time is normalized into one nullable `meeting_time` column.
 - Coordinates are stored as nullable `latitude` and `longitude` values without PostGIS.
 - Contact phone numbers are stored as text, not numeric values.
@@ -246,8 +247,8 @@ Portal authorization uses narrow authenticated RPCs rather than broad direct tab
 - `private.is_portal_admin()` checks the authenticated user's `portal_users.is_admin` flag. It lives in the non-exposed `private` schema to keep helper implementation details out of the public API surface. Browser roles do not receive `USAGE` on the `private` schema and cannot call this helper directly.
 - `public.get_my_communities()` returns only groups where `owner_user_id = auth.uid()`, including pending, active, and inactive groups plus private contact fields.
 - `public.get_admin_groups()` returns all groups only when `private.is_portal_admin()` is true.
-- `public.update_my_community(p_group_id text, p_changes jsonb)` patch-updates only contact-editable fields for a group owned by the authenticated user. It does not accept status, ownership, IDs, timestamps, or coordinates.
-- `public.update_admin_group(p_group_id text, p_changes jsonb)` requires administrator permission and can patch normal group fields, coordinates, status, and owner assignment.
+- `public.update_my_community(p_group_id text, p_changes jsonb)` patch-updates contact-editable fields, `is_closed`, and active/inactive status for a group owned by the authenticated user. It does not accept ownership, IDs, timestamps, or coordinates, and contacts cannot set `pending`.
+- `public.update_admin_group(p_group_id text, p_changes jsonb)` requires administrator permission and can patch normal group fields, `is_closed`, coordinates, status, and owner assignment.
 
 The base `public.groups` table remains locked down for `anon` and `authenticated`, so contacts cannot bypass column restrictions with direct updates. Direct table `DELETE` is not granted. This RPC shape is safer than plain row-level `UPDATE` policies because PostgreSQL RLS filters rows but does not, by itself, provide ergonomic per-column update restrictions for browser clients.
 
@@ -258,10 +259,19 @@ Portal update RPCs use JSON patch semantics:
 - JSON null clears only nullable fields.
 - Required text fields reject JSON null, blank strings, and invalid values.
 - Contacts may update only `title`, `description`, `contact_name`, `contact_email`, `contact_phone`, `day`, `meeting_time`, `audience`, `age_group`, `city`, `zip_code`, `cross_streets`, and `additional_info`.
+- Contacts may also update `is_closed` and may set `status` only to `active` or `inactive`.
+- Contacts cannot set status to `pending`.
 - Contacts may clear only `day`, `meeting_time`, and `additional_info`.
-- Admins may also update `latitude`, `longitude`, `status`, and `owner_user_id`.
+- Admins may also update `latitude`, `longitude`, `status`, `is_closed`, and `owner_user_id`.
 - Admins may clear only `day`, `meeting_time`, `additional_info`, `latitude`, `longitude`, and `owner_user_id`.
 - Admin coordinate patches require `latitude` and `longitude` together; both may be numbers or both may be JSON null.
+
+Public visibility and open/closed meaning:
+
+- `active` determines whether a group appears publicly through `public.get_public_groups()`.
+- `inactive` hides a group from the public listing.
+- `is_closed` indicates whether an active group is currently accepting new members.
+- The public Find a Community page will later display open/closed status.
 
 ## Security Notes
 

@@ -96,10 +96,16 @@ Design the LifeGate Portal database and authorization foundation without deployi
 - Administrators will see both Admin and My Communities tabs.
 - Non-admin contacts will see only My Communities.
 - Contacts may see their own assigned groups in `pending`, `active`, and `inactive` statuses.
-- Contacts cannot approve groups, activate/deactivate groups, change status, or change ownership.
+- Contacts cannot approve pending groups, set groups to `pending`, or change ownership.
+- Contacts may toggle owned groups between `active` and `inactive`.
 - Portal update RPCs use JSON patch semantics: omitted properties remain unchanged, and JSON null clears only nullable fields.
-- Contacts cannot update status, ownership, or coordinates through portal RPCs.
+- Contacts cannot update ownership or coordinates through portal RPCs.
+- `is_closed` defaults to `false`.
+- `active` controls whether a group appears publicly; `inactive` hides it.
+- `is_closed` indicates whether an active group is accepting new members.
+- Contacts and administrators may update `is_closed`.
 - Administrators can update group status and ownership through admin portal RPCs.
+- The public Find a Community page will later display open/closed status.
 - `private.is_portal_admin()` is an internal helper and is not directly callable by browser roles.
 - Group ownership uses `auth.users.id`, not `contact_email`.
 - Changing a group's contact email must not automatically transfer ownership.
