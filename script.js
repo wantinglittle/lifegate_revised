@@ -1,20 +1,8 @@
-// Firebase SDK imports
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from './supabase-config.js';
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyAuYODcjC2wO4q5KrO4HqBzvFEmu3rWjWM",
-  authDomain: "socialgroupsapp-a8fed.firebaseapp.com",
-  projectId: "socialgroupsapp-a8fed",
-  storageBucket: "socialgroupsapp-a8fed.appspot.com",
-  messagingSenderId: "1071260804262",
-  appId: "1:1071260804262:web:fa5925809d05135eef0067"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const SUPABASE_URL_PLACEHOLDER = "https://YOUR_PROJECT_REF.supabase.co";
+const SUPABASE_ANON_KEY_PLACEHOLDER = "YOUR_SUPABASE_ANON_KEY";
+const PUBLIC_GROUPS_RPC = "get_public_groups";
 
 let map;
 let markers = [];
@@ -35,37 +23,232 @@ export async function initMap() {
     mapId: "8f453e71c329ac123f8540c9"
   });
 
-  allGroups = await fetchGroupsWithCoords();
-  renderGroups(allGroups, map, AdvancedMarkerElement);
-  setupFilters(AdvancedMarkerElement);
+  try {
+    allGroups = await fetchGroupsWithCoords();
+    renderGroups(allGroups, map, AdvancedMarkerElement);
+    setupFilters(AdvancedMarkerElement);
+  } catch (error) {
+    console.error("Failed to load public groups:", error);
+    showGroupsLoadError();
+  }
 }
 
 async function fetchGroupsWithCoords() {
-  const groupsRef = collection(db, "groups");
-  const [legacyPublishedSnapshot, approvedSnapshot] = await Promise.all([
-    getDocs(query(groupsRef, where("hidden", "==", "no"))),
-    getDocs(query(groupsRef, where("status", "==", "approved")))
-  ]);
+  const rpcGroups = await fetchPublicGroupsFromSupabase();
   const groups = [];
-  const seenIds = new Set();
 
-  for (const doc of [...legacyPublishedSnapshot.docs, ...approvedSnapshot.docs]) {
-    if (seenIds.has(doc.id)) continue;
-    seenIds.add(doc.id);
-
-    const group = doc.data();
+  for (const group of rpcGroups.map(mapSupabaseGroupToLegacyGroup)) {
     if (!group.crossStreets || !group.zipCode) continue;
 
     const fullAddress = `${group.crossStreets}, ${group.zipCode}`;
     try {
-      const coords = await geocodeAddress(fullAddress);
-      groups.push({ ...group, coords, id: doc.id });
+      // TODO: Replace temporary browser geocoding with privacy-safe stored
+      // public intersection labels and coordinates after the read cutover.
+      const coords = hasStoredCoords(group) ? group.coords : await geocodeAddress(fullAddress);
+      groups.push({ ...group, coords, id: group.id });
     } catch (err) {
       console.warn(`Geocode failed for ${fullAddress}:`, err);
     }
   }
 
   return groups;
+}
+
+async function fetchPublicGroupsFromSupabase() {
+  if (
+    SUPABASE_URL === SUPABASE_URL_PLACEHOLDER ||
+    SUPABASE_ANON_KEY === SUPABASE_ANON_KEY_PLACEHOLDER
+  ) {
+    throw new Error("Supabase public configuration is missing.");
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${PUBLIC_GROUPS_RPC}`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({})
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase RPC ${PUBLIC_GROUPS_RPC} failed with status ${response.status}.`);
+  }
+
+  const groups = await response.json();
+  if (!Array.isArray(groups)) {
+    throw new Error(`Supabase RPC ${PUBLIC_GROUPS_RPC} returned an unexpected response.`);
+  }
+
+  return groups;
+}
+
+function mapSupabaseGroupToLegacyGroup(group) {
+  const timeParts = splitMeetingTime(group.meeting_time);
+  const coords = getCoords(group);
+
+  return {
+    id: group.id,
+    title: group.title,
+    description: group.description,
+    day: group.day,
+    audience: group.audience,
+    city: group.city,
+    ageGroup: group.age_group,
+    zipCode: group.zip_code,
+    crossStreets: group.cross_streets,
+    additionalInfo: group.additional_info,
+    contactEmail: group.contact_email,
+    isClosed: group.is_closed === true,
+    hour: timeParts.hour,
+    minute: timeParts.minute,
+    ampm: timeParts.ampm,
+    coords
+  };
+}
+
+function splitMeetingTime(meetingTime) {
+  if (!meetingTime) {
+    return { hour: "", minute: "", ampm: "" };
+  }
+
+  const [hourText, minuteText] = meetingTime.split(":");
+  const hour24 = Number(hourText);
+  if (!Number.isInteger(hour24) || !minuteText) {
+    return { hour: "", minute: "", ampm: "" };
+  }
+
+  const ampm = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  return {
+    hour: String(hour12),
+    minute: minuteText.padStart(2, "0"),
+    ampm
+  };
+}
+
+function getCoords(group) {
+  if (typeof group.latitude !== "number" || typeof group.longitude !== "number") {
+    return null;
+  }
+
+  return {
+    lat: group.latitude,
+    lng: group.longitude
+  };
+}
+
+function hasStoredCoords(group) {
+  return group.coords &&
+    typeof group.coords.lat === "number" &&
+    typeof group.coords.lng === "number";
+}
+
+function formatGroupTime(group) {
+  const hour = group.hour || "";
+  const minute = (group.minute || "00").toString().padStart(2, "0");
+  const ampm = group.ampm || "";
+  return hour && ampm ? `${hour}:${minute} ${ampm}` : "N/A";
+}
+
+function availabilityLabel(group) {
+  return group.isClosed === true ? "Currently Closed" : "Open to New Members";
+}
+
+function createElement(tagName, className, text) {
+  const element = document.createElement(tagName);
+  if (className) {
+    element.className = className;
+  }
+  if (text !== undefined) {
+    element.textContent = text;
+  }
+  return element;
+}
+
+function createMetaItem(label, value) {
+  const item = createElement("div", "group-card-meta-item");
+  item.setAttribute("aria-label", `${label}: ${value || "N/A"}`);
+  item.append(
+    createIcon(iconNameForDetail(label)),
+    createElement("span", "group-card-meta-label", label),
+    createElement("strong", "group-card-meta-value", value || "N/A")
+  );
+  return item;
+}
+
+function createButton(className, text) {
+  const button = createElement("button", className);
+  button.type = "button";
+  button.append(createIcon(iconNameForAction(text)), createElement("span", "", text));
+  return button;
+}
+
+function iconNameForDetail(label) {
+  const names = {
+    Day: "calendar",
+    Time: "clock",
+    Who: "people",
+    Ages: "person"
+  };
+  return names[label] || "info";
+}
+
+function iconNameForAction(label) {
+  const names = {
+    "More Info": "info",
+    Contact: "mail",
+    Map: "map"
+  };
+  return names[label] || "info";
+}
+
+function createIcon(name) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", `card-icon card-icon-${name}`);
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  path.setAttribute("stroke-width", "2");
+
+  const paths = {
+    location: "M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+    calendar: "M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z",
+    clock: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z M12 6v6l4 2",
+    people: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
+    person: "M20 21a8 8 0 1 0-16 0 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
+    info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z M12 16v-4 M12 8h.01",
+    mail: "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z M22 6l-10 7L2 6",
+    map: "M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3Z M9 3v15 M15 6v15"
+  };
+
+  path.setAttribute("d", paths[name] || paths.info);
+  svg.append(path);
+  return svg;
+}
+
+function showGroupsLoadError() {
+  const container = document.getElementById("groups-container");
+  if (container) {
+    container.innerHTML = `
+      <div class="group-card show">
+        <h3>Communities could not be loaded</h3>
+        <p>Please refresh the page or try again later.</p>
+      </div>
+    `;
+  }
+
+  const count = document.getElementById("group-count");
+  if (count) {
+    count.textContent = "0";
+  }
 }
 
 async function renderGroups(groups, map, AdvancedMarkerElement) {
@@ -91,10 +274,8 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
 
     // Add new cards
     groups.forEach((group, index) => {
-      const hour = group.hour || "";
-      const minute = (group.minute || "00").toString().padStart(2, "0");
-      const ampm = group.ampm || "";
-      const timeStr = hour && ampm ? `${hour}:${minute} ${ampm}` : "N/A";
+      const timeStr = formatGroupTime(group);
+      const availability = availabilityLabel(group);
 
       const marker = new AdvancedMarkerElement({
         map,
@@ -116,18 +297,60 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
 
       const div = document.createElement("div");
       div.className = "group-card";
-      div.innerHTML = `
-        <h3>${group.title || "No Title"}</h3>
-        <p>${shortDesc}</p>
-        <p><strong>Day:</strong> ${group.day || "N/A"}</p>
-        <p><strong>Time:</strong> ${timeStr}</p>
-        <p><strong>Audience:</strong> ${group.audience || "N/A"}</p>
-        <p><strong>Age Group:</strong> ${group.ageGroup || "N/A"}</p>
-        <p><strong>City:</strong> ${group.city || "N/A"}</p>
-        <button class="more-info-btn" data-index="${index}">More Info</button>
-        <button class="contact-btn" data-title="${group.title || ""}" data-email="${group.contactEmail || ""}">Contact</button>
-        <button class="view-on-map-btn" data-id="${group.id}">View on Map</button>
-      `;
+
+      const topRow = createElement("div", "group-card-top");
+      const location = createElement("p", "group-card-city");
+      const cityName = createElement("span", "group-card-city-name", group.city || "N/A");
+      location.append(
+        createIcon("location"),
+        cityName
+      );
+      const availabilityTab = createElement(
+        "span",
+        `availability-badge ${group.isClosed === true ? "availability-closed" : "availability-open"}`,
+        availability
+      );
+      topRow.append(location, availabilityTab);
+
+      const fullTitle = group.title || "No Title";
+      const title = createElement("h3", "group-card-title", fullTitle);
+      title.title = fullTitle;
+      title.setAttribute("aria-label", fullTitle);
+
+      const moreInfoButton = createButton("more-info-btn", "More Info");
+      moreInfoButton.dataset.index = String(index);
+
+      const contactButton = createButton("contact-btn", "Contact");
+      contactButton.dataset.title = group.title || "";
+      contactButton.dataset.email = group.contactEmail || "";
+
+      const viewOnMapButton = createButton("view-on-map-btn", "Map");
+      viewOnMapButton.dataset.id = group.id;
+
+      const description = createElement(
+        "p",
+        "group-card-description",
+        group.description || "No description available."
+      );
+
+      const details = createElement("div", "group-card-meta");
+      details.append(
+        createMetaItem("Day", group.day),
+        createMetaItem("Time", timeStr),
+        createMetaItem("Who", group.audience),
+        createMetaItem("Ages", group.ageGroup)
+      );
+
+      const actions = createElement("div", "group-card-actions");
+      actions.append(moreInfoButton, contactButton, viewOnMapButton);
+
+      div.append(
+        topRow,
+        title,
+        description,
+        details,
+        actions
+      );
       container.appendChild(div);
 
       // Trigger fade-in after a slightly longer delay
@@ -140,7 +363,8 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
     // Attach event listeners
     document.querySelectorAll(".more-info-btn").forEach(btn => {
       btn.addEventListener("click", e => {
-        const i = parseInt(e.target.dataset.index);
+        const i = parseInt(e.currentTarget.dataset.index, 10);
+        if (Number.isNaN(i) || !groups[i]) return;
         showGroupModal(groups[i]);
       });
     });
@@ -157,7 +381,7 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
 
     document.querySelectorAll(".view-on-map-btn").forEach(btn => {
       btn.addEventListener("click", e => {
-        const groupId = e.target.dataset.id;
+        const groupId = e.currentTarget.dataset.id;
         const group = groups.find(g => g.id === groupId);
         if (!group) return;
 
@@ -178,13 +402,11 @@ async function renderGroups(groups, map, AdvancedMarkerElement) {
 }
 
 function showGroupModal(group) {
-  const hour = group.hour || "";
-  const minute = (group.minute || "00").toString().padStart(2, "0");
-  const ampm = group.ampm || "";
-  const timeStr = hour && ampm ? `${hour}:${minute} ${ampm}` : "N/A";
+  const timeStr = formatGroupTime(group);
 
   document.getElementById("info-title").textContent = group.title || "No Title";
   document.getElementById("info-description").textContent = group.description || "No description available.";
+  document.getElementById("info-availability").textContent = availabilityLabel(group);
   document.getElementById("info-day").textContent = group.day || "N/A";
   document.getElementById("info-time").textContent = timeStr;
   document.getElementById("info-audience").textContent = group.audience || "N/A";

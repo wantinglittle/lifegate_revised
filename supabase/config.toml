@@ -1,0 +1,5 @@
+# The public submit-group Edge Function accepts unauthenticated browser form
+# submissions. reCAPTCHA, CORS, validation, and server-side credentials protect
+# the endpoint; callers do not need to be signed in to Supabase.
+[functions.submit-group]
+verify_jwt = false

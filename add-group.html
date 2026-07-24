@@ -8,10 +8,10 @@
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   
   <!-- Light theme (black icon) -->
-  <link rel="icon" href="/images/favicon-grey.png" media="(prefers-color-scheme: light)" type="image/png">
+  <link rel="icon" href="images/favicon-grey.png" media="(prefers-color-scheme: light)" type="image/png">
 
   <!-- Dark theme (white icon) -->
-  <link rel="icon" href="/images/favicon-grey.png" media="(prefers-color-scheme: dark)" type="image/png">
+  <link rel="icon" href="images/favicon-grey.png" media="(prefers-color-scheme: dark)" type="image/png">
 
   <!-- Fallback favicon -->
   <link rel="icon" href="images/favicon-grey.png" type="image/png">
@@ -261,6 +261,19 @@
   font-size: 0.95rem;
 }
 
+.field-error {
+  color: #9b1c1c;
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+  min-height: 1.25rem;
+}
+
+.form-group input[aria-invalid="true"] {
+  border-color: #9b1c1c;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -294,6 +307,7 @@
   <header>
     <div class="header-logo"><a href="index.html" class="back-button" alt="Back to Home">← Back to Home</a></div>
     <div class="header-title"><h1 class="page-title">Add Your Community</h1></div>
+    <div class="header-actions"><a href="portal-login.html" class="add-group-btn" data-dashboard-link>Log In</a></div>
   </header>
 
   <main>
@@ -311,18 +325,26 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="contact-name">Contact Name *</label>
-            <input type="text" id="contact-name" name="contactName" required />
+            <label for="first-name">First Name *</label>
+            <input type="text" id="first-name" name="first_name" required maxlength="80" autocomplete="given-name" aria-describedby="first-name-error" />
+            <span id="first-name-error" class="field-error" aria-live="polite"></span>
           </div>
+          <div class="form-group">
+            <label for="last-name">Last Name *</label>
+            <input type="text" id="last-name" name="last_name" required maxlength="80" autocomplete="family-name" aria-describedby="last-name-error" />
+            <span id="last-name-error" class="field-error" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <div class="form-row">
           <div class="form-group">
             <label for="contact-email">Contact Email *</label>
             <input type="email" id="contact-email" name="contactEmail" required />
           </div>
-        </div>
-
-        <div class="form-group">
-          <label for="contact-phone">Contact Phone Number *</label>
-          <input type="tel" id="contact-phone" name="contactPhone" placeholder="(555) 123-4567" required maxlength="14" />
+          <div class="form-group">
+            <label for="contact-phone">Contact Phone Number *</label>
+            <input type="tel" id="contact-phone" name="contactPhone" placeholder="(555) 123-4567" required maxlength="14" />
+          </div>
         </div>
 
         <div class="form-row">
@@ -435,5 +457,6 @@
     </div>
   </main>
   <script type="module" src="add-group.js"></script>
+  <script type="module" src="public-dashboard-link.js"></script>
 </body>
 </html>

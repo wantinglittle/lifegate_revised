@@ -113,6 +113,26 @@ body {
     overflow: hidden;
 }
 
+.dashboard-access-link {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 20;
+    background: var(--black-color);
+    color: var(--white-color);
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.dashboard-access-link:hover,
+.dashboard-access-link:focus-visible {
+    background: #5a6268;
+}
+
 .floating-bg {
     position: absolute;
     inset: 0;

@@ -75,6 +75,13 @@ header p {
     margin: 0;
 }
 
+.public-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
 .add-group-btn {
     background: var(--black-color);
     color: var(--white-color);
@@ -235,24 +242,37 @@ main {
 
 .groups-section h2 {
     color: var(--black-color);
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     font-size: 1.8rem;
+}
+
+.availability-note {
+    color: var(--black-color);
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem;
 }
 
 #groups-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    align-items: stretch;
     gap: 1.5rem;
 }
 
 .group-card {
     background: var(--blue-color);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1.45rem;
+    padding-top: 0.95rem;
     box-shadow: 0 4px 6px var(--grey-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 380px;
     opacity: 0;
+    overflow: hidden;
+    position: relative;
     transform: translateY(10px);
-    transition: opacity 1.0s ease, transform 1.0s ease;
+    transition: opacity 0.45s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .group-card.show {
@@ -263,12 +283,158 @@ main {
 .group-card.fade-out {
     opacity: 0;
     transform: translateY(10px);
-    transition: opacity 1.0s ease, transform 1.0s ease;
+    transition: opacity 0.3s ease, transform 0.2s ease;
 }
 
 .group-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px var(--grey-color);
+    box-shadow: 0 6px 14px var(--grey-color);
+}
+
+.group-card-top {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    margin-bottom: 1.05rem;
+    min-height: 2rem;
+    padding-right: 10.25rem;
+}
+
+.group-card-title {
+    color: var(--black-color);
+    display: block;
+    font-size: 1.55rem;
+    line-height: 1.2;
+    margin: 0 0 1rem;
+    min-height: 1.2em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.availability-badge {
+    border: 1px solid currentColor;
+    border-radius: 0 12px 0 8px;
+    display: inline-flex;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    max-width: min(9.2rem, 48%);
+    padding: 0.34rem 0.55rem;
+    position: absolute;
+    right: 0;
+    text-align: center;
+    top: 0;
+}
+
+.availability-open {
+    background: #dff2e5;
+    color: #1f5b37;
+}
+
+.availability-closed {
+    background: #ececec;
+    color: #333;
+}
+
+.group-card-description {
+    color: var(--black-color);
+    display: -webkit-box;
+    line-height: 1.45;
+    margin: 0 0 1.25rem;
+    min-height: 4.35em;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.group-card-meta {
+    background: #fbfaf7;
+    border-radius: 14px;
+    box-shadow: inset 0 0 0 1px rgba(28, 43, 60, 0.08), 0 4px 10px rgba(28, 43, 60, 0.08);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 1.35rem;
+    overflow: hidden;
+    padding: 0.85rem 0.55rem;
+}
+
+.group-card-meta-item {
+    align-items: center;
+    color: #1f3c5a;
+    display: grid;
+    gap: 0.24rem;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    min-width: 0;
+    padding: 0.15rem 0.65rem;
+    position: relative;
+    text-align: center;
+}
+
+.group-card-meta-item:not(:last-child)::after {
+    background: rgba(28, 43, 60, 0.16);
+    bottom: 0.45rem;
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0.45rem;
+    width: 1px;
+}
+
+.group-card-meta-label {
+    color: #586573;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.group-card-meta-value {
+    color: #1f2933;
+    font-size: 0.92rem;
+    font-weight: 800;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-icon {
+    color: currentColor;
+    flex: 0 0 auto;
+    height: 1rem;
+    width: 1rem;
+}
+
+.group-card-meta-item .card-icon {
+    color: #1f3c5a;
+    height: 1.2rem;
+    margin-bottom: 0.1rem;
+    width: 1.2rem;
+}
+
+.group-card-city {
+    align-items: center;
+    color: var(--black-color);
+    display: inline-flex;
+    gap: 0.35rem;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.group-card-city-name {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .group-title {
@@ -324,6 +490,26 @@ main {
 .group-actions {
     display: flex;
     gap: 1rem;
+}
+
+.group-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: auto;
+}
+
+.group-card-actions .contact-btn,
+.group-card-actions .view-on-map-btn,
+.group-card-actions .more-info-btn {
+    flex: 1 1 92px;
+    align-items: center;
+    display: inline-flex;
+    gap: 0.35rem;
+    justify-content: center;
+    margin-top: 0;
+    min-width: 86px;
+    padding: 0.45rem 0.85rem;
 }
 
 .contact-btn, .view-map-btn, .more-info-btn {
@@ -546,6 +732,32 @@ main {
         flex-direction: column;
     }
 
+    .group-card {
+        min-height: 0;
+    }
+
+    .group-card-top {
+        padding-right: 8.6rem;
+    }
+
+    .availability-badge {
+        max-width: 8rem;
+    }
+
+    .group-card-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .group-card-meta-item::after {
+        display: none;
+    }
+
+    .group-card-actions .contact-btn,
+    .group-card-actions .view-on-map-btn,
+    .group-card-actions .more-info-btn {
+        flex: 1 1 120px;
+    }
+
     .modal-content {
         margin: 10% auto;
         width: 95%;
@@ -575,6 +787,20 @@ main {
 
     .group-card {
         padding: 1rem;
+        padding-top: 1rem;
+    }
+
+    .group-card-top {
+        align-items: center;
+        flex-wrap: wrap;
+        padding-right: 0;
+    }
+
+    .availability-badge {
+        border-radius: 8px;
+        margin-left: auto;
+        max-width: 70%;
+        position: static;
     }
 
     .group-details {

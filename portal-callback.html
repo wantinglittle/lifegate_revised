@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Signing In | LifeGate Dashboard</title>
+  <link rel="icon" href="images/favicon-grey.png" type="image/png">
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <link href="portal.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+  <div class="wrapper portal-wrapper">
+    <header class="portal-header">
+      <div class="header-logo">
+        <a href="index.html"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
+      </div>
+      <div class="header-content">
+        <h1>LifeGate Dashboard</h1>
+        <p>Confirming your secure sign-in link</p>
+      </div>
+    </header>
+
+    <main class="portal-main">
+      <section class="portal-card portal-login-card" aria-labelledby="portal-callback-title">
+        <h2 id="portal-callback-title">Signing You In</h2>
+        <p id="portal-callback-status" class="portal-status" aria-live="polite">Checking your sign-in link...</p>
+        <a id="portal-callback-login-link" class="portal-secondary-link" href="portal-login.html" hidden>Request a new sign-in link</a>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="portal-callback.js"></script>
+</body>
+</html>

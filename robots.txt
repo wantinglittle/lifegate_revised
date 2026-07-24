@@ -1,5 +1,5 @@
 # robots.txt for LIFEGATE Denver Community Directory
-# https://www.lifegatecommunity.com
+# https://lifegatecommunity.com
 
 User-agent: *
 Allow: /
@@ -30,7 +30,7 @@ Allow: /*.jpg$
 Allow: /*.jpeg$
 
 # Point search engines to your sitemap
-Sitemap: https://www.lifegatecommunity.com/sitemap.xml
+Sitemap: https://lifegatecommunity.com/sitemap.xml
 
 # Crawl delay (optional - gives your server a break between requests)
 Crawl-delay: 1

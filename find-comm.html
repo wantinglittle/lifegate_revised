@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <!-- Light theme (black icon) -->
-  <link rel="icon" href="/images/favicon-grey.png" media="(prefers-color-scheme: light)" type="image/png">
+  <link rel="icon" href="images/favicon-grey.png" media="(prefers-color-scheme: light)" type="image/png">
 
   <!-- Dark theme (white icon) -->
-  <link rel="icon" href="/images/favicon-grey.png" media="(prefers-color-scheme: dark)" type="image/png">
+  <link rel="icon" href="images/favicon-grey.png" media="(prefers-color-scheme: dark)" type="image/png">
 
   <!-- Fallback favicon -->
   <link rel="icon" href="images/favicon-grey.png" type="image/png">
@@ -20,23 +20,23 @@
   <meta name="author" content="LIFEGATE Denver">
   
   <!-- Canonical URL -->
-  <link rel="canonical" href="https://www.lifegatecommunity.com/find-comm.html">
+  <link rel="canonical" href="https://lifegatecommunity.com/find-comm.html">
   
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://www.lifegatecommunity.com/find-comm.html">
+  <meta property="og:url" content="https://lifegatecommunity.com/find-comm.html">
   <meta property="og:title" content="Find Denver Church Small Groups Near Me | LIFEGATE Community Directory">
   <meta property="og:description" content="Search Denver church small groups by location, day, and audience. Find Bible study groups, spiritual growth communities near you.">
-  <meta property="og:image" content="https://www.lifegatecommunity.com/images/bible_study.jpg">
+  <meta property="og:image" content="https://lifegatecommunity.com/images/bible_study.jpg">
   <meta property="og:site_name" content="LIFEGATE Denver">
   <meta property="og:locale" content="en_US">
   
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://www.lifegatecommunity.com/find-comm.html">
+  <meta property="twitter:url" content="https://lifegatecommunity.com/find-comm.html">
   <meta property="twitter:title" content="Find Denver Church Small Groups Near Me | LIFEGATE Community Directory">
   <meta property="twitter:description" content="Search Denver church small groups by location, day, and audience. Find Bible study groups, spiritual growth communities near you.">
-  <meta property="twitter:image" content="https://www.lifegatecommunity.com/images/bible_study.jpg">
+  <meta property="twitter:image" content="https://lifegatecommunity.com/images/bible_study.jpg">
   
   <!-- Preconnect for performance -->
   <link rel="preconnect" href="https://maps.googleapis.com">
@@ -52,7 +52,7 @@
     "@type": "WebPage",
     "name": "Find Denver Church Small Groups",
     "description": "Search and find church small groups in Denver. Browse Bible study groups, spiritual growth communities, and faith-based groups by location and schedule.",
-    "url": "https://www.lifegatecommunity.com/find-comm.html",
+    "url": "https://lifegatecommunity.com/find-comm.html",
     "mainEntity": {
       "@type": "ItemList",
       "name": "Denver Church Small Groups Directory",
@@ -65,13 +65,13 @@
           "@type": "ListItem",
           "position": 1,
           "name": "Home",
-          "item": "https://www.lifegatecommunity.com/"
+          "item": "https://lifegatecommunity.com/"
         },
         {
           "@type": "ListItem",
           "position": 2,
           "name": "Find Small Groups",
-          "item": "https://www.lifegatecommunity.com/find-comm.html"
+          "item": "https://lifegatecommunity.com/find-comm.html"
         }
       ]
     },
@@ -89,15 +89,15 @@
     "@type": "SearchResultsPage",
     "name": "Denver Church Small Groups Search",
     "description": "Find church small groups in Denver by location, day of the week, audience, and age group.",
-    "url": "https://www.lifegatecommunity.com/find-comm.html",
+    "url": "https://lifegatecommunity.com/find-comm.html",
     "mainEntity": {
       "@type": "WebSite",
-      "url": "https://www.lifegatecommunity.com/",
+      "url": "https://lifegatecommunity.com/",
       "potentialAction": {
         "@type": "SearchAction",
         "target": {
           "@type": "EntryPoint",
-          "urlTemplate": "https://www.lifegatecommunity.com/find-comm.html?location={search_term_string}"
+          "urlTemplate": "https://lifegatecommunity.com/find-comm.html?location={search_term_string}"
         },
         "query-input": "required name=search_term_string"
       }
@@ -124,7 +124,8 @@
         <h1>LIFEGATE Community</h1>
         <p>Find and connect with church community</p>
       </div>
-      <div class="header-actions">
+      <div class="header-actions public-header-actions">
+        <a href="portal-login.html" class="add-group-btn" data-dashboard-link>Log In</a>
         <a href="add-group.html" class="add-group-btn">Add My Community</a>
       </div>
     </header>
@@ -203,6 +204,7 @@
         <span class="close-info">&times;</span>
         <h3 id="info-title"></h3>
         <p id="info-description"></p>
+        <p><strong>Availability:</strong> <span id="info-availability"></span></p>
         <p><strong>Day:</strong> <span id="info-day"></span></p>
         <p><strong>Time:</strong> <span id="info-time"></span></p>
         <p><strong>Audience:</strong> <span id="info-audience"></span></p>
@@ -320,6 +322,7 @@
           alert("Map failed to load. Please try again later.");
         });
     </script>
+    <script type="module" src="public-dashboard-link.js"></script>
   </div>
 </body>
 </html>

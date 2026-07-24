@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Light theme (black icon) -->
-    <link rel="icon" href="/images/favicon-grey.png" media="(prefers-color-scheme: light)" type="image/png">
+    <link rel="icon" href="images/favicon-grey.png" media="(prefers-color-scheme: light)" type="image/png">
 
     <!-- Dark theme (white icon) -->
-    <link rel="icon" href="/images/favicon-grey.png" media="(prefers-color-scheme: dark)" type="image/png">
+    <link rel="icon" href="images/favicon-grey.png" media="(prefers-color-scheme: dark)" type="image/png">
 
     <!-- Fallback favicon -->
     <link rel="icon" href="images/favicon-grey.png" type="image/png">
@@ -23,14 +23,14 @@
     <meta name="author" content="LIFEGATE Church Denver">
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="https://www.lifegatecommunity.com">
+    <link rel="canonical" href="https://lifegatecommunity.com">
     
     <!-- Open Graph tags for social sharing -->
     <meta property="og:title" content="LIFEGATE Denver Community Directory">
     <meta property="og:description" content="Connect with like-minded believers, grow in faith together, and find your place in our vibrant LIFEGATE Denver community.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.lifegatecommunity.com">
-    <meta property="og:image" content="https://www.lifegatecommunity.com/images/cover-photo.jpg">
+    <meta property="og:url" content="https://lifegatecommunity.com">
+    <meta property="og:image" content="https://lifegatecommunity.com/images/cover-photo.jpg">
     <meta property="og:site_name" content="LIFEGATE Denver">
     <meta property="og:locale" content="en_US">
     
@@ -38,7 +38,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="LIFEGATE Denver Community Directory">
     <meta name="twitter:description" content="Connect with like-minded believers, grow in faith together, and find your place in our vibrant LIFEGATE Denver community.">
-    <meta name="twitter:image" content="https://www.lifegatecommunity.com/images/cover-photo.jpg">
+    <meta name="twitter:image" content="https://lifegatecommunity.com/images/cover-photo.jpg">
     
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,8 +57,8 @@
         "@type": "Organization",
         "name": "LIFEGATE Denver Community Website",
         "alternateName": "LIFEGATE Church Denver",
-        "url": "https://www.lifegatecommunity.com",
-        "logo": "https://www.lifegatecommunity.com/images/favicon-grey.png",
+        "url": "https://lifegatecommunity.com",
+        "logo": "https://lifegatecommunity.com/images/favicon-grey.png",
         "description": "LIFEGATE Denver is a vibrant faith community offering Bible study groups, prayer circles, and Christian fellowship opportunities throughout the Denver area.",
         "address": {
             "@type": "PostalAddress",
@@ -80,7 +80,7 @@
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "LIFEGATE Denver Community Directory",
-        "url": "https://www.lifegatecommunity.com",
+        "url": "https://lifegatecommunity.com",
         "description": "Find and join faith-based communities at LIFEGATE Denver. Browse Bible studies, prayer groups, and social activities.",
         "publisher": {
             "@type": "Organization",
@@ -88,7 +88,7 @@
         },
         "potentialAction": {
             "@type": "SearchAction",
-            "target": "https://www.lifegatecommunity.com/find-comm.html?q={search_term_string}",
+            "target": "https://lifegatecommunity.com/find-comm.html?q={search_term_string}",
             "query-input": "required name=search_term_string"
         }
     }
@@ -107,6 +107,8 @@
     <div class="app">
         <!-- Hero Section -->
         <section class="hero-section">
+            <a href="portal-login.html" class="dashboard-access-link" data-dashboard-link>Log In</a>
+
             <!-- Floating Background Icons -->
             <div class="floating-bg">
                 <div class="floating-icon icon-1">
@@ -230,5 +232,6 @@
     </div>
 
     <script src="splash-script.js"></script>
+    <script type="module" src="public-dashboard-link.js"></script>
 </body>
 </html>
