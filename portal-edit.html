@@ -16,7 +16,7 @@
       </div>
       <div class="header-content">
         <h1>LifeGate Community Portal</h1>
-        <p>Community details</p>
+        <p>Update community details</p>
       </div>
       <div class="header-actions">
         <a href="portal.html" class="add-group-btn">Back to Portal</a>
@@ -24,12 +24,191 @@
     </header>
 
     <main class="portal-main">
-      <section class="portal-card portal-login-card" aria-labelledby="portal-edit-title">
-        <h2 id="portal-edit-title">Edit Community</h2>
-        <p id="portal-edit-community" class="portal-muted" aria-live="polite">Loading community...</p>
-        <p>Editing tools are coming in the next phase.</p>
-        <a class="portal-secondary-link" href="portal.html">Back to Portal</a>
-        <p id="portal-edit-status" class="portal-status" aria-live="polite"></p>
+      <section class="portal-dashboard portal-edit-dashboard" aria-labelledby="portal-edit-title">
+        <div class="portal-dashboard-header">
+          <div>
+            <h2 id="portal-edit-title">Edit Community</h2>
+            <p id="portal-edit-community" class="portal-muted" aria-live="polite">Loading community...</p>
+          </div>
+          <p id="portal-edit-status" class="portal-status" aria-live="polite">Checking your portal session...</p>
+        </div>
+
+        <div id="portal-edit-error-summary" class="portal-error-summary" tabindex="-1" aria-live="assertive" hidden></div>
+
+        <form id="portal-edit-form" class="portal-edit-form" novalidate hidden>
+          <fieldset class="portal-edit-section">
+            <legend>Community Information</legend>
+            <div class="portal-form-grid">
+              <div class="form-group">
+                <label for="edit-title">Title</label>
+                <input id="edit-title" name="title" type="text" maxlength="120" required aria-describedby="edit-title-error" />
+                <p id="edit-title-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-city">City</label>
+                <input id="edit-city" name="city" type="text" maxlength="120" required aria-describedby="edit-city-error" />
+                <p id="edit-city-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group portal-wide-field">
+                <label for="edit-description">Description</label>
+                <textarea id="edit-description" name="description" rows="5" required aria-describedby="edit-description-error"></textarea>
+                <p id="edit-description-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-day">Day</label>
+                <select id="edit-day" name="day" aria-describedby="edit-day-error">
+                  <option value="">No day selected</option>
+                  <option value="Sunday">Sunday</option>
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                </select>
+                <p id="edit-day-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-meeting-time">Meeting Time</label>
+                <input id="edit-meeting-time" name="meeting_time" type="time" aria-describedby="edit-meeting-time-error" />
+                <p id="edit-meeting-time-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-audience">Audience</label>
+                <select id="edit-audience" name="audience" required aria-describedby="edit-audience-error">
+                  <option value="All">All</option>
+                  <option value="Men">Men</option>
+                  <option value="Women">Women</option>
+                </select>
+                <p id="edit-audience-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-age-group">Age Group</label>
+                <select id="edit-age-group" name="age_group" required aria-describedby="edit-age-group-error">
+                  <option value="All-ages">All-ages</option>
+                  <option value="Kids">Kids</option>
+                  <option value="Teens">Teens</option>
+                  <option value="Adult">Adult</option>
+                </select>
+                <p id="edit-age-group-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-zip-code">ZIP Code</label>
+                <input id="edit-zip-code" name="zip_code" type="text" required aria-describedby="edit-zip-code-error" />
+                <p id="edit-zip-code-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-cross-streets">Cross Streets</label>
+                <input id="edit-cross-streets" name="cross_streets" type="text" required aria-describedby="edit-cross-streets-error" />
+                <p id="edit-cross-streets-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group portal-wide-field">
+                <label for="edit-additional-info">Additional Information</label>
+                <textarea id="edit-additional-info" name="additional_info" rows="4" aria-describedby="edit-additional-info-help edit-additional-info-error"></textarea>
+                <p id="edit-additional-info-help" class="portal-help-text">Leave blank to clear this optional field.</p>
+                <p id="edit-additional-info-error" class="portal-field-error"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="portal-edit-section">
+            <legend>Contact Information</legend>
+            <div class="portal-form-grid">
+              <div class="form-group">
+                <label for="edit-contact-name">Contact Name</label>
+                <input id="edit-contact-name" name="contact_name" type="text" required aria-describedby="edit-contact-name-error" />
+                <p id="edit-contact-name-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-contact-email">Contact Email</label>
+                <input id="edit-contact-email" name="contact_email" type="email" required aria-describedby="edit-contact-email-error" />
+                <p id="edit-contact-email-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-contact-phone">Contact Phone</label>
+                <input id="edit-contact-phone" name="contact_phone" type="tel" required aria-describedby="edit-contact-phone-error" />
+                <p id="edit-contact-phone-error" class="portal-field-error"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="portal-edit-section">
+            <legend>Website Visibility</legend>
+
+            <div id="contact-status-control" class="portal-check-row">
+              <input id="edit-visible" name="visible" type="checkbox" aria-describedby="edit-visible-help edit-visible-error" />
+              <div>
+                <label for="edit-visible">Visible on Website</label>
+                <p id="edit-visible-help" class="portal-help-text">Active communities appear on the Find a Community page. Inactive communities are hidden from the public website.</p>
+                <p id="edit-visible-pending" class="portal-help-text" hidden>Pending Review: visibility is disabled until this community is approved.</p>
+                <p id="edit-visible-error" class="portal-field-error"></p>
+              </div>
+            </div>
+
+            <div id="admin-status-control" class="form-group" hidden>
+              <label for="edit-status">Status</label>
+              <select id="edit-status" name="status" aria-describedby="edit-status-help edit-status-error">
+                <option value="pending">Pending</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <p id="edit-status-help" class="portal-help-text">Pending is awaiting approval and hidden publicly. Active is visible on the public website. Inactive is hidden publicly.</p>
+              <p id="edit-status-error" class="portal-field-error"></p>
+            </div>
+
+            <div class="portal-check-row">
+              <input id="edit-is-closed" name="is_closed" type="checkbox" aria-describedby="edit-is-closed-help edit-is-closed-error" />
+              <div>
+                <label for="edit-is-closed">Group is Closed</label>
+                <p id="edit-is-closed-help" class="portal-help-text">Check this when the group is not accepting new members. If the community is visible on the website, visitors will see that it is currently closed. Closed status does not hide the group.</p>
+                <p id="edit-is-closed-error" class="portal-field-error"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset id="portal-admin-fields" class="portal-edit-section" hidden>
+            <legend>Administrator Fields</legend>
+            <div class="portal-form-grid">
+              <div class="form-group">
+                <label for="edit-latitude">Latitude</label>
+                <input id="edit-latitude" name="latitude" type="number" step="any" min="-90" max="90" aria-describedby="edit-coordinates-help edit-latitude-error" />
+                <p id="edit-latitude-error" class="portal-field-error"></p>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-longitude">Longitude</label>
+                <input id="edit-longitude" name="longitude" type="number" step="any" min="-180" max="180" aria-describedby="edit-coordinates-help edit-longitude-error" />
+                <p id="edit-longitude-error" class="portal-field-error"></p>
+              </div>
+
+              <p id="edit-coordinates-help" class="portal-help-text portal-wide-field">Coordinates are optional, but latitude and longitude must be supplied or cleared together.</p>
+
+              <div class="form-group portal-wide-field">
+                <label for="edit-owner-user-id">Owner User ID</label>
+                <input id="edit-owner-user-id" name="owner_user_id" type="text" aria-describedby="edit-owner-user-id-help edit-owner-user-id-error" />
+                <p id="edit-owner-user-id-help" class="portal-help-text">Optional Supabase Auth user UUID. Leave blank to remove the current owner.</p>
+                <p id="edit-owner-user-id-error" class="portal-field-error"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="portal-edit-actions">
+            <button id="portal-save-edit" type="submit" class="portal-primary-btn">Save Changes</button>
+            <button id="portal-reset-edit" type="button" class="portal-secondary-btn">Cancel/Reset Changes</button>
+            <a class="portal-secondary-link" href="portal.html">Back to Portal</a>
+          </div>
+        </form>
       </section>
     </main>
   </div>

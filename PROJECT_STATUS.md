@@ -57,7 +57,8 @@ LifeGate Portal database and authorization foundation.
 - Initial portal frontend shell created for magic-link login, callback handling, protected session checks, logout, admin detection, and basic portal RPC counts.
 - Portal magic-link authentication tested successfully on the shadow site.
 - Resend custom SMTP tested successfully for portal authentication emails.
-- First usable portal admin dashboard created: administrators can view all communities as responsive cards with status and open/closed badges, client-side search, status filters, and protected edit-placeholder navigation.
+- First usable portal admin dashboard created: administrators can view all communities as responsive cards with status and open/closed badges, client-side search, status filters, and edit navigation.
+- Full authenticated portal edit form implemented for contact-owned communities and administrator-managed communities. Updates use changed-only JSON patch payloads through the protected portal RPCs.
 
 Supabase now contains all 22 migrated group records. Existing Firestore document IDs were preserved. The verified imported status totals are 17 approved, 5 pending, 0 rejected, and 0 archived.
 
@@ -69,7 +70,7 @@ The portal frontend is a static GitHub Pages-compatible experience. It uses Supa
 
 # Current Task
 
-Review and test the first usable LifeGate Portal admin dashboard on the shadow site.
+Review and test the authenticated LifeGate Portal edit form on the shadow site.
 
 # Upcoming Tasks
 
@@ -79,7 +80,7 @@ Review and test the first usable LifeGate Portal admin dashboard on the shadow s
 4. Deploy public-read and submission cutovers
 5. Implement location privacy and automatic geocoding
 6. Remove Firebase
-7. Build full portal editing forms and submit/update behavior
+7. Build owner search/provisioning and remaining portal administration workflows
 
 # Important Decisions
 
@@ -117,7 +118,12 @@ Review and test the first usable LifeGate Portal admin dashboard on the shadow s
 - Portal administrators can view all communities in responsive cards showing status, open/closed state, schedule, location summary, and contact fields.
 - Portal admin search runs client-side against already-loaded `get_admin_groups()` data and matches title, city, cross streets, contact name, contact email, and contact phone.
 - Portal admin status filters support All, Pending, Active, and Inactive counts and combine with search.
-- Portal edit links open a protected placeholder page; full edit functionality is still pending.
+- Portal edit links open a protected edit form. Contacts may edit owned communities, control website visibility through active/inactive status, and mark a group closed.
+- Pending communities show Pending Review for contacts and keep the visibility control disabled until approval.
+- Administrators may edit status, coordinates, and owner UUID in addition to normal community fields.
+- Portal edit saves send JSON patch payloads containing only changed fields through either `update_my_community(text, jsonb)` or `update_admin_group(text, jsonb)`.
+- Owner search and account provisioning remain future work.
+- Public Find a Community open/closed display is still pending.
 - `private.is_portal_admin()` is an internal helper and is not directly callable by browser roles.
 - Group ownership uses `auth.users.id`, not `contact_email`.
 - Changing a group's contact email must not automatically transfer ownership.

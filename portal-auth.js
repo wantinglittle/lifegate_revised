@@ -117,6 +117,28 @@ export async function getAdminGroups() {
   return Array.isArray(data) ? data : [];
 }
 
+export async function updateMyCommunity(groupId, changes) {
+  const { data, error } = await supabase.rpc("update_my_community", {
+    p_group_id: groupId,
+    p_changes: changes
+  });
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data[0] : data;
+}
+
+export async function updateAdminGroup(groupId, changes) {
+  const { data, error } = await supabase.rpc("update_admin_group", {
+    p_group_id: groupId,
+    p_changes: changes
+  });
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data[0] : data;
+}
+
 export function isExpectedNonAdminError(error) {
   const message = String(error?.message || "").toLowerCase();
   return error?.code === "42501" ||

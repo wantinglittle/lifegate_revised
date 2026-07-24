@@ -248,9 +248,13 @@ The static portal frontend uses Supabase magic links through Resend custom SMTP:
 - Administrators see all communities as responsive cards with status badges, open/closed availability, schedule, public-safe location summary, and contact fields.
 - Administrator search is client-side against already-loaded `get_admin_groups()` data and matches title, city, cross streets, contact name, contact email, and contact phone.
 - Administrator status filters support All, Pending, Active, and Inactive counts and combine with search.
-- `portal-edit.html` is a protected placeholder page for selected communities. It resolves the title through authorized portal RPC data, does not expose the group ID visibly, and does not include edit/submit controls yet.
+- `portal-edit.html` is the protected community edit page. It resolves the selected record only from authorized portal RPC data and does not expose the group ID visibly.
+- Contacts may edit owned communities through `public.update_my_community(text, jsonb)`. They control website visibility with active/inactive status, but pending communities keep the visibility control disabled until approval.
+- Contacts and administrators may mark a group closed with `is_closed`; closed status does not itself hide the group.
+- Administrators edit any community returned by `get_admin_groups()` through `public.update_admin_group(text, jsonb)` and may update status, coordinates, and the owner UUID.
+- Edit saves compare the form to the originally loaded record and send JSON patch payloads containing only changed fields. Omitted properties remain unchanged, and JSON null is sent only for approved nullable fields intentionally cleared by the user.
 - Unknown emails must not create Auth users. The UI uses a generic success/error response and does not intentionally reveal whether an email address is provisioned.
-- Full edit forms and update submissions are not implemented yet.
+- Owner search and account provisioning remain future work. The public Find a Community page still needs an open/closed display.
 
 For hosted GitHub Pages testing, add this redirect URL in Supabase Dashboard -> Authentication -> URL Configuration -> Redirect URLs:
 
