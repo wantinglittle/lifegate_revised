@@ -8,6 +8,29 @@ The current application remains unchanged during this phase. The public website 
 
 - `supabase/migrations/20260723_001_create_groups_schema.sql`
 
+## Firestore Export
+
+Use `scripts/export-firestore-groups.mjs` to create a read-only JSON export of the Firestore `groups` collection before transforming records for Supabase. The script preserves each Firestore document ID as `id`, converts Firestore-specific values into JSON-safe values, and writes `migration-data/firestore-groups-export.json`.
+
+PowerShell:
+
+```powershell
+$env:GOOGLE_APPLICATION_CREDENTIALS="C:\secure-path\firebase-service-account.json"
+$env:FIREBASE_PROJECT_ID="your-firebase-project-id"
+node .\scripts\export-firestore-groups.mjs
+```
+
+Before proceeding, confirm that the Firebase project ID printed by the script is correct. The exporter performs a one-time read only and does not write, update, or delete Firebase data.
+
+Never commit the service-account file. The generated export JSON is intentionally ignored by Git.
+
+After exporting, clear the environment-variable values:
+
+```powershell
+Remove-Item Env:\GOOGLE_APPLICATION_CREDENTIALS
+Remove-Item Env:\FIREBASE_PROJECT_ID
+```
+
 ## Schema Summary
 
 The migration creates `public.groups` as the permanent relational table for community groups.

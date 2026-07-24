@@ -1,0 +1,8 @@
+
+supabase/.temp/
+
+migration-data/*.json
+
+# Local Firebase migration credentials. Never commit service-account files.
+*service-account*.json
+firebase-service-account*.json
