@@ -176,7 +176,11 @@ Cut over the revised Supabase-based GitHub Pages site to `https://lifegatecommun
 
 Production target
 
-GitHub Pages from `wantinglittle/lifegate_revised`, using Supabase public RPCs and the Supabase `submit-group` Edge Function.
+`https://lifegatecommunity.com`, currently served by Netlify from `wantinglittle/lifegate_revised`. Future default push target is production (`main`) unless the user explicitly requests the GitHub Pages shadow site or another branch.
+
+Shadow/reference
+
+The GitHub Pages shadow URL `https://wantinglittle.github.io/lifegate_revised/` should not be the default target for future pushes. Use it only when the user explicitly asks for shadow testing or shadow-site updates.
 
 Rollback/reference
 
