@@ -7,6 +7,7 @@ const SUPABASE_ANON_KEY_PLACEHOLDER = "YOUR_SUPABASE_ANON_KEY";
 export const PORTAL_LOGIN_PAGE = "portal-login.html";
 export const PORTAL_CALLBACK_PAGE = "portal-callback.html";
 export const PORTAL_PAGE = "portal.html";
+export const SEND_MESSAGE_PAGE = "send-message.html";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -147,6 +148,23 @@ export async function updateAdminGroup(groupId, changes) {
     throw error;
   }
   return Array.isArray(data) ? data[0] : data;
+}
+
+export async function invokeDashboardMessage(action, payload = {}) {
+  ensureSupabaseConfig();
+
+  const { data, error } = await supabase.functions.invoke("send-dashboard-message", {
+    body: {
+      action,
+      ...payload
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }
 
 export function isExpectedNonAdminError(error) {

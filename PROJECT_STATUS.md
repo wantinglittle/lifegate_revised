@@ -77,6 +77,7 @@ The next development phase is incremental production hardening and Dashboard/Com
 - Netlify production replacement completed in `LIFEGATE-Community`.
 - Production cutover completed for `https://lifegatecommunity.com`.
 - Firebase retired from production runtime.
+- First production Dashboard Send Message implementation prepared locally for review. It adds an admin-only composer, Supabase Edge Function, Resend integration path, server-side recipient loading from `portal_users`, HTML sanitization, test-send path, confirmation flow, duplicate-send guard, and a reviewable audit-table migration. The migration, Edge Function deployment, secrets, and any test email still require explicit manual authorization.
 
 # Official Terminology
 
@@ -132,6 +133,13 @@ The next development phase is incremental production hardening and Dashboard/Com
 - Group ownership uses `auth.users.id`, not `contact_email`.
 - Changing a group's contact email must not automatically transfer ownership.
 - `private.is_portal_admin()` is an internal helper and is not directly callable by browser roles.
+- Dashboard Send Message is intended only for communications to current Dashboard users, including admins and Community Hosts.
+- Dashboard Send Message must load recipients from `portal_users`; do not create or synchronize a separate Resend contact list.
+- Dashboard Send Message must send one separate email per recipient and must not expose recipient addresses to other recipients.
+- Dashboard Send Message uses `LifeGate Community <messages@lifegatecommunity.com>` by default, configurable only through server-side Edge Function environment variables.
+- Dashboard Send Message Reply-To must be the authenticated sending admin's own email address.
+- Dashboard Send Message must append the standard `LifeGate Community` footer with a `Manage Your Group Here` link to `https://lifegatecommunity.com/portal-login.html`.
+- Dashboard Send Message must not include unsubscribe text until real unsubscribe functionality exists.
 
 # Location Privacy
 

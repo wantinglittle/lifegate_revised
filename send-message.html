@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Send Message | LifeGate Community Dashboard</title>
+  <link rel="icon" href="images/favicon-grey.png" type="image/png">
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <link href="portal.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+  <div class="wrapper portal-wrapper">
+    <header class="portal-header">
+      <div class="header-logo">
+        <a href="index.html"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
+      </div>
+      <div class="header-content">
+        <h1>LifeGate Community Dashboard</h1>
+        <p>Send Message</p>
+      </div>
+      <div class="header-actions">
+        <a href="portal.html" class="add-group-btn">Back to Dashboard</a>
+      </div>
+    </header>
+
+    <main class="portal-main">
+      <section class="portal-dashboard portal-message-dashboard" aria-labelledby="send-message-title">
+        <div class="portal-dashboard-header">
+          <div>
+            <h2 id="send-message-title">Send Message</h2>
+            <p class="portal-muted">Send an email to current Dashboard users, including admins and Community Hosts.</p>
+          </div>
+          <p id="send-message-status" class="portal-status" aria-live="polite">Checking admin access...</p>
+        </div>
+
+        <div id="send-message-error-summary" class="portal-error-summary" tabindex="-1" aria-live="assertive" hidden></div>
+
+        <form id="send-message-form" class="portal-message-layout" novalidate hidden>
+          <div class="portal-message-summary" aria-live="polite">
+            <div>
+              <span>Recipients</span>
+              <strong id="send-message-recipient-label">All Dashboard Users</strong>
+            </div>
+            <div>
+              <span>Eligible Count</span>
+              <strong id="send-message-recipient-count">Loading...</strong>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="send-message-subject">Subject</label>
+            <input id="send-message-subject" name="subject" type="text" maxlength="140" required aria-describedby="send-message-subject-error" />
+            <p id="send-message-subject-error" class="portal-field-error"></p>
+          </div>
+
+          <div class="form-group">
+            <label for="send-message-editor">Message</label>
+            <div class="portal-message-editor-toolbar" aria-label="Message formatting controls">
+              <button class="portal-message-toolbar-btn" type="button" data-command="bold" aria-label="Bold"><strong>B</strong></button>
+              <button class="portal-message-toolbar-btn" type="button" data-command="italic" aria-label="Italic"><em>I</em></button>
+              <button class="portal-message-toolbar-btn" type="button" data-command="insertUnorderedList" aria-label="Bulleted list">UL</button>
+              <button class="portal-message-toolbar-btn" type="button" data-command="insertOrderedList" aria-label="Numbered list">OL</button>
+              <button class="portal-message-toolbar-btn" type="button" data-command="createLink" aria-label="Add link">Link</button>
+            </div>
+            <div id="send-message-editor" class="portal-message-editor" role="textbox" aria-multiline="true" contenteditable="true" data-placeholder="Write your message..."></div>
+            <p id="send-message-body-error" class="portal-field-error"></p>
+          </div>
+
+          <section id="send-message-preview" class="portal-message-preview" aria-labelledby="send-message-preview-title" hidden>
+            <h3 id="send-message-preview-title">Preview</h3>
+            <p><strong>Subject:</strong> <span id="send-message-preview-subject"></span></p>
+            <p><strong>From:</strong> <span id="send-message-preview-from"></span></p>
+            <p><strong>Reply-To:</strong> <span id="send-message-preview-reply-to"></span></p>
+            <div id="send-message-preview-body" class="portal-message-preview-frame"></div>
+          </section>
+
+          <div class="portal-edit-actions">
+            <button id="send-message-preview-btn" type="button" class="portal-secondary-btn">Preview</button>
+            <button id="send-message-test-btn" type="button" class="portal-secondary-btn">Send Test to Me</button>
+            <button id="send-message-send-btn" type="button" class="portal-primary-btn">Send Message</button>
+            <a class="portal-secondary-link" href="portal.html">Cancel</a>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div id="send-message-confirm-modal" class="portal-modal" role="dialog" aria-modal="true" aria-labelledby="send-message-confirm-title" hidden>
+    <div class="portal-modal-panel" role="document" tabindex="-1">
+      <h3 id="send-message-confirm-title">Confirm Send</h3>
+      <dl class="portal-message-confirm-list">
+        <div>
+          <dt>Subject</dt>
+          <dd id="send-message-confirm-subject"></dd>
+        </div>
+        <div>
+          <dt>Recipients</dt>
+          <dd id="send-message-confirm-count"></dd>
+        </div>
+        <div>
+          <dt>From</dt>
+          <dd id="send-message-confirm-from"></dd>
+        </div>
+        <div>
+          <dt>Reply-To</dt>
+          <dd id="send-message-confirm-reply-to"></dd>
+        </div>
+      </dl>
+      <p class="portal-warning-text">This message will be sent immediately. Do not continue unless the message is ready for all Dashboard users.</p>
+      <div class="portal-edit-actions">
+        <button id="send-message-confirm-send" type="button" class="portal-primary-btn">Send to Dashboard Users</button>
+        <button id="send-message-confirm-cancel" type="button" class="portal-secondary-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="send-message.js"></script>
+</body>
+</html>

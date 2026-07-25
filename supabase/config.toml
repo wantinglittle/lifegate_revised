@@ -3,3 +3,6 @@
 # the endpoint; callers do not need to be signed in to Supabase.
 [functions.submit-group]
 verify_jwt = false
+
+[functions.send-dashboard-message]
+verify_jwt = false

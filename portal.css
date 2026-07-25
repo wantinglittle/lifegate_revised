@@ -85,6 +85,12 @@
   outline-offset: 3px;
 }
 
+.portal-message-toolbar-btn:focus-visible,
+.portal-message-editor:focus-visible {
+  outline: 3px solid rgba(25, 25, 25, 0.35);
+  outline-offset: 3px;
+}
+
 .portal-primary-btn:disabled {
   cursor: wait;
   opacity: 0.7;
@@ -104,6 +110,10 @@
 .portal-secondary-btn:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+.portal-secondary-btn[hidden] {
+  display: none;
 }
 
 .portal-status {
@@ -126,6 +136,14 @@
   display: inline-block;
   font-weight: 700;
   margin-top: 1rem;
+}
+
+.portal-dashboard-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
 }
 
 .portal-metrics {
@@ -239,11 +257,20 @@
   margin: 0 0 1rem;
 }
 
-.portal-tabs {
+.portal-dashboard-nav {
+  align-items: flex-start;
   border-bottom: 2px solid var(--grey-color);
   display: flex;
+  justify-content: space-between;
   gap: 0.5rem;
   margin-bottom: 1.25rem;
+}
+
+.portal-tabs {
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .portal-tab {
@@ -259,6 +286,12 @@
 
 .portal-tab[aria-selected="true"] {
   border-bottom-color: var(--black-color);
+}
+
+.portal-nav-action {
+  flex: 0 0 auto;
+  margin-left: 1rem;
+  text-decoration: none;
 }
 
 .portal-panel {
@@ -549,6 +582,101 @@
   margin-top: 0;
 }
 
+.portal-message-dashboard {
+  width: min(1040px, 100%);
+}
+
+.portal-message-layout {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.portal-message-summary {
+  background: var(--blue-color);
+  border-radius: 8px;
+  color: var(--black-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.portal-message-summary strong {
+  display: block;
+}
+
+.portal-message-editor-toolbar {
+  border: 1px solid #bbb;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.5rem;
+}
+
+.portal-message-toolbar-btn {
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  color: var(--black-color);
+  cursor: pointer;
+  font-weight: 700;
+  min-width: 2.5rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.portal-message-editor {
+  border: 1px solid #bbb;
+  border-radius: 0 0 8px 8px;
+  min-height: 220px;
+  overflow-wrap: anywhere;
+  padding: 0.85rem;
+}
+
+.portal-message-editor:empty::before {
+  color: #777;
+  content: attr(data-placeholder);
+}
+
+.portal-message-preview {
+  border: 1px solid #d7d7d7;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.portal-message-preview-frame {
+  border-top: 1px solid #d7d7d7;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.portal-message-confirm-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+}
+
+.portal-message-confirm-list div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.portal-message-confirm-list dt {
+  color: var(--black-color);
+  font-weight: 700;
+}
+
+.portal-message-confirm-list dd {
+  margin: 0;
+}
+
+.portal-warning-text {
+  color: #7b1111;
+  font-weight: 700;
+}
+
 @media (max-width: 768px) {
   .portal-login-header {
     min-height: 0;
@@ -563,6 +691,10 @@
   .portal-card,
   .portal-dashboard {
     padding: 1.25rem;
+  }
+
+  .portal-dashboard-header {
+    flex-direction: column;
   }
 
   .portal-metrics {
@@ -581,8 +713,14 @@
     grid-template-columns: 1fr;
   }
 
-  .portal-tabs {
-    overflow-x: auto;
+  .portal-dashboard-nav {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .portal-nav-action {
+    margin-left: 0;
+    text-align: center;
   }
 
   .portal-search-row {

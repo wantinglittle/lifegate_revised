@@ -43,6 +43,7 @@ const adminMetric = document.getElementById("portal-admin-metric");
 const statusMessage = document.getElementById("portal-status");
 const logoutButton = document.getElementById("portal-logout");
 const adminTab = document.getElementById("portal-tab-admin");
+const sendMessageLink = document.getElementById("portal-send-message-link");
 const myTab = document.getElementById("portal-tab-my");
 const myPanel = document.getElementById("portal-panel-my");
 const adminPanel = document.getElementById("portal-panel-admin");
@@ -588,6 +589,7 @@ function showAdminDashboard(groups) {
   adminCount.textContent = String(adminGroups.length);
   adminMetric.hidden = false;
   adminTab.hidden = false;
+  sendMessageLink.hidden = false;
   adminPanel.hidden = false;
   renderAdminCommunities();
 }
@@ -596,6 +598,7 @@ function showContactPortal() {
   portalRole.textContent = "Community Host";
   adminMetric.hidden = true;
   adminTab.hidden = true;
+  sendMessageLink.hidden = true;
   adminPanel.hidden = true;
 }
 
@@ -603,6 +606,7 @@ function showAdminLoadFailure() {
   portalRole.textContent = "Community Host";
   adminMetric.hidden = true;
   adminTab.hidden = false;
+  sendMessageLink.hidden = true;
   adminPanel.hidden = true;
   renderEmptyState(adminList, "Community data could not be loaded. Please refresh and try again.");
 }
