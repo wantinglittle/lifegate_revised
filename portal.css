@@ -273,6 +273,13 @@
   justify-content: space-between;
 }
 
+.portal-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
 .portal-admin-tools {
   display: grid;
   gap: 1rem;
@@ -576,6 +583,12 @@
   }
 
   .portal-search-row {
+    flex-direction: column;
+  }
+
+  .portal-section-heading,
+  .portal-section-actions {
+    align-items: stretch;
     flex-direction: column;
   }
 
