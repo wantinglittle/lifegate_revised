@@ -36,7 +36,7 @@ const SEARCH_FIELDS = [
   "contact_phone"
 ];
 
-const userEmail = document.getElementById("portal-user-email");
+const userName = document.getElementById("portal-user-name");
 const portalRole = document.getElementById("portal-role");
 const ownedCount = document.getElementById("portal-owned-count");
 const adminCount = document.getElementById("portal-admin-count");
@@ -100,6 +100,11 @@ function profileDisplayValue(value) {
   return text || "Not set";
 }
 
+function profileGreetingName(profile) {
+  const firstName = String(profile?.first_name || "").trim();
+  return firstName || "dashboard user";
+}
+
 function setProfileFieldError(input, message) {
   const errorElement = document.getElementById(`${input.id.replace("-input", "")}-error`);
   input.setAttribute("aria-invalid", message ? "true" : "false");
@@ -147,7 +152,7 @@ function renderProfile(profile, fallbackEmail = "") {
   profileFirstName.textContent = profileDisplayValue(currentProfile.first_name);
   profileLastName.textContent = profileDisplayValue(currentProfile.last_name);
   profileEmail.textContent = profileDisplayValue(currentConfirmedEmail);
-  userEmail.textContent = currentConfirmedEmail || "Signed-in dashboard user";
+  userName.textContent = profileGreetingName(currentProfile);
 }
 
 async function refreshProfileFromServer(fallbackEmail = currentConfirmedEmail) {
@@ -160,7 +165,7 @@ function showProfileEditor() {
   profileModalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : profileEditButton;
   profileFirstInput.value = currentProfile?.first_name || "";
   profileLastInput.value = currentProfile?.last_name || "";
-  profileEmailInput.value = currentConfirmedEmail || currentProfile?.email || userEmail.textContent || "";
+  profileEmailInput.value = currentConfirmedEmail || currentProfile?.email || "";
   [profileFirstInput, profileLastInput, profileEmailInput].forEach((input) => {
     setProfileFieldError(input, "");
   });
@@ -234,7 +239,7 @@ async function saveProfile(event) {
     return;
   }
 
-  const currentEmail = normalizeEmail(currentConfirmedEmail || currentProfile?.email || userEmail.textContent);
+  const currentEmail = normalizeEmail(currentConfirmedEmail || currentProfile?.email);
   const changes = {};
   if (firstName !== (currentProfile?.first_name || "")) {
     changes.first_name = firstName;
@@ -617,7 +622,7 @@ async function loadPortal() {
   }
 
   currentConfirmedEmail = normalizeEmail(session.user?.email || "");
-  userEmail.textContent = currentConfirmedEmail || "Signed-in dashboard user";
+  userName.textContent = "dashboard user";
   setStatus("Loading communities...", "info");
 
   const [profileResult, myCommunities, adminResult] = await Promise.allSettled([

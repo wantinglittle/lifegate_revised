@@ -12,6 +12,7 @@ const form = document.getElementById("portal-login-form");
 const emailInput = document.getElementById("portal-email");
 const submitButton = document.getElementById("portal-login-submit");
 const statusMessage = document.getElementById("portal-login-status");
+const MAGIC_LINK_SENT_MESSAGE = "If an account exists for this email address, a sign-in link has been sent. Please check your inbox and spam folder.";
 
 function setStatus(message, tone = "info") {
   statusMessage.textContent = message;
@@ -21,6 +22,20 @@ function setStatus(message, tone = "info") {
 function setLoading(isLoading) {
   submitButton.disabled = isLoading;
   submitButton.textContent = isLoading ? "Sending Link..." : "Send Sign-In Link";
+}
+
+function isAccountPrivacySafeAuthError(error) {
+  const code = String(error?.code || "").toLowerCase();
+  const message = String(error?.message || "").toLowerCase();
+
+  // Supabase returns these when shouldCreateUser is false and the email is not provisioned.
+  return (
+    code === "user_not_found" ||
+    code === "signup_disabled" ||
+    message.includes("user not found") ||
+    message.includes("account not found") ||
+    message.includes("signups not allowed")
+  );
 }
 
 async function redirectIfSignedIn() {
@@ -37,11 +52,13 @@ async function redirectIfSignedIn() {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
+  if (submitButton.disabled) return;
+
   const email = normalizeEmail(emailInput.value);
   emailInput.value = email;
 
   if (!looksLikeEmail(email)) {
-    setStatus("Enter a valid email address.", "error");
+    setStatus("Please enter a valid email address.", "error");
     emailInput.focus();
     return;
   }
@@ -55,9 +72,15 @@ form.addEventListener("submit", async (event) => {
       throw error;
     }
 
-    setStatus("If this email has portal access, a secure sign-in link has been sent.", "success");
+    setStatus(MAGIC_LINK_SENT_MESSAGE, "success");
     form.reset();
   } catch (error) {
+    if (isAccountPrivacySafeAuthError(error)) {
+      setStatus(MAGIC_LINK_SENT_MESSAGE, "success");
+      form.reset();
+      return;
+    }
+
     console.error("Portal magic link request failed:", error);
     setStatus("We could not send a sign-in link right now. Please try again later.", "error");
   } finally {
