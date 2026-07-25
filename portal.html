@@ -69,9 +69,15 @@
           </div>
         </section>
 
-        <div class="portal-tabs" role="tablist" aria-label="Dashboard sections">
-          <button id="portal-tab-admin" class="portal-tab" type="button" role="tab" aria-selected="false" aria-controls="portal-panel-admin" hidden>Admin</button>
-          <button id="portal-tab-my" class="portal-tab" type="button" role="tab" aria-selected="true" aria-controls="portal-panel-my">My Communities</button>
+        <div class="portal-dashboard-nav">
+          <div class="portal-tabs" role="tablist" aria-label="Dashboard sections">
+            <button id="portal-tab-admin" class="portal-tab" type="button" role="tab" aria-selected="false" aria-controls="portal-panel-admin" hidden>Admin</button>
+            <button id="portal-tab-my" class="portal-tab" type="button" role="tab" aria-selected="true" aria-controls="portal-panel-my">My Communities</button>
+          </div>
+          <div class="portal-nav-actions">
+            <a id="portal-send-message-link" class="portal-secondary-btn portal-nav-action" href="/send-message" hidden>Send Message</a>
+            <button id="portal-download-list" type="button" class="portal-secondary-btn portal-nav-action" hidden>Download List</button>
+          </div>
         </div>
 
         <section id="portal-panel-my" class="portal-panel" role="tabpanel" aria-labelledby="portal-tab-my">
@@ -79,16 +85,7 @@
           <div id="portal-my-list" class="portal-community-grid" aria-live="polite"></div>
         </section>
 
-        <section id="portal-panel-admin" class="portal-panel" role="tabpanel" aria-labelledby="portal-tab-admin" hidden>
-          <div class="portal-section-heading">
-            <div>
-              <h3>All Communities</h3>
-            </div>
-            <div class="portal-section-actions">
-              <button id="portal-download-list" type="button" class="portal-secondary-btn" hidden>Download List</button>
-            </div>
-          </div>
-
+        <section id="portal-panel-admin" class="portal-panel portal-admin-panel" role="tabpanel" aria-labelledby="portal-tab-admin" hidden>
           <div class="portal-admin-tools" aria-label="Community search and filters">
             <div class="portal-search">
               <div class="portal-search-row">
