@@ -36,7 +36,7 @@ const SEARCH_FIELDS = [
   "contact_phone"
 ];
 
-const userName = document.getElementById("portal-user-name");
+const userEmail = document.getElementById("portal-user-email");
 const portalRole = document.getElementById("portal-role");
 const ownedCount = document.getElementById("portal-owned-count");
 const adminCount = document.getElementById("portal-admin-count");
@@ -103,11 +103,6 @@ function profileDisplayValue(value) {
   return text || "Not set";
 }
 
-function profileGreetingName(profile) {
-  const firstName = String(profile?.first_name || "").trim();
-  return firstName || "dashboard user";
-}
-
 function setProfileFieldError(input, message) {
   const errorElement = document.getElementById(`${input.id.replace("-input", "")}-error`);
   input.setAttribute("aria-invalid", message ? "true" : "false");
@@ -155,7 +150,7 @@ function renderProfile(profile, fallbackEmail = "") {
   profileFirstName.textContent = profileDisplayValue(currentProfile.first_name);
   profileLastName.textContent = profileDisplayValue(currentProfile.last_name);
   profileEmail.textContent = profileDisplayValue(currentConfirmedEmail);
-  userName.textContent = profileGreetingName(currentProfile);
+  userEmail.textContent = currentConfirmedEmail || "Signed-in dashboard user";
 }
 
 async function refreshProfileFromServer(fallbackEmail = currentConfirmedEmail) {
@@ -168,7 +163,7 @@ function showProfileEditor() {
   profileModalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : profileEditButton;
   profileFirstInput.value = currentProfile?.first_name || "";
   profileLastInput.value = currentProfile?.last_name || "";
-  profileEmailInput.value = currentConfirmedEmail || currentProfile?.email || "";
+  profileEmailInput.value = currentConfirmedEmail || currentProfile?.email || userEmail.textContent || "";
   [profileFirstInput, profileLastInput, profileEmailInput].forEach((input) => {
     setProfileFieldError(input, "");
   });
@@ -242,7 +237,7 @@ async function saveProfile(event) {
     return;
   }
 
-  const currentEmail = normalizeEmail(currentConfirmedEmail || currentProfile?.email);
+  const currentEmail = normalizeEmail(currentConfirmedEmail || currentProfile?.email || userEmail.textContent);
   const changes = {};
   if (firstName !== (currentProfile?.first_name || "")) {
     changes.first_name = firstName;
@@ -661,8 +656,8 @@ function showAdminDashboard(groups) {
   adminMetric.hidden = false;
   adminTab.hidden = false;
   sendMessageLink.hidden = false;
-  adminPanel.hidden = false;
   downloadListButton.hidden = false;
+  adminPanel.hidden = false;
   renderAdminCommunities();
 }
 
@@ -671,8 +666,8 @@ function showContactPortal() {
   adminMetric.hidden = true;
   adminTab.hidden = true;
   sendMessageLink.hidden = true;
-  adminPanel.hidden = true;
   downloadListButton.hidden = true;
+  adminPanel.hidden = true;
 }
 
 function showAdminLoadFailure() {
@@ -680,8 +675,8 @@ function showAdminLoadFailure() {
   adminMetric.hidden = true;
   adminTab.hidden = false;
   sendMessageLink.hidden = true;
-  adminPanel.hidden = true;
   downloadListButton.hidden = true;
+  adminPanel.hidden = true;
   renderEmptyState(adminList, "Community data could not be loaded. Please refresh and try again.");
 }
 
@@ -695,7 +690,7 @@ async function loadPortal() {
   }
 
   currentConfirmedEmail = normalizeEmail(session.user?.email || "");
-  userName.textContent = "dashboard user";
+  userEmail.textContent = currentConfirmedEmail || "Signed-in dashboard user";
   setStatus("Loading communities...", "info");
 
   const [profileResult, myCommunities, adminResult] = await Promise.allSettled([
