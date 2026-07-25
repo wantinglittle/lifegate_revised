@@ -52,6 +52,7 @@ const adminList = document.getElementById("portal-admin-list");
 const adminSearch = document.getElementById("portal-admin-search");
 const clearSearchButton = document.getElementById("portal-clear-search");
 const filterButtons = Array.from(document.querySelectorAll(".portal-filter-btn"));
+const downloadListButton = document.getElementById("portal-download-list");
 const profileView = document.getElementById("portal-profile-view");
 const profileModal = document.getElementById("portal-profile-modal");
 const profileModalPanel = profileModal.querySelector(".portal-modal-panel");
@@ -72,6 +73,7 @@ let adminGroups = [];
 let currentAdminFilter = "all";
 let currentProfile = null;
 let currentConfirmedEmail = "";
+let isDownloadingList = false;
 let isProfileSaving = false;
 let profileModalReturnFocus = null;
 
@@ -356,6 +358,8 @@ function setupTabs() {
 }
 
 function setupAdminControls() {
+  downloadListButton.addEventListener("click", downloadContactList);
+
   adminSearch.addEventListener("input", () => {
     clearSearchButton.hidden = adminSearch.value.trim().length === 0;
     renderAdminCommunities();
@@ -431,6 +435,59 @@ function fieldValue(value) {
   }
 
   return String(value);
+}
+
+function csvField(value) {
+  const text = value === null || value === undefined ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function groupContactRow(group) {
+  return [
+    group.title,
+    group.contact_name,
+    group.contact_email,
+    group.contact_phone
+  ].map(csvField).join(",");
+}
+
+function contactListCsv(groups) {
+  const header = [
+    "Group Title",
+    "Contact Name",
+    "Contact Email",
+    "Contact Phone"
+  ].map(csvField).join(",");
+  const rows = groups
+    .slice()
+    .sort((left, right) => fieldValue(left.title).localeCompare(fieldValue(right.title), undefined, {
+      sensitivity: "base"
+    }))
+    .map(groupContactRow);
+
+  return `\uFEFF${[header, ...rows].join("\r\n")}`;
+}
+
+function downloadFilename() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `lifegate-community-groups-${year}-${month}-${day}.csv`;
+}
+
+function saveCsv(csv) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = downloadFilename();
+  link.style.display = "none";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function sortedGroups(groups) {
@@ -583,6 +640,31 @@ function renderAdminCommunities() {
   });
 }
 
+async function downloadContactList() {
+  if (isDownloadingList) return;
+
+  isDownloadingList = true;
+  downloadListButton.disabled = true;
+  downloadListButton.textContent = "Preparing...";
+  setStatus("Preparing contact list...", "info");
+
+  try {
+    const groups = await getAdminGroups();
+    adminGroups = groups;
+    adminCount.textContent = String(adminGroups.length);
+    renderAdminCommunities();
+    saveCsv(contactListCsv(groups));
+    setStatus("Contact list downloaded.", "success");
+  } catch (error) {
+    console.error("Contact list download failed:", error);
+    setStatus("We could not prepare the contact list. Please refresh and try again.", "error");
+  } finally {
+    isDownloadingList = false;
+    downloadListButton.disabled = false;
+    downloadListButton.textContent = "Download List";
+  }
+}
+
 function showAdminDashboard(groups) {
   adminGroups = Array.isArray(groups) ? groups : [];
   portalRole.textContent = "Administrator";
@@ -590,6 +672,7 @@ function showAdminDashboard(groups) {
   adminMetric.hidden = false;
   adminTab.hidden = false;
   sendMessageLink.hidden = false;
+  downloadListButton.hidden = false;
   adminPanel.hidden = false;
   renderAdminCommunities();
 }
@@ -599,6 +682,7 @@ function showContactPortal() {
   adminMetric.hidden = true;
   adminTab.hidden = true;
   sendMessageLink.hidden = true;
+  downloadListButton.hidden = true;
   adminPanel.hidden = true;
 }
 
@@ -607,6 +691,7 @@ function showAdminLoadFailure() {
   adminMetric.hidden = true;
   adminTab.hidden = false;
   sendMessageLink.hidden = true;
+  downloadListButton.hidden = true;
   adminPanel.hidden = true;
   renderEmptyState(adminList, "Community data could not be loaded. Please refresh and try again.");
 }
