@@ -24,13 +24,6 @@
 
     <main class="portal-main">
       <section class="portal-dashboard" aria-label="Dashboard">
-        <div class="portal-dashboard-header">
-          <div>
-            <p class="portal-muted">Welcome, <strong id="portal-user-name">Loading...</strong></p>
-          </div>
-          <p id="portal-status" class="portal-status" aria-live="polite">Loading portal...</p>
-        </div>
-
         <div class="portal-metrics" aria-label="Community portal summary">
           <div class="portal-metric">
             <span class="portal-metric-label">Role:</span>
@@ -46,10 +39,11 @@
           </div>
         </div>
 
-        <section class="portal-profile-card" aria-labelledby="portal-profile-title">
+        <p id="portal-status" class="portal-status" aria-live="polite" hidden></p>
+
+        <section class="portal-profile-card" aria-label="My profile">
           <div class="portal-profile-view" id="portal-profile-view">
             <div>
-              <h3 id="portal-profile-title">My Profile</h3>
               <dl class="portal-profile-details">
                 <div>
                   <dt>First Name</dt>
@@ -79,13 +73,7 @@
           <div id="portal-my-list" class="portal-community-grid" aria-live="polite"></div>
         </section>
 
-        <section id="portal-panel-admin" class="portal-panel" role="tabpanel" aria-labelledby="portal-tab-admin" hidden>
-          <div class="portal-section-heading">
-            <div>
-              <h3>All Communities</h3>
-            </div>
-          </div>
-
+        <section id="portal-panel-admin" class="portal-panel portal-admin-panel" role="tabpanel" aria-labelledby="portal-tab-admin" hidden>
           <div class="portal-admin-tools" aria-label="Community search and filters">
             <div class="portal-search">
               <div class="portal-search-row">

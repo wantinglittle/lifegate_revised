@@ -36,7 +36,6 @@ const SEARCH_FIELDS = [
   "contact_phone"
 ];
 
-const userName = document.getElementById("portal-user-name");
 const portalRole = document.getElementById("portal-role");
 const ownedCount = document.getElementById("portal-owned-count");
 const adminCount = document.getElementById("portal-admin-count");
@@ -78,11 +77,13 @@ let profileModalReturnFocus = null;
 function setStatus(message, tone = "info") {
   statusMessage.textContent = message;
   statusMessage.dataset.tone = tone;
+  statusMessage.hidden = !message;
 }
 
 function clearStatus() {
   statusMessage.textContent = "";
   delete statusMessage.dataset.tone;
+  statusMessage.hidden = true;
 }
 
 function setProfileStatus(message, tone = "info") {
@@ -98,11 +99,6 @@ function clearProfileStatus() {
 function profileDisplayValue(value) {
   const text = String(value || "").trim();
   return text || "Not set";
-}
-
-function profileGreetingName(profile) {
-  const firstName = String(profile?.first_name || "").trim();
-  return firstName || "dashboard user";
 }
 
 function setProfileFieldError(input, message) {
@@ -152,7 +148,6 @@ function renderProfile(profile, fallbackEmail = "") {
   profileFirstName.textContent = profileDisplayValue(currentProfile.first_name);
   profileLastName.textContent = profileDisplayValue(currentProfile.last_name);
   profileEmail.textContent = profileDisplayValue(currentConfirmedEmail);
-  userName.textContent = profileGreetingName(currentProfile);
 }
 
 async function refreshProfileFromServer(fallbackEmail = currentConfirmedEmail) {
@@ -622,7 +617,6 @@ async function loadPortal() {
   }
 
   currentConfirmedEmail = normalizeEmail(session.user?.email || "");
-  userName.textContent = "dashboard user";
   setStatus("Loading communities...", "info");
 
   const [profileResult, myCommunities, adminResult] = await Promise.allSettled([
