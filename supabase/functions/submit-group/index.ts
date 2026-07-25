@@ -1,8 +1,13 @@
-const ALLOWED_PRODUCTION_ORIGINS = new Set([
+const ALLOWED_PRODUCTION_ORIGIN_SPECS = [
   "https://lifegatecommunity.com",
   "https://www.lifegatecommunity.com",
-  "https://wantinglittle.github.io"
-]);
+  "https://wantinglittle.github.io",
+  "https://wantinglittle.github.io/lifegate_revised"
+];
+
+const ALLOWED_PRODUCTION_ORIGINS = new Set(
+  ALLOWED_PRODUCTION_ORIGIN_SPECS.map((originSpec) => new URL(originSpec).origin)
+);
 
 const VALID_DAYS = new Set(["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]);
 const VALID_HOURS = new Set(["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]);

@@ -16,7 +16,6 @@
       </div>
       <div class="header-content">
         <h1>LifeGate Community Dashboard</h1>
-        <p>Community Host tools</p>
       </div>
       <div class="header-actions">
         <button id="portal-logout" type="button" class="add-group-btn">Logout</button>
@@ -24,26 +23,25 @@
     </header>
 
     <main class="portal-main">
-      <section class="portal-dashboard" aria-labelledby="portal-dashboard-title">
+      <section class="portal-dashboard" aria-label="Dashboard">
         <div class="portal-dashboard-header">
           <div>
-            <h2 id="portal-dashboard-title">Community Dashboard</h2>
-            <p class="portal-muted">Welcome, <strong id="portal-user-email">Loading...</strong></p>
+            <p class="portal-muted">Welcome, <strong id="portal-user-name">Loading...</strong></p>
           </div>
           <p id="portal-status" class="portal-status" aria-live="polite">Loading portal...</p>
         </div>
 
         <div class="portal-metrics" aria-label="Community portal summary">
           <div class="portal-metric">
-            <span class="portal-metric-label">Role</span>
+            <span class="portal-metric-label">Role:</span>
             <strong id="portal-role">Checking...</strong>
           </div>
           <div class="portal-metric">
-            <span class="portal-metric-label">My Communities</span>
+            <span class="portal-metric-label">My Communities:</span>
             <strong id="portal-owned-count">0</strong>
           </div>
           <div class="portal-metric" id="portal-admin-metric" hidden>
-            <span class="portal-metric-label">All Communities</span>
+            <span class="portal-metric-label">All Communities:</span>
             <strong id="portal-admin-count">0</strong>
           </div>
         </div>
@@ -71,9 +69,15 @@
           </div>
         </section>
 
-        <div class="portal-tabs" role="tablist" aria-label="Dashboard sections">
-          <button id="portal-tab-admin" class="portal-tab" type="button" role="tab" aria-selected="false" aria-controls="portal-panel-admin" hidden>Admin</button>
-          <button id="portal-tab-my" class="portal-tab" type="button" role="tab" aria-selected="true" aria-controls="portal-panel-my">My Communities</button>
+        <div class="portal-dashboard-nav">
+          <div class="portal-tabs" role="tablist" aria-label="Dashboard sections">
+            <button id="portal-tab-admin" class="portal-tab" type="button" role="tab" aria-selected="false" aria-controls="portal-panel-admin" hidden>Admin</button>
+            <button id="portal-tab-my" class="portal-tab" type="button" role="tab" aria-selected="true" aria-controls="portal-panel-my">My Communities</button>
+          </div>
+          <div class="portal-nav-actions">
+            <a id="portal-send-message-link" class="portal-secondary-btn portal-nav-action" href="/send-message" hidden>Send Message</a>
+            <button id="portal-download-list" type="button" class="portal-secondary-btn portal-nav-action" hidden>Download List</button>
+          </div>
         </div>
 
         <section id="portal-panel-my" class="portal-panel" role="tabpanel" aria-labelledby="portal-tab-my">
@@ -81,19 +85,11 @@
           <div id="portal-my-list" class="portal-community-grid" aria-live="polite"></div>
         </section>
 
-        <section id="portal-panel-admin" class="portal-panel" role="tabpanel" aria-labelledby="portal-tab-admin" hidden>
-          <div class="portal-section-heading">
-            <div>
-              <h3>All Communities</h3>
-              <p class="portal-muted">Review submitted and active communities.</p>
-            </div>
-          </div>
-
+        <section id="portal-panel-admin" class="portal-panel portal-admin-panel" role="tabpanel" aria-labelledby="portal-tab-admin" hidden>
           <div class="portal-admin-tools" aria-label="Community search and filters">
             <div class="portal-search">
-              <label for="portal-admin-search">Search communities</label>
               <div class="portal-search-row">
-                <input id="portal-admin-search" type="search" autocomplete="off" />
+                <input id="portal-admin-search" type="search" autocomplete="off" aria-label="Search" placeholder="🔍 Search" />
                 <button id="portal-clear-search" type="button" class="portal-filter-clear" hidden>Clear</button>
               </div>
             </div>

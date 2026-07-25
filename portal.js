@@ -36,7 +36,7 @@ const SEARCH_FIELDS = [
   "contact_phone"
 ];
 
-const userEmail = document.getElementById("portal-user-email");
+const userName = document.getElementById("portal-user-name");
 const portalRole = document.getElementById("portal-role");
 const ownedCount = document.getElementById("portal-owned-count");
 const adminCount = document.getElementById("portal-admin-count");
@@ -44,6 +44,7 @@ const adminMetric = document.getElementById("portal-admin-metric");
 const statusMessage = document.getElementById("portal-status");
 const logoutButton = document.getElementById("portal-logout");
 const adminTab = document.getElementById("portal-tab-admin");
+const sendMessageLink = document.getElementById("portal-send-message-link");
 const myTab = document.getElementById("portal-tab-my");
 const myPanel = document.getElementById("portal-panel-my");
 const adminPanel = document.getElementById("portal-panel-admin");
@@ -52,6 +53,7 @@ const adminList = document.getElementById("portal-admin-list");
 const adminSearch = document.getElementById("portal-admin-search");
 const clearSearchButton = document.getElementById("portal-clear-search");
 const filterButtons = Array.from(document.querySelectorAll(".portal-filter-btn"));
+const downloadListButton = document.getElementById("portal-download-list");
 const profileView = document.getElementById("portal-profile-view");
 const profileModal = document.getElementById("portal-profile-modal");
 const profileModalPanel = profileModal.querySelector(".portal-modal-panel");
@@ -72,6 +74,7 @@ let adminGroups = [];
 let currentAdminFilter = "all";
 let currentProfile = null;
 let currentConfirmedEmail = "";
+let isDownloadingList = false;
 let isProfileSaving = false;
 let profileModalReturnFocus = null;
 
@@ -98,6 +101,11 @@ function clearProfileStatus() {
 function profileDisplayValue(value) {
   const text = String(value || "").trim();
   return text || "Not set";
+}
+
+function profileGreetingName(profile) {
+  const firstName = String(profile?.first_name || "").trim();
+  return firstName || "dashboard user";
 }
 
 function setProfileFieldError(input, message) {
@@ -147,7 +155,7 @@ function renderProfile(profile, fallbackEmail = "") {
   profileFirstName.textContent = profileDisplayValue(currentProfile.first_name);
   profileLastName.textContent = profileDisplayValue(currentProfile.last_name);
   profileEmail.textContent = profileDisplayValue(currentConfirmedEmail);
-  userEmail.textContent = currentConfirmedEmail || "Signed-in dashboard user";
+  userName.textContent = profileGreetingName(currentProfile);
 }
 
 async function refreshProfileFromServer(fallbackEmail = currentConfirmedEmail) {
@@ -160,7 +168,7 @@ function showProfileEditor() {
   profileModalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : profileEditButton;
   profileFirstInput.value = currentProfile?.first_name || "";
   profileLastInput.value = currentProfile?.last_name || "";
-  profileEmailInput.value = currentConfirmedEmail || currentProfile?.email || userEmail.textContent || "";
+  profileEmailInput.value = currentConfirmedEmail || currentProfile?.email || "";
   [profileFirstInput, profileLastInput, profileEmailInput].forEach((input) => {
     setProfileFieldError(input, "");
   });
@@ -234,7 +242,7 @@ async function saveProfile(event) {
     return;
   }
 
-  const currentEmail = normalizeEmail(currentConfirmedEmail || currentProfile?.email || userEmail.textContent);
+  const currentEmail = normalizeEmail(currentConfirmedEmail || currentProfile?.email);
   const changes = {};
   if (firstName !== (currentProfile?.first_name || "")) {
     changes.first_name = firstName;
@@ -355,6 +363,8 @@ function setupTabs() {
 }
 
 function setupAdminControls() {
+  downloadListButton.addEventListener("click", downloadContactList);
+
   adminSearch.addEventListener("input", () => {
     clearSearchButton.hidden = adminSearch.value.trim().length === 0;
     renderAdminCommunities();
@@ -430,6 +440,59 @@ function fieldValue(value) {
   }
 
   return String(value);
+}
+
+function csvField(value) {
+  const text = value === null || value === undefined ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function groupContactRow(group) {
+  return [
+    group.title,
+    group.contact_name,
+    group.contact_email,
+    group.contact_phone
+  ].map(csvField).join(",");
+}
+
+function contactListCsv(groups) {
+  const header = [
+    "Group Title",
+    "Contact Name",
+    "Contact Email",
+    "Contact Phone"
+  ].map(csvField).join(",");
+  const rows = groups
+    .slice()
+    .sort((left, right) => fieldValue(left.title).localeCompare(fieldValue(right.title), undefined, {
+      sensitivity: "base"
+    }))
+    .map(groupContactRow);
+
+  return `\uFEFF${[header, ...rows].join("\r\n")}`;
+}
+
+function downloadFilename() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `lifegate-community-groups-${year}-${month}-${day}.csv`;
+}
+
+function saveCsv(csv) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = downloadFilename();
+  link.style.display = "none";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function sortedGroups(groups) {
@@ -566,13 +629,40 @@ function renderAdminCommunities() {
   });
 }
 
+async function downloadContactList() {
+  if (isDownloadingList) return;
+
+  isDownloadingList = true;
+  downloadListButton.disabled = true;
+  downloadListButton.textContent = "Preparing...";
+  setStatus("Preparing contact list...", "info");
+
+  try {
+    const groups = await getAdminGroups();
+    adminGroups = groups;
+    adminCount.textContent = String(adminGroups.length);
+    renderAdminCommunities();
+    saveCsv(contactListCsv(groups));
+    setStatus("Contact list downloaded.", "success");
+  } catch (error) {
+    console.error("Contact list download failed:", error);
+    setStatus("We could not prepare the contact list. Please refresh and try again.", "error");
+  } finally {
+    isDownloadingList = false;
+    downloadListButton.disabled = false;
+    downloadListButton.textContent = "Download List";
+  }
+}
+
 function showAdminDashboard(groups) {
   adminGroups = Array.isArray(groups) ? groups : [];
   portalRole.textContent = "Administrator";
   adminCount.textContent = String(adminGroups.length);
   adminMetric.hidden = false;
   adminTab.hidden = false;
+  sendMessageLink.hidden = false;
   adminPanel.hidden = false;
+  downloadListButton.hidden = false;
   renderAdminCommunities();
 }
 
@@ -580,14 +670,18 @@ function showContactPortal() {
   portalRole.textContent = "Community Host";
   adminMetric.hidden = true;
   adminTab.hidden = true;
+  sendMessageLink.hidden = true;
   adminPanel.hidden = true;
+  downloadListButton.hidden = true;
 }
 
 function showAdminLoadFailure() {
   portalRole.textContent = "Community Host";
   adminMetric.hidden = true;
   adminTab.hidden = false;
+  sendMessageLink.hidden = true;
   adminPanel.hidden = true;
+  downloadListButton.hidden = true;
   renderEmptyState(adminList, "Community data could not be loaded. Please refresh and try again.");
 }
 
@@ -601,7 +695,7 @@ async function loadPortal() {
   }
 
   currentConfirmedEmail = normalizeEmail(session.user?.email || "");
-  userEmail.textContent = currentConfirmedEmail || "Signed-in dashboard user";
+  userName.textContent = "dashboard user";
   setStatus("Loading communities...", "info");
 
   const [profileResult, myCommunities, adminResult] = await Promise.allSettled([
