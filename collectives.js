@@ -9,6 +9,7 @@ const initialZoom = 9;
 let map;
 let markers = new Map();
 let activeCard = null;
+let selectedCollective = null;
 
 function rpcUrl(name) {
   return `${SUPABASE_URL.replace(/\/+$/, "")}/rest/v1/rpc/${name}`;
@@ -66,9 +67,50 @@ function showExperience() {
   document.getElementById("collectives-experience").hidden = false;
 }
 
+function isMobileCollectivesLayout() {
+  return window.matchMedia("(max-width: 860px)").matches;
+}
+
+function refreshMapView() {
+  if (!map) return;
+  const center = selectedCollective
+    ? { lat: selectedCollective.latitude, lng: selectedCollective.longitude }
+    : initialCenter;
+
+  requestAnimationFrame(() => {
+    window.google?.maps?.event?.trigger(map, "resize");
+    map.setCenter(center);
+    if (selectedCollective) map.setZoom(14);
+  });
+}
+
+function setMobileView(view) {
+  const experience = document.getElementById("collectives-experience");
+  if (!experience) return;
+  experience.dataset.mobileView = view;
+
+  document.querySelectorAll(".collectives-view-tab").forEach((tab) => {
+    const isSelected = tab.dataset.view === view;
+    tab.classList.toggle("is-active", isSelected);
+    tab.setAttribute("aria-selected", String(isSelected));
+  });
+
+  if (view === "map") refreshMapView();
+}
+
+function setupMobileViewSwitch() {
+  document.querySelectorAll(".collectives-view-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      setMobileView(tab.dataset.view || "list");
+    });
+  });
+  setMobileView("list");
+}
+
 function selectCollective(collective, card) {
   if (activeCard) activeCard.classList.remove("is-selected");
   activeCard = card;
+  selectedCollective = collective;
   if (activeCard) activeCard.classList.add("is-selected");
 
   const marker = markers.get(collective.id);
@@ -78,9 +120,9 @@ function selectCollective(collective, card) {
     marker.element?.classList.add("is-active");
   }
 
-  const mapElement = document.getElementById("collectives-map");
-  if (window.matchMedia("(max-width: 860px)").matches) {
-    mapElement.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (isMobileCollectivesLayout()) {
+    setMobileView("map");
+    document.getElementById("collectives-experience").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
@@ -96,11 +138,14 @@ function openContactModal(collective) {
 
 function renderList(collectives) {
   const list = document.getElementById("collectives-list");
-  document.getElementById("collectives-count").textContent = String(collectives.length);
+  document.getElementById("collectives-count").textContent = `${collectives.length} active host${collectives.length === 1 ? "" : "s"}`;
   list.innerHTML = "";
 
   if (collectives.length === 0) {
-    list.append(createElement("p", "collectives-empty", "No active Collectives are currently listed."));
+    list.append(
+      createElement("p", "collectives-empty", "No active Collectives are currently listed."),
+      createElement("p", "collectives-empty-note", "New host locations will appear here when available.")
+    );
     return;
   }
 
@@ -119,7 +164,6 @@ function renderList(collectives) {
     card.setAttribute("aria-label", `View ${fieldValue(collective.primary_host_last_name)} Collective on map`);
     card.append(
       createElement("h3", "", `${fieldValue(collective.primary_host_last_name)} Collective`),
-      detail("City", city),
       detail("Cross Streets", fieldValue(collective.cross_streets)),
       detail("Audience", audienceLabel(collective.audience)),
       detail("Childcare provided", childcareLabel(collective.childcare_provided))
@@ -244,6 +288,7 @@ function setupContactModal() {
 
 export async function initCollectivesPage(options = {}) {
   setupContactModal();
+  setupMobileViewSwitch();
 
   try {
     const stateRows = await callRpc(PUBLIC_STATE_RPC);

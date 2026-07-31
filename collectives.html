@@ -10,6 +10,14 @@
   <link href="collectives.css" rel="stylesheet" type="text/css" />
   <link rel="preconnect" href="https://maps.googleapis.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.emailjs.com">
+  <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    (function () {
+      emailjs.init("vXc5-Hh3C7fIob-j5");
+    })();
+  </script>
 </head>
 <body>
   <div class="wrapper collectives-wrapper">
@@ -19,9 +27,9 @@
       </div>
       <div class="header-content">
         <h1>LIFEGATE Collectives</h1>
-        <p>Find a 7-week gathering near you</p>
       </div>
       <div class="header-actions public-header-actions">
+        <a href="portal-login.html" class="add-group-btn" data-dashboard-link>Log In</a>
         <a href="host-collective.html" class="add-group-btn">Host a Collective</a>
       </div>
     </header>
@@ -33,22 +41,30 @@
         <a href="find-comm.html" class="collectives-primary-link">Explore Communities</a>
       </section>
 
-      <section id="collectives-experience" class="collectives-experience" hidden aria-label="Collectives map and listing">
-        <div class="collectives-list-panel">
+      <section id="collectives-experience" class="collectives-experience" hidden aria-label="Collectives map and listing" data-mobile-view="list">
+        <div class="collectives-mobile-switch" role="tablist" aria-label="Collectives views">
+          <button id="collectives-list-tab" class="collectives-view-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="collectives-list-panel" data-view="list">LIST</button>
+          <button id="collectives-map-tab" class="collectives-view-tab" type="button" role="tab" aria-selected="false" aria-controls="collectives-map-panel" data-view="map">MAP</button>
+        </div>
+        <div id="collectives-list-panel" class="collectives-list-panel">
           <div class="collectives-list-header">
             <div>
-              <p class="collectives-kicker">Seasonal Gatherings</p>
               <h2>Collectives</h2>
             </div>
-            <span id="collectives-count" class="collectives-count">0</span>
+            <span id="collectives-count" class="collectives-count">0 active hosts</span>
           </div>
           <div id="collectives-list" class="collectives-list" aria-live="polite"></div>
         </div>
-        <div class="collectives-map-panel">
+        <div id="collectives-map-panel" class="collectives-map-panel">
           <div id="collectives-map" class="collectives-map"></div>
         </div>
       </section>
     </main>
+
+    <button id="open-church-modal" class="collectives-message-bubble" type="button" aria-label="Message the church">
+      <span class="collectives-message-icon" aria-hidden="true"></span>
+      <span>Message church</span>
+    </button>
 
     <div id="collective-contact-modal" class="modal">
       <div class="modal-content">
@@ -76,6 +92,40 @@
           <button type="submit">Send Message</button>
           <p id="collective-contact-status" class="collectives-form-status" aria-live="polite"></p>
         </form>
+      </div>
+    </div>
+
+    <div id="contact-church" class="modal">
+      <div class="modal-content">
+        <span class="close-contact">&times;</span>
+        <h3>Contact the Church</h3>
+        <form id="contact-church-form">
+          <div class="form-group">
+            <label for="contact-church-name">Name:</label>
+            <input type="text" id="contact-church-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="contact-church-phone">Phone:</label>
+            <input type="text" id="contact-church-phone" name="phone" placeholder="(555) 123-4567" maxlength="14">
+          </div>
+          <div class="form-group">
+            <label for="contact-church-email">Email:</label>
+            <input type="email" id="contact-church-email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="contact-church-message">Message:</label>
+            <textarea id="contact-church-message" rows="4" name="message" required></textarea>
+          </div>
+          <button type="submit">Send Message</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="church-confirmation-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-church-confirmation">&times;</span>
+        <h3>Your message has been sent!</h3>
+        <p>You should hear back from the church soon. Please keep an eye on your junk folder as messages often end up there.</p>
       </div>
     </div>
 
@@ -114,5 +164,7 @@
         initCollectivesPage({ mapUnavailable: true });
       });
   </script>
+  <script type="module" src="public-dashboard-link.js"></script>
+  <script type="module" src="collectives-church-contact.js"></script>
 </body>
 </html>

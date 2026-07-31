@@ -523,21 +523,65 @@ main {
     transition: background-color 0.3s;
 }
 
-.msg-church {
-    padding: 0.6rem 1.2rem;
-    background: var(--blue-color);
-    margin-top: 10px;
-    width: 270px;
-    border: none;
-    border-radius: 6px;
+.message-church-bubble {
+    align-items: center;
+    background: var(--black-color);
+    border: 0;
+    border-radius: 999px;
+    bottom: 1.25rem;
+    box-shadow: 0 8px 24px rgba(25, 25, 25, 0.24);
+    color: var(--white-color);
     cursor: pointer;
+    display: flex;
     font-size: 0.9rem;
-    font-weight: 500;
-    transition: background-color 0.3s;
+    font-weight: 800;
+    gap: 0.55rem;
+    justify-content: center;
+    max-width: calc(100vw - 2rem);
+    padding: 0.75rem 0.95rem;
+    position: fixed;
+    right: 1.25rem;
+    transition: background-color 0.3s, transform 0.3s;
+    z-index: 950;
 }
 
-.msg-church:hover {
-    background: var(--hover-color)
+.message-church-bubble:hover,
+.message-church-bubble:focus-visible {
+    background: var(--hover-color);
+    transform: translateY(-1px);
+}
+
+.message-church-bubble:focus-visible {
+    outline: 3px solid rgba(25, 25, 25, 0.35);
+    outline-offset: 3px;
+}
+
+.message-church-icon {
+    border: 2px solid currentColor;
+    border-radius: 7px;
+    display: inline-block;
+    flex: 0 0 auto;
+    height: 0.9rem;
+    position: relative;
+    width: 1.1rem;
+}
+
+.message-church-icon::after {
+    background: var(--black-color);
+    border-bottom: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+    bottom: -0.28rem;
+    content: "";
+    height: 0.35rem;
+    position: absolute;
+    right: 0.15rem;
+    transform: rotate(35deg);
+    width: 0.35rem;
+}
+
+.message-church-bubble:hover .message-church-icon::after,
+.message-church-bubble:focus-visible .message-church-icon::after {
+    background: var(--hover-color);
 }
 
 .view-on-map-btn {

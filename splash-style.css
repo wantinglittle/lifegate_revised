@@ -233,7 +233,7 @@ body {
 .hero-tagline {
     font-size: clamp(1.25rem, 2vw, 2rem);
     color: var(--white-color);
-    margin-bottom: 48px;
+    margin-bottom: 14px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -250,41 +250,112 @@ body {
 }
 
 .collectives-promo {
-    align-items: center;
-    background: rgba(25, 25, 25, 0.88);
-    border: 1px solid rgba(231, 231, 231, 0.45);
-    border-radius: 8px;
-    color: var(--white-color);
-    display: flex;
-    gap: 1.5rem;
-    justify-content: space-between;
     margin: 2rem auto 0;
-    max-width: 760px;
-    padding: 1.25rem;
-    text-align: left;
+    max-width: 880px;
+    width: min(880px, calc(100% - 32px));
 }
 
 .collectives-promo[hidden] {
     display: none;
 }
 
-.collectives-promo-kicker {
-    color: var(--grey-color);
-    font-size: 0.8rem;
+.collectives-divider {
+    align-items: center;
+    color: rgba(25, 25, 25, 0.66);
+    display: flex;
+    gap: 0.9rem;
+    justify-content: center;
+    margin: 1.45rem auto 1.35rem;
+    width: 100%;
+}
+
+.collectives-divider span {
+    background: rgba(231, 231, 231, 0.7);
+    flex: 1;
+    height: 1px;
+}
+
+.collectives-divider strong {
+    color: rgba(25, 25, 25, 0.72);
+    font-size: 1.6rem;
     font-weight: 700;
-    margin: 0 0 0.25rem;
+    letter-spacing: 1px;
+    line-height: 1;
     text-transform: uppercase;
 }
 
-.collectives-promo h2 {
-    color: var(--white-color);
-    font-size: clamp(1.25rem, 2vw, 1.75rem);
+.collectives-promo-panel {
+    align-items: center;
+    background: #f8e8a6;
+    border: 1px solid rgba(25, 25, 25, 0.14);
+    border-radius: 22px;
+    box-shadow: 0 14px 34px rgba(25, 25, 25, 0.16);
+    color: #13233d;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: auto 1fr auto;
+    padding: 1.25rem 1.35rem;
+    text-align: left;
+}
+
+.collectives-promo-icon {
+    align-items: center;
+    background: rgba(19, 35, 61, 0.1);
+    border: 1px solid rgba(19, 35, 61, 0.16);
+    border-radius: 18px;
+    color: #13233d;
+    display: inline-flex;
+    font-size: 2.25rem;
+    height: 4.25rem;
+    justify-content: center;
+    width: 4.25rem;
+}
+
+.collectives-promo-copy h2 {
+    color: #13233d;
+    font-size: clamp(1.15rem, 1.7vw, 1.55rem);
+    font-weight: 800;
     letter-spacing: 0;
     margin: 0 0 0.25rem;
 }
 
-.collectives-promo p {
+.collectives-promo-copy p {
+    color: #22314d;
     margin: 0;
+}
+
+.collectives-promo-button {
+    background: #13233d;
+    color: #fff;
+    flex-shrink: 0;
+    padding: 14px 22px;
+    white-space: nowrap;
+}
+
+.collectives-promo-button:hover,
+.collectives-promo-button:focus-visible {
+    background: #20395f;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.collectives-supporting-line {
+    align-items: center;
+    color: #263246;
+    display: flex;
+    font-size: 0.98rem;
+    gap: 0.55rem;
+    justify-content: center;
+    line-height: 1.45;
+    margin: 0.85rem auto 0;
+    max-width: 760px;
+    text-align: center;
+    text-shadow: none;
+}
+
+.collectives-supporting-line i {
+    color: #13233d;
+    flex-shrink: 0;
 }
 
 @media (min-width: 640px) {
@@ -615,10 +686,20 @@ body {
         font-size: 1.125rem;
     }
 
-    .collectives-promo {
-        align-items: stretch;
-        flex-direction: column;
+    .collectives-promo-panel {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        padding: 1.25rem;
         text-align: center;
+    }
+
+    .collectives-promo-button {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .collectives-supporting-line {
+        align-items: flex-start;
     }
 
 }

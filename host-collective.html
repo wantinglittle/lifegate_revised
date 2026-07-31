@@ -10,22 +10,87 @@
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <style>
     .collective-host-card {
-      width: min(760px, 100%);
+      width: min(880px, calc(100% - 2rem));
+      padding: 1.4rem 1.5rem;
+    }
+
+    .collective-host-card h2 {
+      margin-bottom: 0.55rem;
     }
 
     .collective-privacy-note {
-      background: var(--blue-color);
+      background: #d5dde1;
       border-radius: 8px;
       color: var(--black-color);
-      font-weight: 700;
-      margin: 0 0 1rem;
-      padding: 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.35;
+      margin: 0 0 0.75rem;
+      padding: 0.65rem 0.85rem;
+    }
+
+    .collective-host-card .portal-edit-form {
+      gap: 0.9rem;
+    }
+
+    .collective-host-card .portal-edit-section {
+      padding: 0.85rem 1rem 0.7rem;
+    }
+
+    .collective-host-card .portal-edit-section legend {
+      font-size: 0.98rem;
+    }
+
+    .collective-host-card .portal-form-grid {
+      gap: 0.65rem 0.9rem;
+    }
+
+    .collective-host-card .portal-edit-form label {
+      font-size: 0.94rem;
+      margin-bottom: 0.22rem;
+    }
+
+    .collective-host-card .portal-edit-form input,
+    .collective-host-card .portal-edit-form select {
+      min-height: 45px;
+      padding: 0.55rem 0.75rem;
+    }
+
+    .collective-host-card .portal-help-text {
+      font-size: 0.84rem;
+      line-height: 1.3;
+      margin-top: 0.15rem;
+    }
+
+    .collective-host-card .portal-field-error {
+      font-size: 0.84rem;
+      margin-top: 0.15rem;
+      min-height: 1rem;
+    }
+
+    .collective-host-card .portal-edit-actions {
+      gap: 0.65rem;
+    }
+
+    .collective-host-card .portal-primary-btn {
+      padding: 0.7rem 1rem;
     }
 
     .collective-submit-status {
       color: #444;
+      font-size: 0.9rem;
       font-weight: 700;
-      min-height: 1.5rem;
+      min-height: 1.2rem;
+    }
+
+    @media (max-width: 700px) {
+      .collective-host-card {
+        padding: 1.25rem;
+      }
+
+      .collective-host-card .portal-form-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -37,7 +102,6 @@
       </div>
       <div class="header-content">
         <h1>Host a Collective</h1>
-        <p>Submit a 7-week gathering for review</p>
       </div>
       <div class="header-actions">
         <a href="collectives/" class="add-group-btn">View Collectives</a>
@@ -47,7 +111,7 @@
     <main class="portal-main">
       <section class="portal-dashboard collective-host-card" aria-labelledby="host-collective-title">
         <h2 id="host-collective-title">Collective Host Intake</h2>
-        <p class="collective-privacy-note">For your privacy, enter nearby cross streets only. Do not enter your home address.</p>
+        <p class="collective-privacy-note">Privacy: Enter nearby cross streets only. Do not enter your home address.</p>
 
         <form id="collective-host-form" class="portal-edit-form" novalidate>
           <fieldset class="portal-edit-section">
@@ -77,12 +141,12 @@
           </fieldset>
 
           <fieldset class="portal-edit-section">
-            <legend>Optional Second Host</legend>
+            <legend>Second Host (Optional)</legend>
             <div class="portal-form-grid">
               <div class="form-group portal-wide-field">
                 <label for="secondary-email">Email</label>
                 <input id="secondary-email" name="secondaryEmail" type="email" autocomplete="email">
-                <p class="portal-help-text">If this email already has a portal account, that host will be linked automatically. Otherwise, the email is held for administrator follow-up without creating an account.</p>
+                <p class="portal-help-text">The second host will be able to log in and manage this Collective using this email.</p>
                 <p id="secondary-email-error" class="portal-field-error"></p>
               </div>
             </div>
