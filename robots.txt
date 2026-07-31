@@ -8,6 +8,9 @@ Allow: /
 Allow: /index.html
 Allow: /find-comm.html
 Allow: /add-comm.html
+Allow: /collectives.html
+Allow: /collectives/
+Allow: /host-collective.html
 
 # Disallow technical files that shouldn't appear in search results
 Disallow: /*.css$

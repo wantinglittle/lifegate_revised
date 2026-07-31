@@ -73,6 +73,7 @@
 .portal-secondary-link:focus-visible,
 .portal-tab:focus-visible,
 .portal-filter-btn:focus-visible,
+.portal-collective-filter-btn:focus-visible,
 .portal-filter-clear:focus-visible,
 .portal-edit-btn:focus-visible,
 .portal-header a:focus-visible,
@@ -259,6 +260,7 @@
 
 .portal-dashboard-nav {
   align-items: flex-start;
+  border-bottom: 0;
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
@@ -275,16 +277,22 @@
 .portal-tab {
   background: transparent;
   border: 0;
-  border-bottom: 4px solid transparent;
   color: var(--black-color);
   cursor: pointer;
   font-size: 1rem;
   font-weight: 700;
   padding: 0.75rem 1rem;
+  position: relative;
 }
 
-.portal-tab[aria-selected="true"] {
-  border-bottom-color: var(--black-color);
+.portal-tab[aria-selected="true"]::after {
+  background: var(--black-color);
+  bottom: 0;
+  content: "";
+  height: 4px;
+  left: 1rem;
+  position: absolute;
+  right: 1rem;
 }
 
 .portal-nav-actions {
@@ -323,6 +331,42 @@
   margin: 0 0 1.25rem;
 }
 
+.portal-collectives-settings {
+  align-items: end;
+  border: 1px solid #d7d7d7;
+  border-radius: 8px;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  margin: 0 0 1.25rem;
+  padding: 1rem;
+}
+
+.portal-collectives-settings .form-group {
+  margin-bottom: 0;
+}
+
+.portal-collectives-settings label {
+  color: var(--black-color);
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.portal-collectives-settings input,
+.portal-collectives-settings select {
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  width: 100%;
+}
+
+.portal-collectives-settings .portal-status {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 .portal-search-row {
   display: flex;
   gap: 0.6rem;
@@ -344,6 +388,7 @@
 }
 
 .portal-filter-btn,
+.portal-collective-filter-btn,
 .portal-filter-clear,
 .portal-edit-btn {
   border-radius: 8px;
@@ -352,6 +397,7 @@
 }
 
 .portal-filter-btn,
+.portal-collective-filter-btn,
 .portal-filter-clear {
   background: #fff;
   border: 1px solid #bbb;
@@ -360,6 +406,12 @@
 }
 
 .portal-filter-btn[aria-pressed="true"] {
+  background: var(--black-color);
+  border-color: var(--black-color);
+  color: var(--white-color);
+}
+
+.portal-collective-filter-btn[aria-pressed="true"] {
   background: var(--black-color);
   border-color: var(--black-color);
   color: var(--white-color);
@@ -737,6 +789,10 @@
 
   .portal-search-row {
     flex-direction: column;
+  }
+
+  .portal-collectives-settings {
+    grid-template-columns: 1fr;
   }
 
   .portal-form-grid {

@@ -114,6 +114,29 @@ function populateCommunities() {
     });
 }
 
+async function updateCollectivesPromo() {
+    const promo = document.getElementById('collectives-promo');
+    if (!promo) return;
+
+    try {
+        const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import('./supabase-config.js');
+        const response = await fetch(`${SUPABASE_URL.replace(/\/+$/, '')}/rest/v1/rpc/get_collectives_public_state`, {
+            method: 'POST',
+            headers: {
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        });
+        if (!response.ok) return;
+        const state = await response.json();
+        promo.hidden = !(Array.isArray(state) && state[0]?.enabled === true);
+    } catch (error) {
+        console.warn('Collectives seasonal visibility could not be loaded.', error);
+    }
+}
+
 // Button click handlers (updated to use direct links)
 function handleExploreClick() {
     console.log('Explore Communities clicked');
@@ -140,6 +163,7 @@ function smoothScrollTo(target) {
 function initializePage() {
     // Populate communities
     populateCommunities();
+    updateCollectivesPromo();
     
     // Add scroll event listener for parallax effect
     window.addEventListener('scroll', updateScrollEffect);

@@ -6,3 +6,12 @@ verify_jwt = false
 
 [functions.send-dashboard-message]
 verify_jwt = false
+
+[functions.submit-collective]
+verify_jwt = false
+
+[functions.contact-collective-hosts]
+verify_jwt = false
+
+[functions.update-collective]
+verify_jwt = false

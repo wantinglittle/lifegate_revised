@@ -92,8 +92,24 @@ export async function getMyCommunities() {
   return Array.isArray(data) ? data : [];
 }
 
+export async function getMyCollectives() {
+  const { data, error } = await supabase.rpc("get_my_collectives");
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data : [];
+}
+
 export async function getAdminGroups() {
   const { data, error } = await supabase.rpc("get_admin_groups");
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getAdminCollectives() {
+  const { data, error } = await supabase.rpc("get_admin_collectives");
   if (error) {
     throw error;
   }
@@ -143,6 +159,41 @@ export async function updateAdminGroup(groupId, changes) {
   const { data, error } = await supabase.rpc("update_admin_group", {
     p_group_id: groupId,
     p_changes: changes
+  });
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data[0] : data;
+}
+
+export async function updateCollective(collectiveId, changes) {
+  ensureSupabaseConfig();
+
+  const { data, error } = await supabase.functions.invoke("update-collective", {
+    body: {
+      collectiveId,
+      changes
+    }
+  });
+  if (error) {
+    throw error;
+  }
+  return data?.collective || null;
+}
+
+export async function getCollectivesSettingsAdmin() {
+  const { data, error } = await supabase.rpc("get_collectives_settings_admin");
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data[0] : data;
+}
+
+export async function updateCollectivesSettingsAdmin(settings) {
+  const { data, error } = await supabase.rpc("update_collectives_settings_admin", {
+    p_manual_override: settings.manual_override,
+    p_start_date: settings.start_date || null,
+    p_end_date: settings.end_date || null
   });
   if (error) {
     throw error;

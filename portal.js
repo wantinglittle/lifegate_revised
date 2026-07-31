@@ -1,7 +1,10 @@
 import {
+  getAdminCollectives,
   getAdminGroups,
+  getCollectivesSettingsAdmin,
   getCurrentSession,
   getCurrentUser,
+  getMyCollectives,
   getMyProfile,
   getMyCommunities,
   isExpectedNonAdminError,
@@ -12,6 +15,7 @@ import {
   requestUserEmailChange,
   signOutPortalUser,
   supabase,
+  updateCollectivesSettingsAdmin,
   updateMyProfile
 } from './portal-auth.js';
 
@@ -36,6 +40,15 @@ const SEARCH_FIELDS = [
   "contact_phone"
 ];
 
+const COLLECTIVE_SEARCH_FIELDS = [
+  "city",
+  "cross_streets",
+  "primary_host_email",
+  "primary_host_first_name",
+  "primary_host_last_name",
+  "secondary_host_email"
+];
+
 const portalRole = document.getElementById("portal-role");
 const ownedCount = document.getElementById("portal-owned-count");
 const adminCount = document.getElementById("portal-admin-count");
@@ -43,15 +56,26 @@ const adminMetric = document.getElementById("portal-admin-metric");
 const statusMessage = document.getElementById("portal-status");
 const logoutButton = document.getElementById("portal-logout");
 const adminTab = document.getElementById("portal-tab-admin");
+const collectivesTab = document.getElementById("portal-tab-collectives");
 const sendMessageLink = document.getElementById("portal-send-message-link");
 const myTab = document.getElementById("portal-tab-my");
 const myPanel = document.getElementById("portal-panel-my");
 const adminPanel = document.getElementById("portal-panel-admin");
+const collectivesPanel = document.getElementById("portal-panel-collectives");
 const myList = document.getElementById("portal-my-list");
 const adminList = document.getElementById("portal-admin-list");
+const collectivesList = document.getElementById("portal-collectives-list");
 const adminSearch = document.getElementById("portal-admin-search");
 const clearSearchButton = document.getElementById("portal-clear-search");
 const filterButtons = Array.from(document.querySelectorAll(".portal-filter-btn"));
+const collectivesSearch = document.getElementById("portal-collectives-search");
+const clearCollectivesSearchButton = document.getElementById("portal-clear-collectives-search");
+const collectiveFilterButtons = Array.from(document.querySelectorAll(".portal-collective-filter-btn"));
+const collectivesSettingsForm = document.getElementById("portal-collectives-settings-form");
+const collectivesOverride = document.getElementById("portal-collectives-override");
+const collectivesStart = document.getElementById("portal-collectives-start");
+const collectivesEnd = document.getElementById("portal-collectives-end");
+const collectivesSettingsStatus = document.getElementById("portal-collectives-settings-status");
 const downloadListButton = document.getElementById("portal-download-list");
 const profileView = document.getElementById("portal-profile-view");
 const profileModal = document.getElementById("portal-profile-modal");
@@ -70,7 +94,10 @@ const profileStatus = document.getElementById("portal-profile-status");
 
 let authSubscription;
 let adminGroups = [];
+let adminCollectives = [];
 let currentAdminFilter = "all";
+let currentCollectivesFilter = "all";
+let collectivesSettings = null;
 let currentProfile = null;
 let currentConfirmedEmail = "";
 let isDownloadingList = false;
@@ -329,30 +356,43 @@ async function saveProfile(event) {
 
 function activateTab(tabName) {
   const showingAdmin = tabName === "admin";
-  myTab.setAttribute("aria-selected", String(!showingAdmin));
-  myTab.tabIndex = showingAdmin ? -1 : 0;
-  myPanel.hidden = showingAdmin;
+  const showingCollectives = tabName === "collectives";
+  const showingMy = tabName === "my";
+
+  myTab.setAttribute("aria-selected", String(showingMy));
+  myTab.tabIndex = showingMy ? 0 : -1;
+  myPanel.hidden = !showingMy;
 
   if (!adminTab.hidden) {
     adminTab.setAttribute("aria-selected", String(showingAdmin));
     adminTab.tabIndex = showingAdmin ? 0 : -1;
     adminPanel.hidden = !showingAdmin;
   }
+
+  if (!collectivesTab.hidden) {
+    collectivesTab.setAttribute("aria-selected", String(showingCollectives));
+    collectivesTab.tabIndex = showingCollectives ? 0 : -1;
+    collectivesPanel.hidden = !showingCollectives;
+  }
 }
 
 function setupTabs() {
   myTab.addEventListener("click", () => activateTab("my"));
   adminTab.addEventListener("click", () => activateTab("admin"));
+  collectivesTab.addEventListener("click", () => activateTab("collectives"));
 
-  [myTab, adminTab].forEach((tab) => {
+  [adminTab, myTab, collectivesTab].forEach((tab, index, tabs) => {
     tab.addEventListener("keydown", (event) => {
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
       if (adminTab.hidden) return;
 
       event.preventDefault();
-      const nextTab = tab === myTab ? adminTab : myTab;
+      const visibleTabs = tabs.filter((candidate) => !candidate.hidden);
+      const currentIndex = visibleTabs.indexOf(tab);
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const nextTab = visibleTabs[(currentIndex + direction + visibleTabs.length) % visibleTabs.length];
       nextTab.focus();
-      activateTab(nextTab === adminTab ? "admin" : "my");
+      activateTab(nextTab === adminTab ? "admin" : nextTab === collectivesTab ? "collectives" : "my");
     });
   });
 }
@@ -379,11 +419,71 @@ function setupAdminControls() {
       renderAdminCommunities();
     });
   });
+
+  collectivesSearch.addEventListener("input", () => {
+    clearCollectivesSearchButton.hidden = collectivesSearch.value.trim().length === 0;
+    renderAdminCollectives();
+  });
+
+  clearCollectivesSearchButton.addEventListener("click", () => {
+    collectivesSearch.value = "";
+    clearCollectivesSearchButton.hidden = true;
+    collectivesSearch.focus();
+    renderAdminCollectives();
+  });
+
+  collectiveFilterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      currentCollectivesFilter = button.dataset.status || "all";
+      updateCollectiveFilterButtonState();
+      renderAdminCollectives();
+    });
+  });
+
+  collectivesSettingsForm.addEventListener("submit", saveCollectivesSettings);
+}
+
+function setCollectivesSettingsStatus(message, tone = "info") {
+  collectivesSettingsStatus.textContent = message;
+  collectivesSettingsStatus.dataset.tone = tone;
+}
+
+function renderCollectivesSettings(settings) {
+  collectivesSettings = settings;
+  collectivesOverride.value = settings?.manual_override || "automatic";
+  collectivesStart.value = settings?.start_date || "";
+  collectivesEnd.value = settings?.end_date || "";
+  setCollectivesSettingsStatus(settings?.enabled ? "Public Collectives are enabled." : "Public Collectives are disabled.", "info");
+}
+
+async function saveCollectivesSettings(event) {
+  event.preventDefault();
+  setCollectivesSettingsStatus("Saving season settings...", "info");
+
+  try {
+    const settings = await updateCollectivesSettingsAdmin({
+      manual_override: collectivesOverride.value,
+      start_date: collectivesStart.value || null,
+      end_date: collectivesEnd.value || null
+    });
+    renderCollectivesSettings(settings);
+    setCollectivesSettingsStatus(settings.enabled ? "Season settings saved. Public Collectives are enabled." : "Season settings saved. Public Collectives are disabled.", "success");
+  } catch (error) {
+    console.error("Collectives settings update failed:", error);
+    setCollectivesSettingsStatus(error.message || "Season settings could not be saved.", "error");
+  }
 }
 
 function updateFilterButtonState() {
   filterButtons.forEach((button) => {
     const isSelected = button.dataset.status === currentAdminFilter;
+    button.setAttribute("aria-pressed", String(isSelected));
+  });
+}
+
+function updateCollectiveFilterButtonState() {
+  collectiveFilterButtons.forEach((button) => {
+    const isSelected = button.dataset.status === currentCollectivesFilter;
     button.setAttribute("aria-pressed", String(isSelected));
   });
 }
@@ -409,8 +509,39 @@ function updateFilterCounts() {
   });
 }
 
+function updateCollectiveFilterCounts() {
+  const counts = {
+    all: adminCollectives.length,
+    pending: 0,
+    active: 0,
+    inactive: 0
+  };
+
+  adminCollectives.forEach((collective) => {
+    const status = collectiveStatus(collective);
+    if (Object.prototype.hasOwnProperty.call(counts, status)) {
+      counts[status] += 1;
+    }
+  });
+
+  collectiveFilterButtons.forEach((button) => {
+    const status = button.dataset.status || "all";
+    const label = status === "all" ? "All" : statusLabel(status);
+    button.textContent = `${label} (${counts[status] || 0})`;
+  });
+}
+
 function statusLabel(status) {
   return STATUS_LABELS[status] || "Unknown";
+}
+
+function collectiveStatus(collective) {
+  if (collective?.approval_status === "pending") return "pending";
+  return collective?.listing_status === "active" ? "active" : "inactive";
+}
+
+function collectiveStatusLabel(collective) {
+  return collectiveStatus(collective) === "pending" ? "Pending Approval" : statusLabel(collectiveStatus(collective));
 }
 
 function availabilityLabel(group) {
@@ -504,6 +635,20 @@ function sortedGroups(groups) {
   });
 }
 
+function sortedCollectives(collectives) {
+  return [...collectives].sort((left, right) => {
+    const leftStatus = STATUS_ORDER[collectiveStatus(left)] ?? 99;
+    const rightStatus = STATUS_ORDER[collectiveStatus(right)] ?? 99;
+    if (leftStatus !== rightStatus) {
+      return leftStatus - rightStatus;
+    }
+
+    return fieldValue(left.city).localeCompare(fieldValue(right.city), undefined, {
+      sensitivity: "base"
+    });
+  });
+}
+
 function groupMatchesSearch(group, searchTerm) {
   if (!searchTerm) return true;
 
@@ -518,6 +663,23 @@ function filteredAdminGroups() {
   return sortedGroups(adminGroups.filter((group) => {
     const statusMatches = currentAdminFilter === "all" || group.status === currentAdminFilter;
     return statusMatches && groupMatchesSearch(group, searchTerm);
+  }));
+}
+
+function collectiveMatchesSearch(collective, searchTerm) {
+  if (!searchTerm) return true;
+
+  return COLLECTIVE_SEARCH_FIELDS.some((field) =>
+    fieldValue(collective[field]).toLowerCase().includes(searchTerm)
+  );
+}
+
+function filteredAdminCollectives() {
+  const searchTerm = collectivesSearch.value.trim().toLowerCase();
+
+  return sortedCollectives(adminCollectives.filter((collective) => {
+    const statusMatches = currentCollectivesFilter === "all" || collectiveStatus(collective) === currentCollectivesFilter;
+    return statusMatches && collectiveMatchesSearch(collective, searchTerm);
   }));
 }
 
@@ -561,8 +723,12 @@ function editUrl(group) {
   return `portal-edit.html?id=${encodeURIComponent(String(group.id || ""))}`;
 }
 
+function collectiveEditUrl(collective) {
+  return `portal-edit.html?type=collective&id=${encodeURIComponent(String(collective.id || ""))}`;
+}
+
 function renderCommunityCard(group, options = {}) {
-  const { showContactDetails = false } = options;
+  const { showContactDetails = false, typeLabel = "" } = options;
   const card = createElement("article", "portal-community-card");
 
   const header = createElement("div", "portal-community-card-header");
@@ -575,6 +741,9 @@ function renderCommunityCard(group, options = {}) {
     availabilityLabel(group)
   );
 
+  if (typeLabel) {
+    badges.append(createElement("span", "portal-badge portal-badge-inactive", typeLabel));
+  }
   badges.append(statusBadge, availabilityBadge);
   header.append(title, badges);
   card.append(header);
@@ -600,22 +769,64 @@ function renderCommunityCard(group, options = {}) {
   return card;
 }
 
+function renderCollectiveCard(collective, options = {}) {
+  const { showContactDetails = false } = options;
+  const card = createElement("article", "portal-community-card");
+  const header = createElement("div", "portal-community-card-header");
+  const title = createElement("h4", "", "Collective Host");
+  const badges = createElement("div", "portal-badges");
+
+  badges.append(
+    createElement("span", "portal-badge portal-badge-inactive", "Collective"),
+    createElement("span", `portal-badge portal-badge-${collectiveStatus(collective)}`, collectiveStatusLabel(collective))
+  );
+  header.append(title, badges);
+  card.append(header);
+
+  addDetail(card, "City", fieldValue(collective.city));
+  addDetail(card, "Cross Streets", fieldValue(collective.cross_streets));
+  addDetail(card, "Audience", fieldValue(collective.audience));
+  addDetail(card, "Childcare", collective.childcare_provided === true ? "Yes" : "No");
+
+  if (showContactDetails) {
+    addDetail(card, "Primary Host", `${fieldValue(collective.primary_host_first_name)} ${fieldValue(collective.primary_host_last_name)}`.trim());
+    addEmailDetail(card, "Primary Host Email", collective.primary_host_email);
+    addDetail(card, "Primary Phone", fieldValue(collective.primary_host_phone));
+    if (collective.secondary_host_email) {
+      addEmailDetail(card, "Second Host Email", collective.secondary_host_email);
+    }
+  }
+
+  const actions = createElement("div", "portal-community-actions");
+  const editLink = createElement("a", "portal-edit-btn", "Edit");
+  editLink.href = collectiveEditUrl(collective);
+  editLink.setAttribute("aria-label", "Edit Collective Host");
+  actions.append(editLink);
+  card.append(actions);
+
+  return card;
+}
+
 function renderEmptyState(container, message) {
   container.innerHTML = "";
   container.append(createElement("p", "portal-empty-state", message));
 }
 
-function renderMyCommunities(groups) {
-  ownedCount.textContent = String(groups.length);
+function renderMyCommunities(groups, collectives = []) {
+  const totalCount = groups.length + collectives.length;
+  ownedCount.textContent = String(totalCount);
 
-  if (groups.length === 0) {
-    renderEmptyState(myList, "You do not currently have any communities assigned to your account.");
+  if (totalCount === 0) {
+    renderEmptyState(myList, "You do not currently have any communities or collectives assigned to your account.");
     return;
   }
 
   myList.innerHTML = "";
   sortedGroups(groups).forEach((group) => {
-    myList.append(renderCommunityCard(group));
+    myList.append(renderCommunityCard(group, { typeLabel: "Community" }));
+  });
+  sortedCollectives(collectives).forEach((collective) => {
+    myList.append(renderCollectiveCard(collective));
   });
 }
 
@@ -637,6 +848,27 @@ function renderAdminCommunities() {
   adminList.innerHTML = "";
   visibleGroups.forEach((group) => {
     adminList.append(renderCommunityCard(group, { showContactDetails: true }));
+  });
+}
+
+function renderAdminCollectives() {
+  updateCollectiveFilterCounts();
+  updateCollectiveFilterButtonState();
+
+  if (adminCollectives.length === 0) {
+    renderEmptyState(collectivesList, "No collectives exist yet.");
+    return;
+  }
+
+  const visibleCollectives = filteredAdminCollectives();
+  if (visibleCollectives.length === 0) {
+    renderEmptyState(collectivesList, "No collectives match the current search and filter.");
+    return;
+  }
+
+  collectivesList.innerHTML = "";
+  visibleCollectives.forEach((collective) => {
+    collectivesList.append(renderCollectiveCard(collective, { showContactDetails: true }));
   });
 }
 
@@ -665,34 +897,42 @@ async function downloadContactList() {
   }
 }
 
-function showAdminDashboard(groups) {
+function showAdminDashboard(groups, collectives = []) {
   adminGroups = Array.isArray(groups) ? groups : [];
+  adminCollectives = Array.isArray(collectives) ? collectives : [];
   portalRole.textContent = "Administrator";
   adminCount.textContent = String(adminGroups.length);
   adminMetric.hidden = false;
   adminTab.hidden = false;
+  collectivesTab.hidden = false;
   sendMessageLink.hidden = false;
   downloadListButton.hidden = false;
   adminPanel.hidden = false;
+  collectivesPanel.hidden = true;
   renderAdminCommunities();
+  renderAdminCollectives();
 }
 
 function showContactPortal() {
   portalRole.textContent = "Community Host";
   adminMetric.hidden = true;
   adminTab.hidden = true;
+  collectivesTab.hidden = true;
   sendMessageLink.hidden = true;
   downloadListButton.hidden = true;
   adminPanel.hidden = true;
+  collectivesPanel.hidden = true;
 }
 
 function showAdminLoadFailure() {
   portalRole.textContent = "Community Host";
   adminMetric.hidden = true;
   adminTab.hidden = false;
+  collectivesTab.hidden = true;
   sendMessageLink.hidden = true;
   downloadListButton.hidden = true;
   adminPanel.hidden = true;
+  collectivesPanel.hidden = true;
   renderEmptyState(adminList, "Community data could not be loaded. Please refresh and try again.");
 }
 
@@ -708,10 +948,13 @@ async function loadPortal() {
   currentConfirmedEmail = normalizeEmail(session.user?.email || "");
   setStatus("Loading communities...", "info");
 
-  const [profileResult, myCommunities, adminResult] = await Promise.allSettled([
+  const [profileResult, myCommunities, myCollectives, adminResult, adminCollectivesResult, collectivesSettingsResult] = await Promise.allSettled([
     getMyProfile(),
     getMyCommunities(),
-    getAdminGroups()
+    getMyCollectives(),
+    getAdminGroups(),
+    getAdminCollectives(),
+    getCollectivesSettingsAdmin()
   ]);
 
   if (profileResult.status === "fulfilled" && profileResult.value) {
@@ -722,17 +965,23 @@ async function loadPortal() {
     setStatus("Your profile could not be loaded. Please refresh and try again.", "error");
   }
 
-  if (myCommunities.status === "rejected") {
-    console.error("My communities failed to load:", myCommunities.reason);
+  if (myCommunities.status === "rejected" || myCollectives.status === "rejected") {
+    console.error("My dashboard groups failed to load:", myCommunities.reason || myCollectives.reason);
     renderEmptyState(myList, "Your communities could not be loaded. Please refresh and try again.");
     setStatus("Dashboard data could not be loaded. Please refresh and try again.", "error");
     return;
   }
 
-  renderMyCommunities(myCommunities.value);
+  renderMyCommunities(myCommunities.value, myCollectives.value);
 
   if (adminResult.status === "fulfilled") {
-    showAdminDashboard(adminResult.value);
+    showAdminDashboard(
+      adminResult.value,
+      adminCollectivesResult.status === "fulfilled" ? adminCollectivesResult.value : []
+    );
+    if (collectivesSettingsResult.status === "fulfilled") {
+      renderCollectivesSettings(collectivesSettingsResult.value);
+    }
     clearStatus();
     activateTab("admin");
   } else if (isExpectedNonAdminError(adminResult.reason)) {

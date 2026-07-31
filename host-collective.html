@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Host a Collective</title>
+  <link rel="icon" href="images/favicon-grey.png" type="image/png">
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <link href="portal.css" rel="stylesheet" type="text/css" />
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <style>
+    .collective-host-card {
+      width: min(760px, 100%);
+    }
+
+    .collective-privacy-note {
+      background: var(--blue-color);
+      border-radius: 8px;
+      color: var(--black-color);
+      font-weight: 700;
+      margin: 0 0 1rem;
+      padding: 1rem;
+    }
+
+    .collective-submit-status {
+      color: #444;
+      font-weight: 700;
+      min-height: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper portal-wrapper">
+    <header class="portal-header">
+      <div class="header-logo">
+        <a href="index.html"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
+      </div>
+      <div class="header-content">
+        <h1>Host a Collective</h1>
+        <p>Submit a 7-week gathering for review</p>
+      </div>
+      <div class="header-actions">
+        <a href="collectives/" class="add-group-btn">View Collectives</a>
+      </div>
+    </header>
+
+    <main class="portal-main">
+      <section class="portal-dashboard collective-host-card" aria-labelledby="host-collective-title">
+        <h2 id="host-collective-title">Collective Host Intake</h2>
+        <p class="collective-privacy-note">For your privacy, enter nearby cross streets only. Do not enter your home address.</p>
+
+        <form id="collective-host-form" class="portal-edit-form" novalidate>
+          <fieldset class="portal-edit-section">
+            <legend>Primary Host</legend>
+            <div class="portal-form-grid">
+              <div class="form-group">
+                <label for="primary-first-name">First Name</label>
+                <input id="primary-first-name" name="primaryFirstName" type="text" maxlength="80" autocomplete="given-name" required>
+                <p id="primary-first-name-error" class="portal-field-error"></p>
+              </div>
+              <div class="form-group">
+                <label for="primary-last-name">Last Name</label>
+                <input id="primary-last-name" name="primaryLastName" type="text" maxlength="80" autocomplete="family-name" required>
+                <p id="primary-last-name-error" class="portal-field-error"></p>
+              </div>
+              <div class="form-group">
+                <label for="primary-email">Email</label>
+                <input id="primary-email" name="primaryEmail" type="email" autocomplete="email" required>
+                <p id="primary-email-error" class="portal-field-error"></p>
+              </div>
+              <div class="form-group">
+                <label for="primary-phone">Phone Number</label>
+                <input id="primary-phone" name="primaryPhone" type="tel" placeholder="(555) 123-4567" maxlength="14" required>
+                <p id="primary-phone-error" class="portal-field-error"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="portal-edit-section">
+            <legend>Optional Second Host</legend>
+            <div class="portal-form-grid">
+              <div class="form-group portal-wide-field">
+                <label for="secondary-email">Email</label>
+                <input id="secondary-email" name="secondaryEmail" type="email" autocomplete="email">
+                <p class="portal-help-text">If this email already has a portal account, that host will be linked automatically. Otherwise, the email is held for administrator follow-up without creating an account.</p>
+                <p id="secondary-email-error" class="portal-field-error"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="portal-edit-section">
+            <legend>Collective</legend>
+            <div class="portal-form-grid">
+              <div class="form-group">
+                <label for="collective-city">City</label>
+                <input id="collective-city" name="city" type="text" maxlength="120" required>
+                <p id="collective-city-error" class="portal-field-error"></p>
+              </div>
+              <div class="form-group">
+                <label for="collective-zip">ZIP Code</label>
+                <input id="collective-zip" name="zipCode" type="text" inputmode="numeric" maxlength="5" minlength="5" required>
+                <p id="collective-zip-error" class="portal-field-error"></p>
+              </div>
+              <div class="form-group portal-wide-field">
+                <label for="collective-cross-streets">Cross Streets</label>
+                <input id="collective-cross-streets" name="crossStreets" type="text" maxlength="200" placeholder="e.g., Main St & Oak Ave" required>
+                <p class="portal-help-text">For your privacy, enter nearby cross streets only. Do not enter your home address.</p>
+                <p id="collective-cross-streets-error" class="portal-field-error"></p>
+              </div>
+              <div class="form-group">
+                <label for="collective-audience">Audience</label>
+                <select id="collective-audience" name="audience" required>
+                  <option value="">Select audience</option>
+                  <option value="Men">Men</option>
+                  <option value="Women">Women</option>
+                  <option value="All">All</option>
+                </select>
+                <p id="collective-audience-error" class="portal-field-error"></p>
+              </div>
+              <div class="form-group">
+                <label for="collective-childcare">Childcare Provided</label>
+                <select id="collective-childcare" name="childcareProvided" required>
+                  <option value="">Select one</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+                <p id="collective-childcare-error" class="portal-field-error"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="g-recaptcha" data-sitekey="6Lc4OpArAAAAAB28oRvNoDbwJS0Z4N71F6zxFcGe"></div>
+
+          <div class="portal-edit-actions">
+            <button id="collective-submit" type="submit" class="portal-primary-btn">Submit Collective</button>
+            <a class="portal-secondary-link" href="index.html">Back to Home</a>
+          </div>
+          <p id="collective-submit-status" class="collective-submit-status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="host-collective.js"></script>
+</body>
+</html>

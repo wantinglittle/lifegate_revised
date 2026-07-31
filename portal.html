@@ -65,8 +65,9 @@
 
         <div class="portal-dashboard-nav">
           <div class="portal-tabs" role="tablist" aria-label="Dashboard sections">
-            <button id="portal-tab-admin" class="portal-tab" type="button" role="tab" aria-selected="false" aria-controls="portal-panel-admin" hidden>Admin</button>
+            <button id="portal-tab-admin" class="portal-tab" type="button" role="tab" aria-selected="false" aria-controls="portal-panel-admin" hidden>All Communities</button>
             <button id="portal-tab-my" class="portal-tab" type="button" role="tab" aria-selected="true" aria-controls="portal-panel-my">My Communities</button>
+            <button id="portal-tab-collectives" class="portal-tab" type="button" role="tab" aria-selected="false" aria-controls="portal-panel-collectives" hidden>Collectives</button>
           </div>
           <div class="portal-nav-actions">
             <a id="portal-send-message-link" class="portal-secondary-btn portal-nav-action" href="send-message.html" hidden>Send Message</a>
@@ -97,6 +98,47 @@
           </div>
 
           <div id="portal-admin-list" class="portal-community-grid" aria-live="polite"></div>
+        </section>
+
+        <section id="portal-panel-collectives" class="portal-panel portal-admin-panel" role="tabpanel" aria-labelledby="portal-tab-collectives" hidden>
+          <form id="portal-collectives-settings-form" class="portal-collectives-settings" aria-label="Collectives seasonal visibility settings">
+            <div class="form-group">
+              <label for="portal-collectives-override">Season Visibility</label>
+              <select id="portal-collectives-override">
+                <option value="automatic">Automatic</option>
+                <option value="force_on">Force On</option>
+                <option value="force_off">Force Off</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="portal-collectives-start">Start Date</label>
+              <input id="portal-collectives-start" type="date">
+            </div>
+            <div class="form-group">
+              <label for="portal-collectives-end">End Date</label>
+              <input id="portal-collectives-end" type="date">
+            </div>
+            <button id="portal-save-collectives-settings" type="submit" class="portal-secondary-btn">Save Season</button>
+            <p id="portal-collectives-settings-status" class="portal-status" aria-live="polite"></p>
+          </form>
+
+          <div class="portal-admin-tools" aria-label="Collective search and filters">
+            <div class="portal-search">
+              <div class="portal-search-row">
+                <input id="portal-collectives-search" type="search" autocomplete="off" aria-label="Search collectives" placeholder="Search" />
+                <button id="portal-clear-collectives-search" type="button" class="portal-filter-clear" hidden>Clear</button>
+              </div>
+            </div>
+
+            <div class="portal-filter-group" role="group" aria-label="Filter collectives by status">
+              <button class="portal-collective-filter-btn" type="button" data-status="all" aria-pressed="true">All (0)</button>
+              <button class="portal-collective-filter-btn" type="button" data-status="pending" aria-pressed="false">Pending (0)</button>
+              <button class="portal-collective-filter-btn" type="button" data-status="active" aria-pressed="false">Active (0)</button>
+              <button class="portal-collective-filter-btn" type="button" data-status="inactive" aria-pressed="false">Inactive (0)</button>
+            </div>
+          </div>
+
+          <div id="portal-collectives-list" class="portal-community-grid" aria-live="polite"></div>
         </section>
       </section>
     </main>

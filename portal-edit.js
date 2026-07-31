@@ -1,12 +1,15 @@
 import {
+  getAdminCollectives,
   getAdminGroups,
   getCurrentSession,
+  getMyCollectives,
   getMyCommunities,
   isExpectedNonAdminError,
   PORTAL_LOGIN_PAGE,
   redirectTo,
   supabase,
   updateAdminGroup,
+  updateCollective,
   updateMyCommunity
 } from './portal-auth.js';
 
@@ -70,6 +73,7 @@ const errorFields = {
 let authSubscription;
 let originalRecord = null;
 let editMode = "contact";
+let recordType = "community";
 let isSubmitting = false;
 
 function setStatus(message, tone = "info") {
@@ -85,6 +89,11 @@ function clearStatus() {
 function selectedGroupId() {
   const params = new URLSearchParams(window.location.search);
   return params.get("id") || "";
+}
+
+function selectedRecordType() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("type") === "collective" ? "collective" : "community";
 }
 
 function normalizeText(value) {
@@ -108,6 +117,26 @@ function normalizeNumber(value) {
 }
 
 function normalizeRecord(record) {
+  if (recordType === "collective") {
+    const approvalStatus = record.approval_status || "pending";
+    const listingStatus = record.listing_status || "inactive";
+    return {
+      id: record.id,
+      city: normalizeText(record.city),
+      zip_code: normalizeText(record.zip_code),
+      cross_streets: normalizeText(record.cross_streets),
+      formatted_location: normalizeNullableText(record.formatted_location),
+      audience: record.audience || "All",
+      childcare_provided: record.childcare_provided === true,
+      primary_host_phone: normalizeText(record.primary_host_phone),
+      approval_status: approvalStatus,
+      listing_status: listingStatus,
+      status: approvalStatus === "pending" ? "pending" : listingStatus,
+      latitude: normalizeNumber(record.latitude),
+      longitude: normalizeNumber(record.longitude)
+    };
+  }
+
   return {
     id: record.id,
     title: normalizeText(record.title),
@@ -162,6 +191,39 @@ function showErrorSummary(errors) {
 }
 
 function populateForm(record) {
+  const statusControl = document.getElementById("status-control");
+  if (recordType === "collective") {
+    fields.title.value = "Collective Host";
+    fields.description.value = "7-week Collective gathering";
+    fields.contact_name.value = "Collective Host";
+    fields.contact_email.value = "collectives@lifegatecommunity.com";
+    fields.contact_phone.value = record.primary_host_phone;
+    fields.day.value = "";
+    fields.meeting_time.value = "";
+    fields.audience.value = record.audience;
+    fields.age_group.value = "Adult";
+    fields.city.value = record.city;
+    fields.zip_code.value = record.zip_code;
+    fields.cross_streets.value = record.cross_streets;
+    fields.additional_info.value = record.formatted_location || "";
+    fields.is_closed.checked = record.childcare_provided;
+    fields.status.value = ADMIN_STATUSES.includes(record.status) ? record.status : "pending";
+    fields.status.disabled = editMode !== "admin" && record.approval_status === "pending";
+    if (statusControl) {
+      statusControl.hidden = editMode !== "admin" && record.approval_status === "pending";
+    }
+    fields.status.querySelector('option[value="pending"]').disabled =
+      record.approval_status === "approved";
+    fields.latitude.value = record.latitude === null ? "" : String(record.latitude);
+    fields.longitude.value = record.longitude === null ? "" : String(record.longitude);
+    fields.owner_user_id.value = "";
+    fields.contact_phone.value = record.primary_host_phone;
+    return;
+  }
+
+  if (statusControl) {
+    statusControl.hidden = false;
+  }
   fields.title.value = record.title;
   fields.description.value = record.description;
   fields.contact_name.value = record.contact_name;
@@ -188,6 +250,46 @@ function populateForm(record) {
 function configureMode(isAdmin) {
   editMode = isAdmin ? "admin" : "contact";
   adminFields.hidden = !isAdmin;
+
+  const pageTitle = document.getElementById("portal-edit-title");
+  const communityLegend = form.querySelector(".portal-edit-section legend");
+  pageTitle.textContent = recordType === "collective" ? "Edit Collective" : "Edit Community";
+  communityLegend.textContent = recordType === "collective" ? "Collective Information" : "Community Information";
+
+  const communityOnlyFields = [
+    fields.title.closest(".form-group"),
+    fields.description.closest(".form-group"),
+    fields.day.closest(".form-group"),
+    fields.meeting_time.closest(".form-group"),
+    fields.age_group.closest(".form-group"),
+    fields.additional_info.closest(".form-group"),
+    fields.owner_user_id.closest(".form-group")
+  ];
+  const isClosedLabel = document.querySelector('label[for="edit-is-closed"]');
+  const isClosedHelp = document.getElementById("edit-is-closed-help");
+  if (recordType === "collective") {
+    isClosedLabel.textContent = "Childcare Provided";
+    isClosedHelp.textContent = "Check this when childcare is provided for this Collective.";
+  } else {
+    isClosedLabel.textContent = "Group is Closed";
+    isClosedHelp.textContent = "Check this when the group is not accepting new members. If the community is visible on the website, visitors will see that it is currently closed. Closed status does not hide the group.";
+  }
+  const contactFieldset = fields.contact_name.closest("fieldset");
+  const coordinateFields = [
+    fields.latitude.closest(".form-group"),
+    fields.longitude.closest(".form-group"),
+    document.getElementById("edit-coordinates-help")
+  ];
+  communityOnlyFields.forEach((element) => {
+    if (element) element.hidden = recordType === "collective";
+  });
+  coordinateFields.forEach((element) => {
+    if (element) element.hidden = recordType === "collective";
+  });
+  contactFieldset.hidden = recordType === "collective" && editMode !== "admin";
+  fields.contact_name.closest(".form-group").hidden = recordType === "collective";
+  fields.contact_email.closest(".form-group").hidden = recordType === "collective";
+  fields.contact_phone.closest(".form-group").hidden = recordType !== "collective" ? false : editMode !== "admin";
 }
 
 function readRequiredText(fieldName, label, maxLength, errors) {
@@ -230,6 +332,34 @@ function readNullableCoordinate(fieldName, min, max, label, errors) {
 
 function readFormValues() {
   const errors = {};
+
+  if (recordType === "collective") {
+    const values = {
+      city: readRequiredText("city", "City", 120, errors),
+      zip_code: readRequiredText("zip_code", "ZIP code", null, errors),
+      cross_streets: readRequiredText("cross_streets", "Cross streets", null, errors),
+      audience: readRequiredSelect("audience", AUDIENCES, "Audience", errors),
+      childcare_provided: fields.is_closed.checked,
+      status: readRequiredSelect("status", ADMIN_STATUSES, "Status", errors)
+    };
+
+    if (!/^[0-9]{5}$/.test(values.zip_code)) {
+      errors.zip_code = "ZIP code must be exactly 5 digits.";
+    }
+
+    if (editMode === "admin") {
+      values.primary_host_phone = readRequiredText("contact_phone", "Primary host phone", null, errors);
+      if (originalRecord.approval_status === "approved" && values.status === "pending") {
+        errors.status = "Approved collectives cannot be returned to Pending.";
+      }
+    } else if (originalRecord.approval_status === "pending" && values.status !== "pending") {
+      errors.status = "Pending collectives cannot change status until approval.";
+    } else if (originalRecord.approval_status === "approved" && values.status === "pending") {
+      errors.status = "Hosts cannot set status to Pending.";
+    }
+
+    return { values, errors };
+  }
 
   const values = {
     title: readRequiredText("title", "Title", 120, errors),
@@ -298,6 +428,42 @@ function valuesAreEqual(left, right) {
 
 function buildPatch(values) {
   const patch = {};
+
+  if (recordType === "collective") {
+    const commonFields = [
+      "city",
+      "zip_code",
+      "cross_streets",
+      "audience",
+      "childcare_provided"
+    ];
+
+    commonFields.forEach((fieldName) => {
+      if (!valuesAreEqual(values[fieldName], originalRecord[fieldName])) {
+        patch[fieldName] = values[fieldName];
+      }
+    });
+
+    if (editMode === "admin") {
+      if (!valuesAreEqual(values.primary_host_phone, originalRecord.primary_host_phone)) {
+        patch.primary_host_phone = values.primary_host_phone;
+      }
+      if (!valuesAreEqual(values.status, originalRecord.status)) {
+        if (values.status === "pending") {
+          patch.approval_status = "pending";
+          patch.listing_status = "inactive";
+        } else {
+          patch.approval_status = "approved";
+          patch.listing_status = values.status;
+        }
+      }
+    } else if (originalRecord.approval_status === "approved" && !valuesAreEqual(values.status, originalRecord.status)) {
+      patch.listing_status = values.status;
+    }
+
+    return patch;
+  }
+
   const commonFields = [
     "title",
     "description",
@@ -371,17 +537,17 @@ async function loadEditableCommunity() {
   }
 
   const groupId = selectedGroupId();
+  recordType = selectedRecordType();
   if (!groupId) {
-    showPageError("Community not found.", "Choose a community from the portal dashboard.");
+    showPageError(`${recordType === "collective" ? "Collective" : "Community"} not found.`, "Choose an item from the portal dashboard.");
     return;
   }
 
-  setStatus("Loading community...", "info");
+  setStatus(`Loading ${recordType}...`, "info");
 
-  const [myCommunitiesResult, adminGroupsResult] = await Promise.allSettled([
-    getMyCommunities(),
-    getAdminGroups()
-  ]);
+  const [myCommunitiesResult, adminGroupsResult] = recordType === "collective"
+    ? await Promise.allSettled([getMyCollectives(), getAdminCollectives()])
+    : await Promise.allSettled([getMyCommunities(), getAdminGroups()]);
 
   if (myCommunitiesResult.status === "rejected") {
     throw myCommunitiesResult.reason;
@@ -401,16 +567,16 @@ async function loadEditableCommunity() {
   const selectedGroup = adminGroup || myGroup;
   if (!selectedGroup) {
     const message = adminLoadFailed
-      ? "Community access could not be confirmed. Please refresh and try again."
-      : "This community is unavailable from your portal account.";
-    showPageError("Community not found.", message);
+      ? "Access could not be confirmed. Please refresh and try again."
+      : `This ${recordType} is unavailable from your portal account.`;
+    showPageError(`${recordType === "collective" ? "Collective" : "Community"} not found.`, message);
     return;
   }
 
   configureMode(Boolean(adminGroup));
   originalRecord = normalizeRecord(selectedGroup);
   populateForm(originalRecord);
-  communityName.textContent = originalRecord.title || "Untitled community";
+  communityName.textContent = recordType === "collective" ? "Collective Host" : originalRecord.title || "Untitled community";
   form.hidden = false;
   clearErrors();
   clearStatus();
@@ -437,9 +603,11 @@ async function saveChanges() {
   setStatus("Saving changes...", "info");
 
   try {
-    const updatedRecord = editMode === "admin"
-      ? await updateAdminGroup(originalRecord.id, patch)
-      : await updateMyCommunity(originalRecord.id, patch);
+    const updatedRecord = recordType === "collective"
+      ? await updateCollective(originalRecord.id, patch)
+      : editMode === "admin"
+        ? await updateAdminGroup(originalRecord.id, patch)
+        : await updateMyCommunity(originalRecord.id, patch);
 
     if (!updatedRecord) {
       throw new Error("Update RPC did not return the updated community.");
@@ -447,7 +615,7 @@ async function saveChanges() {
 
     originalRecord = normalizeRecord(updatedRecord);
     populateForm(originalRecord);
-    communityName.textContent = originalRecord.title || "Untitled community";
+    communityName.textContent = recordType === "collective" ? "Collective Host" : originalRecord.title || "Untitled community";
     setStatus("Changes saved.", "success");
   } catch (error) {
     console.error("Community update failed:", error);

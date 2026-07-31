@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LIFEGATE Collectives</title>
+  <meta name="description" content="Find a 7-week LIFEGATE Collective gathering near you.">
+  <link rel="icon" href="images/favicon-grey.png" type="image/png">
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <link href="collectives.css" rel="stylesheet" type="text/css" />
+  <link rel="preconnect" href="https://maps.googleapis.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+</head>
+<body>
+  <div class="wrapper collectives-wrapper">
+    <header>
+      <div class="header-logo">
+        <a href="index.html"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
+      </div>
+      <div class="header-content">
+        <h1>LIFEGATE Collectives</h1>
+        <p>Find a 7-week gathering near you</p>
+      </div>
+      <div class="header-actions public-header-actions">
+        <a href="host-collective.html" class="add-group-btn">Host a Collective</a>
+      </div>
+    </header>
+
+    <main class="collectives-main">
+      <section id="collectives-offseason" class="collectives-season-message" hidden>
+        <h2>Collectives are not currently in season</h2>
+        <p>Collectives are temporary 7-week gatherings offered during select seasons of the year. Regular LIFEGATE Communities are still available.</p>
+        <a href="find-comm.html" class="collectives-primary-link">Explore Communities</a>
+      </section>
+
+      <section id="collectives-experience" class="collectives-experience" hidden aria-label="Collectives map and listing">
+        <div class="collectives-list-panel">
+          <div class="collectives-list-header">
+            <div>
+              <p class="collectives-kicker">Seasonal Gatherings</p>
+              <h2>Collectives</h2>
+            </div>
+            <span id="collectives-count" class="collectives-count">0</span>
+          </div>
+          <div id="collectives-list" class="collectives-list" aria-live="polite"></div>
+        </div>
+        <div class="collectives-map-panel">
+          <div id="collectives-map" class="collectives-map"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="collective-contact-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-contact">&times;</span>
+        <h3>Contact Host</h3>
+        <form id="collective-contact-form">
+          <input type="hidden" id="collective-contact-id">
+          <input type="text" id="collective-contact-website" name="website" autocomplete="off" tabindex="-1" aria-hidden="true">
+          <div class="form-group">
+            <label for="collective-contact-name">Name:</label>
+            <input type="text" id="collective-contact-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="collective-contact-phone">Phone:</label>
+            <input type="text" id="collective-contact-phone" name="phone" placeholder="(555) 123-4567" maxlength="14">
+          </div>
+          <div class="form-group">
+            <label for="collective-contact-email">Email:</label>
+            <input type="email" id="collective-contact-email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="collective-contact-message">Message:</label>
+            <textarea id="collective-contact-message" rows="4" name="message" required></textarea>
+          </div>
+          <button type="submit">Send Message</button>
+          <p id="collective-contact-status" class="collectives-form-status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+
+    <div id="collective-confirmation-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-collective-confirmation">&times;</span>
+        <h3>Your message has been sent!</h3>
+        <p>You should hear back from the Collective host soon. Please keep an eye on your junk folder as messages often end up there.</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initCollectivesPage } from './collectives.js';
+
+    function loadGoogleMaps() {
+      return new Promise((resolve, reject) => {
+        if (window.google && window.google.maps) {
+          resolve();
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyBaD2QPffJ15fk2E3VtQjDMRZStj1dMAlg&libraries=marker";
+        script.async = true;
+        script.defer = true;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    loadGoogleMaps()
+      .then(initCollectivesPage)
+      .catch((error) => {
+        console.error("Failed to load Google Maps:", error);
+        initCollectivesPage({ mapUnavailable: true });
+      });
+  </script>
+</body>
+</html>
