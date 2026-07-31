@@ -268,6 +268,22 @@
   min-height: 1.25rem;
 }
 
+#collective-contact-form button {
+  background: var(--blue-color);
+  border: none;
+  border-radius: 8px;
+  color: var(--white-color);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.75rem 2rem;
+  transition: background-color 0.3s;
+  width: 100%;
+}
+
+#collective-contact-form button:hover {
+  background: #5a6268;
+}
+
 #collective-contact-website {
   left: -9999px;
   position: absolute;
