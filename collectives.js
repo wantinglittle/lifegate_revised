@@ -13,6 +13,8 @@ const CHILDCARE_OPTIONS = [
 
 let map;
 let markers = new Map();
+let collectiveInfoWindow = null;
+let infoWindowCollectiveId = null;
 let activeCard = null;
 let selectedCollective = null;
 let allCollectives = [];
@@ -54,7 +56,7 @@ function childcareOption(collective) {
 
 function compactChildcareLabel(value) {
   if (value === "Childcare Available | Sitter Provided") return "Sitter Provided";
-  if (value === "Children Welcome | No Sitter Provided") return "Children Welcome · No Sitter";
+  if (value === "Children Welcome | No Sitter Provided") return "Children Welcome \u00B7 No Sitter";
   return "Childcare Not Provided";
 }
 
@@ -167,6 +169,7 @@ function updateFilterControls(filters = filterValues()) {
 function clearSelection() {
   if (activeCard) activeCard.classList.remove("is-selected");
   markers.forEach((marker) => marker.element?.classList.remove("is-active"));
+  closeInfoWindow();
   activeCard = null;
   selectedCollective = null;
 }
@@ -175,7 +178,11 @@ function restoreSelection() {
   if (!selectedCollective) return;
   activeCard = document.querySelector(`[data-collective-id="${CSS.escape(selectedCollective.id)}"]`);
   if (activeCard) activeCard.classList.add("is-selected");
-  markers.get(selectedCollective.id)?.element?.classList.add("is-active");
+  const marker = markers.get(selectedCollective.id);
+  marker?.element?.classList.add("is-active");
+  if (infoWindowCollectiveId === selectedCollective.id) {
+    openCollectiveInfoWindow(selectedCollective, marker);
+  }
 }
 
 function fitMapToCollectives(collectives) {
@@ -246,16 +253,68 @@ function selectCollective(collective, card) {
   if (activeCard) activeCard.classList.add("is-selected");
 
   const marker = markers.get(collective.id);
-  if (marker) {
+  if (marker && map) {
     map.setCenter({ lat: collective.latitude, lng: collective.longitude });
     map.setZoom(14);
     marker.element?.classList.add("is-active");
+    openCollectiveInfoWindow(collective, marker);
   }
 
   if (isMobileCollectivesLayout()) {
     setMobileView("map");
     document.getElementById("collectives-experience").scrollIntoView({ behavior: "smooth", block: "start" });
   }
+}
+
+function closeInfoWindow() {
+  if (collectiveInfoWindow) collectiveInfoWindow.close();
+  infoWindowCollectiveId = null;
+}
+
+function ensureInfoWindow() {
+  if (!collectiveInfoWindow && window.google?.maps) {
+    collectiveInfoWindow = new google.maps.InfoWindow({
+      maxWidth: 280
+    });
+    collectiveInfoWindow.addListener("closeclick", () => {
+      infoWindowCollectiveId = null;
+    });
+  }
+  return collectiveInfoWindow;
+}
+
+function createInfoWindowContent(collective) {
+  const fullChildcare = childcareOption(collective);
+  const content = createElement("div", "collective-info-window");
+  const contactButton = createElement("button", "collective-info-contact", "Contact Host");
+  contactButton.type = "button";
+  contactButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openContactModal(collective);
+  });
+
+  content.append(
+    createElement("h3", "", `${fieldValue(collective.primary_host_last_name)} Collective`),
+    createElement("p", "collective-info-cross-streets", fieldValue(collective.cross_streets)),
+    detail("Audience", audienceLabel(collective.audience)),
+    detail("Childcare", compactChildcareLabel(fullChildcare)),
+    contactButton
+  );
+
+  return content;
+}
+
+function openCollectiveInfoWindow(collective, marker) {
+  const infoWindow = ensureInfoWindow();
+  if (!infoWindow || !map || !marker) return;
+
+  infoWindowCollectiveId = collective.id;
+  infoWindow.setContent(createInfoWindowContent(collective));
+  infoWindow.open({
+    map,
+    anchor: marker
+  });
 }
 
 function openContactModal(collective) {
@@ -447,6 +506,7 @@ export async function initCollectivesPage(options = {}) {
         zoom: initialZoom,
         mapId: "8f453e71c329ac123f8540c9"
       });
+      map.addListener("click", closeInfoWindow);
     }
 
     allCollectives = await callRpc(PUBLIC_COLLECTIVES_RPC);
