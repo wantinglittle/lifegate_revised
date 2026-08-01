@@ -3,8 +3,10 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from './supabase-config.js';
 const PUBLIC_STATE_RPC = "get_collectives_public_state";
 const PUBLIC_COLLECTIVES_RPC = "get_public_collectives";
 const CONTACT_FUNCTION_URL = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/contact-collective-hosts`;
+const SIGNUP_FUNCTION_URL = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/signup-collective-attendee`;
 const initialCenter = { lat: 39.7392, lng: -104.9903 };
 const initialZoom = 9;
+const CLOSED_MESSAGE = "We’re sorry, this group is currently closed due to capacity.";
 const CHILDCARE_OPTIONS = [
   "Childcare Available | Sitter Provided",
   "Children Welcome | No Sitter Provided",
@@ -18,6 +20,9 @@ let infoWindowCollectiveId = null;
 let activeCard = null;
 let selectedCollective = null;
 let allCollectives = [];
+let signupCollective = null;
+let signupConfirmationToken = "";
+let signupLastFocused = null;
 
 function rpcUrl(name) {
   return `${SUPABASE_URL.replace(/\/+$/, "")}/rest/v1/rpc/${name}`;
@@ -57,6 +62,10 @@ function compactChildcareLabel(value) {
   if (value === "Childcare Available | Sitter Provided") return "Sitter Provided";
   if (value === "Children Welcome | No Sitter Provided") return "Children Welcome \u00B7 No Sitter";
   return "Childcare Not Provided";
+}
+
+function isCollectiveClosed(collective) {
+  return collective?.is_closed === true;
 }
 
 function createElement(tagName, className, text) {
@@ -285,6 +294,7 @@ function ensureInfoWindow() {
 function createInfoWindowContent(collective) {
   const fullChildcare = childcareOption(collective);
   const content = createElement("div", "collective-info-window");
+  const actions = createElement("div", "collective-info-actions");
   const contactButton = createElement("button", "collective-info-contact", "Contact Host");
   contactButton.type = "button";
   contactButton.addEventListener("click", (event) => {
@@ -292,13 +302,22 @@ function createInfoWindowContent(collective) {
     event.stopPropagation();
     openContactModal(collective);
   });
+  const signupButton = createElement("button", "collective-info-signup", isCollectiveClosed(collective) ? "Closed" : "Sign Up");
+  signupButton.type = "button";
+  signupButton.disabled = isCollectiveClosed(collective);
+  signupButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openSignupModal(collective);
+  });
+  actions.append(contactButton, signupButton);
 
   content.append(
     createElement("h3", "", `${fieldValue(collective.primary_host_last_name)} Collective`),
     createElement("p", "collective-info-cross-streets", fieldValue(collective.cross_streets)),
     detail("Audience", audienceLabel(collective.audience)),
     detail("Childcare", compactChildcareLabel(fullChildcare)),
-    contactButton
+    actions
   );
 
   return content;
@@ -324,6 +343,162 @@ function openContactModal(collective) {
   form.reset();
   modal.style.display = "block";
   document.getElementById("collective-contact-name").focus();
+}
+
+function resetRecaptcha() {
+  if (window.grecaptcha?.reset) {
+    try {
+      window.grecaptcha.reset();
+    } catch {
+      // Widget may not be ready yet.
+    }
+  }
+}
+
+function signupStatus(message, tone = "") {
+  const status = document.getElementById("collective-signup-status");
+  if (!status) return;
+  status.textContent = message || "";
+  status.dataset.tone = tone;
+}
+
+function setSignupSubmitting(isSubmitting) {
+  const submitButton = document.getElementById("collective-signup-submit");
+  const moveButton = document.getElementById("collective-signup-move");
+  if (submitButton) {
+    submitButton.disabled = isSubmitting;
+    submitButton.textContent = isSubmitting ? "Submitting..." : "Sign Up";
+  }
+  if (moveButton) moveButton.disabled = isSubmitting;
+}
+
+function setSignupConflict(message, token = "") {
+  signupConfirmationToken = token;
+  const conflict = document.getElementById("collective-signup-conflict");
+  const conflictText = document.getElementById("collective-signup-conflict-text");
+  const codeInput = document.getElementById("collective-signup-confirmation-code");
+  if (conflictText) conflictText.textContent = message ? `${message} We sent a confirmation code to your email.` : "";
+  if (codeInput) codeInput.value = "";
+  if (conflict) conflict.hidden = !message;
+  const submitButton = document.getElementById("collective-signup-submit");
+  if (submitButton) submitButton.hidden = Boolean(message);
+  if (message) codeInput?.focus();
+}
+
+function focusableElements(container) {
+  return Array.from(container.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )).filter((element) => element.offsetParent !== null);
+}
+
+function openSignupModal(collective) {
+  if (isCollectiveClosed(collective)) {
+    const modal = document.getElementById("collective-signup-modal");
+    signupCollective = collective;
+    signupLastFocused = document.activeElement;
+    document.getElementById("collective-signup-form")?.reset();
+    document.getElementById("collective-signup-id").value = collective.id;
+    document.getElementById("collective-signup-title").textContent = `Sign Up for ${fieldValue(collective.primary_host_last_name)} Collective`;
+    setSignupConflict("");
+    signupStatus(CLOSED_MESSAGE, "error");
+    modal.style.display = "block";
+    document.getElementById("collective-signup-cancel")?.focus();
+    return;
+  }
+
+  signupCollective = collective;
+  signupLastFocused = document.activeElement;
+  signupConfirmationToken = "";
+  document.getElementById("collective-signup-id").value = collective.id;
+  document.getElementById("collective-signup-title").textContent = `Sign Up for ${fieldValue(collective.primary_host_last_name)} Collective`;
+  document.getElementById("collective-signup-form").reset();
+  setSignupConflict("");
+  signupStatus("");
+  resetRecaptcha();
+  document.getElementById("collective-signup-modal").style.display = "block";
+  document.getElementById("collective-signup-first-name").focus();
+}
+
+function closeSignupModal() {
+  document.getElementById("collective-signup-modal").style.display = "none";
+  signupCollective = null;
+  signupConfirmationToken = "";
+  signupStatus("");
+  setSignupConflict("");
+  resetRecaptcha();
+  signupLastFocused?.focus?.();
+}
+
+function signupPayload() {
+  return {
+    collectiveId: document.getElementById("collective-signup-id").value,
+    firstName: document.getElementById("collective-signup-first-name").value.trim(),
+    lastName: document.getElementById("collective-signup-last-name").value.trim(),
+    phone: document.getElementById("collective-signup-phone").value.trim(),
+    email: document.getElementById("collective-signup-email").value.trim(),
+    emailConfirm: document.getElementById("collective-signup-email-confirm").value.trim(),
+    adultCount: document.getElementById("collective-signup-adults").value,
+    childCount: document.getElementById("collective-signup-kids").value,
+    privacyAccepted: document.getElementById("collective-signup-privacy").checked,
+    website: document.getElementById("collective-signup-website").value.trim(),
+    recaptchaToken: window.grecaptcha?.getResponse?.() || ""
+  };
+}
+
+function validateSignupPayload(payload) {
+  if (!payload.firstName || !payload.lastName || !payload.phone || !payload.email || !payload.emailConfirm) {
+    return "Please fill out all required fields.";
+  }
+  if (payload.email.trim().toLowerCase() !== payload.emailConfirm.trim().toLowerCase()) {
+    return "Email entries must match.";
+  }
+  if (!payload.privacyAccepted) return "Please accept the privacy agreement.";
+  if (!payload.recaptchaToken) return "Please complete the reCAPTCHA.";
+  return "";
+}
+
+async function submitSignup(confirmationToken = "") {
+  const payload = signupPayload();
+  const validationError = validateSignupPayload(payload);
+  if (validationError) {
+    signupStatus(validationError, "error");
+    return;
+  }
+  const confirmationCode = confirmationToken
+    ? document.getElementById("collective-signup-confirmation-code").value.trim()
+    : "";
+  if (confirmationToken && !/^\d{6}$/.test(confirmationCode)) {
+    signupStatus("Enter the 6-digit confirmation code from your email.", "error");
+    return;
+  }
+
+  setSignupSubmitting(true);
+  signupStatus(confirmationToken ? "Moving your signup..." : "Submitting signup...");
+  try {
+    const response = await fetch(SIGNUP_FUNCTION_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, confirmationToken, confirmationCode })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.status === 409 && result.status === "conflict") {
+      setSignupConflict(result.message || "You are already signed up for a different Collective.", result.confirmationToken || "");
+      signupStatus("");
+      resetRecaptcha();
+      return;
+    }
+    if (!response.ok) throw new Error(result.error || "Signup failed.");
+    setSignupConflict("");
+    signupStatus(result.message || "You're signed up for this Collective.", "success");
+    document.getElementById("collective-signup-form").reset();
+    resetRecaptcha();
+  } catch (error) {
+    console.error("Collective signup failed:", error);
+    signupStatus(error.message || "Signup could not be completed.", "error");
+    resetRecaptcha();
+  } finally {
+    setSignupSubmitting(false);
+  }
 }
 
 function renderList(collectives, totalCount = collectives.length) {
@@ -370,11 +545,14 @@ function renderList(collectives, totalCount = collectives.length) {
     );
 
     const actions = createElement("div", "collective-card-actions");
-    const mapButton = createElement("button", "", "View on Map");
+    const mapButton = createElement("button", "", "View Map");
     mapButton.type = "button";
     const contactButton = createElement("button", "", "Contact Host");
     contactButton.type = "button";
-    actions.append(mapButton, contactButton);
+    const signupButton = createElement("button", "", isCollectiveClosed(collective) ? "Closed" : "Sign Up");
+    signupButton.type = "button";
+    signupButton.disabled = isCollectiveClosed(collective);
+    actions.append(mapButton, contactButton, signupButton);
     card.append(actions);
 
     card.addEventListener("click", () => selectCollective(collective, card));
@@ -391,6 +569,10 @@ function renderList(collectives, totalCount = collectives.length) {
     contactButton.addEventListener("click", (event) => {
       event.stopPropagation();
       openContactModal(collective);
+    });
+    signupButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openSignupModal(collective);
     });
 
     list.append(card);
@@ -486,8 +668,75 @@ function setupContactModal() {
   });
 }
 
+function setupSignupModal() {
+  const modal = document.getElementById("collective-signup-modal");
+  const form = document.getElementById("collective-signup-form");
+  if (!modal || !form) return;
+
+  modal.querySelectorAll(".close-signup, #collective-signup-cancel, #collective-signup-keep").forEach((element) => {
+    element.addEventListener("click", closeSignupModal);
+    element.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        closeSignupModal();
+      }
+    });
+  });
+
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeSignupModal();
+  });
+
+  modal.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeSignupModal();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = focusableElements(modal);
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+
+  document.getElementById("collective-signup-phone").addEventListener("input", (event) => {
+    let digits = event.target.value.replace(/\D/g, "");
+    if (digits.length > 10) digits = digits.slice(0, 10);
+    if (digits.length > 6) {
+      event.target.value = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    } else if (digits.length > 3) {
+      event.target.value = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    } else if (digits.length > 0) {
+      event.target.value = `(${digits}`;
+    } else {
+      event.target.value = "";
+    }
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitSignup();
+  });
+
+  document.getElementById("collective-signup-move").addEventListener("click", () => {
+    if (!signupConfirmationToken) {
+      signupStatus("Signup confirmation expired. Please submit the form again.", "error");
+      return;
+    }
+    submitSignup(signupConfirmationToken);
+  });
+}
+
 export async function initCollectivesPage(options = {}) {
   setupContactModal();
+  setupSignupModal();
   setupMobileViewSwitch();
   setupCollectiveFilters();
 

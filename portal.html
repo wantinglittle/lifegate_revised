@@ -71,12 +71,14 @@
           </div>
           <div class="portal-nav-actions">
             <a id="portal-send-message-link" class="portal-secondary-btn portal-nav-action" href="send-message.html" hidden>Send Message</a>
-            <button id="portal-download-list" type="button" class="portal-secondary-btn portal-nav-action" hidden>Download List</button>
           </div>
         </div>
 
         <section id="portal-panel-my" class="portal-panel" role="tabpanel" aria-labelledby="portal-tab-my">
           <h3>My Communities</h3>
+          <div id="portal-my-download-row" class="portal-download-row">
+            <button id="portal-download-list" type="button" class="portal-secondary-btn portal-nav-action" hidden>Download List</button>
+          </div>
           <div id="portal-my-list" class="portal-community-grid" aria-live="polite"></div>
         </section>
 
@@ -97,6 +99,7 @@
             </div>
           </div>
 
+          <div id="portal-admin-download-row" class="portal-download-row"></div>
           <div id="portal-admin-list" class="portal-community-grid" aria-live="polite"></div>
         </section>
 
@@ -138,6 +141,7 @@
             </div>
           </div>
 
+          <div id="portal-collectives-download-row" class="portal-download-row"></div>
           <div id="portal-collectives-list" class="portal-community-grid" aria-live="polite"></div>
         </section>
       </section>
@@ -177,6 +181,20 @@
           <button id="portal-profile-cancel" type="button" class="portal-secondary-btn">Cancel</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div id="portal-attendees-modal" class="portal-modal" role="dialog" aria-modal="true" aria-labelledby="portal-attendees-title" hidden>
+    <div class="portal-modal-panel portal-attendees-panel" role="document" tabindex="-1">
+      <div class="portal-modal-header">
+        <h3 id="portal-attendees-title">Collective Attendees</h3>
+      </div>
+      <p id="portal-attendees-status" class="portal-status" aria-live="polite"></p>
+      <div class="portal-attendees-actions">
+        <button id="portal-attendees-export" type="button" class="portal-secondary-btn">Export CSV</button>
+        <button id="portal-attendees-close" type="button" class="portal-secondary-btn">Close</button>
+      </div>
+      <div id="portal-attendees-list" class="portal-attendees-list" aria-live="polite"></div>
     </div>
   </div>
 

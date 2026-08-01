@@ -372,6 +372,12 @@
   gap: 0.6rem;
 }
 
+.portal-download-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: -0.4rem 0 1rem;
+}
+
 .portal-search input {
   border: 1px solid #bbb;
   border-radius: 8px;
@@ -490,6 +496,9 @@
 }
 
 .portal-community-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-top: auto;
   padding-top: 0.25rem;
 }
@@ -510,6 +519,91 @@
   grid-column: 1 / -1;
   margin: 0;
   padding: 1rem;
+}
+
+.portal-attendees-panel {
+  max-width: 860px;
+}
+
+.portal-attendees-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.portal-attendees-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.portal-attendee-row {
+  border: 1px solid #d7d7d7;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0.85rem;
+}
+
+.portal-attendee-details {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.portal-attendee-details h4,
+.portal-attendee-details p {
+  margin: 0;
+}
+
+.portal-attendee-details h4 {
+  color: var(--black-color);
+}
+
+.portal-attendee-details p {
+  color: #444;
+  overflow-wrap: anywhere;
+}
+
+.portal-attendee-actions {
+  align-content: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.portal-danger-btn {
+  border-color: #9b1c1c;
+  color: #9b1c1c;
+}
+
+.portal-attendee-edit-form {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.portal-attendee-edit-field {
+  color: var(--black-color);
+  display: grid;
+  font-weight: 700;
+  gap: 0.3rem;
+}
+
+.portal-attendee-edit-field input,
+.portal-attendee-edit-field select {
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  width: 100%;
+}
+
+.portal-attendee-edit-form .portal-attendee-actions {
+  grid-column: 1 / -1;
 }
 
 .portal-edit-dashboard {
@@ -791,6 +885,14 @@
     flex-direction: column;
   }
 
+  .portal-download-row {
+    margin-top: 0;
+  }
+
+  .portal-download-row .portal-secondary-btn {
+    width: 100%;
+  }
+
   .portal-collectives-settings {
     grid-template-columns: 1fr;
   }
@@ -813,5 +915,20 @@
   .portal-edit-actions .portal-secondary-link {
     text-align: center;
     width: 100%;
+  }
+
+  .portal-attendee-row,
+  .portal-attendee-edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-attendee-actions,
+  .portal-attendees-actions {
+    justify-content: stretch;
+  }
+
+  .portal-attendee-actions .portal-secondary-btn,
+  .portal-attendees-actions .portal-secondary-btn {
+    flex: 1 1 100%;
   }
 }

@@ -296,12 +296,14 @@ function configureMode(isAdmin) {
   ];
   const isClosedRow = fields.is_closed.closest(".portal-check-row");
   const childcareOptionGroup = fields.childcare_option.closest(".form-group");
-  isClosedRow.hidden = recordType === "collective";
+  isClosedRow.hidden = false;
   childcareOptionGroup.hidden = recordType !== "collective";
   const isClosedLabel = document.querySelector('label[for="edit-is-closed"]');
   const isClosedHelp = document.getElementById("edit-is-closed-help");
-  isClosedLabel.textContent = "Group is Closed";
-  isClosedHelp.textContent = "Check this when the group is not accepting new members. If the community is visible on the website, visitors will see that it is currently closed. Closed status does not hide the group.";
+  isClosedLabel.textContent = recordType === "collective" ? "Collective is Closed" : "Group is Closed";
+  isClosedHelp.textContent = recordType === "collective"
+    ? "Check this when the Collective is not accepting attendee signups. Closed status does not hide the Collective."
+    : "Check this when the group is not accepting new members. If the community is visible on the website, visitors will see that it is currently closed. Closed status does not hide the group.";
   const contactFieldset = fields.contact_name.closest("fieldset");
   const coordinateFields = [
     fields.latitude.closest(".form-group"),
@@ -368,7 +370,8 @@ function readFormValues() {
       cross_streets: readRequiredText("cross_streets", "Cross streets", null, errors),
       audience: readRequiredSelect("audience", COLLECTIVE_AUDIENCES, "Audience", errors),
       childcare_option: readRequiredSelect("childcare_option", CHILDCARE_OPTIONS, "Childcare", errors),
-      status: readRequiredSelect("status", ADMIN_STATUSES, "Status", errors)
+      status: readRequiredSelect("status", ADMIN_STATUSES, "Status", errors),
+      is_closed: fields.is_closed.checked
     };
 
     if (!/^[0-9]{5}$/.test(values.zip_code)) {
@@ -463,7 +466,8 @@ function buildPatch(values) {
       "zip_code",
       "cross_streets",
       "audience",
-      "childcare_option"
+      "childcare_option",
+      "is_closed"
     ];
 
     commonFields.forEach((fieldName) => {

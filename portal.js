@@ -1,6 +1,7 @@
 import {
   getAdminCollectives,
   getAdminGroups,
+  getCollectiveAttendees,
   getCollectivesSettingsAdmin,
   getCurrentSession,
   getCurrentUser,
@@ -13,9 +14,11 @@ import {
   PORTAL_LOGIN_PAGE,
   redirectTo,
   requestUserEmailChange,
+  removeCollectiveAttendee,
   signOutPortalUser,
   supabase,
   updateCollectivesSettingsAdmin,
+  updateCollectiveAttendee,
   updateMyProfile
 } from './portal-auth.js';
 
@@ -65,6 +68,9 @@ const collectivesPanel = document.getElementById("portal-panel-collectives");
 const myList = document.getElementById("portal-my-list");
 const adminList = document.getElementById("portal-admin-list");
 const collectivesList = document.getElementById("portal-collectives-list");
+const myDownloadRow = document.getElementById("portal-my-download-row");
+const adminDownloadRow = document.getElementById("portal-admin-download-row");
+const collectivesDownloadRow = document.getElementById("portal-collectives-download-row");
 const adminSearch = document.getElementById("portal-admin-search");
 const clearSearchButton = document.getElementById("portal-clear-search");
 const filterButtons = Array.from(document.querySelectorAll(".portal-filter-btn"));
@@ -91,18 +97,31 @@ const profileEmailInput = document.getElementById("portal-profile-email-input");
 const profileSaveButton = document.getElementById("portal-profile-save");
 const profileCancelButton = document.getElementById("portal-profile-cancel");
 const profileStatus = document.getElementById("portal-profile-status");
+const attendeesModal = document.getElementById("portal-attendees-modal");
+const attendeesModalPanel = attendeesModal.querySelector(".portal-modal-panel");
+const attendeesTitle = document.getElementById("portal-attendees-title");
+const attendeesStatus = document.getElementById("portal-attendees-status");
+const attendeesList = document.getElementById("portal-attendees-list");
+const attendeesExportButton = document.getElementById("portal-attendees-export");
+const attendeesCloseButton = document.getElementById("portal-attendees-close");
 
 let authSubscription;
 let adminGroups = [];
 let adminCollectives = [];
+let myCommunitiesCache = [];
+let myCollectivesCache = [];
 let currentAdminFilter = "all";
 let currentCollectivesFilter = "all";
+let currentTabName = "my";
 let collectivesSettings = null;
 let currentProfile = null;
 let currentConfirmedEmail = "";
 let isDownloadingList = false;
 let isProfileSaving = false;
 let profileModalReturnFocus = null;
+let attendeesModalReturnFocus = null;
+let activeAttendeeCollective = null;
+let activeAttendees = [];
 
 function setStatus(message, tone = "info") {
   statusMessage.textContent = message;
@@ -355,6 +374,7 @@ async function saveProfile(event) {
 }
 
 function activateTab(tabName) {
+  currentTabName = tabName;
   const showingAdmin = tabName === "admin";
   const showingCollectives = tabName === "collectives";
   const showingMy = tabName === "my";
@@ -373,6 +393,15 @@ function activateTab(tabName) {
     collectivesTab.setAttribute("aria-selected", String(showingCollectives));
     collectivesTab.tabIndex = showingCollectives ? 0 : -1;
     collectivesPanel.hidden = !showingCollectives;
+  }
+
+  const targetDownloadRow = showingAdmin
+    ? adminDownloadRow
+    : showingCollectives
+      ? collectivesDownloadRow
+      : myDownloadRow;
+  if (targetDownloadRow && downloadListButton.parentElement !== targetDownloadRow) {
+    targetDownloadRow.append(downloadListButton);
   }
 }
 
@@ -578,6 +607,28 @@ function collectiveChildcareLabel(collective) {
   return "Childcare Not Provided";
 }
 
+function collectiveAvailabilityLabel(collective) {
+  return collective.is_closed === true ? "Closed to Signups" : "Open to Signups";
+}
+
+function attendeeCount(collective) {
+  const count = Number(collective?.attendee_count || 0);
+  return Number.isFinite(count) ? count : 0;
+}
+
+function formatDateTime(value) {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fieldValue(value);
+  return date.toLocaleString([], {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
 function csvField(value) {
   const text = value === null || value === undefined ? "" : String(value);
   return `"${text.replace(/"/g, '""')}"`;
@@ -609,21 +660,98 @@ function contactListCsv(groups) {
   return `\uFEFF${[header, ...rows].join("\r\n")}`;
 }
 
-function downloadFilename() {
+function collectiveListCsv(collectives) {
+  const header = [
+    "Host Last Name",
+    "City",
+    "Cross Streets",
+    "Audience",
+    "Childcare",
+    "Status",
+    "Closed",
+    "Attendees"
+  ].map(csvField).join(",");
+  const rows = collectives.map((collective) => [
+    collective.primary_host_last_name,
+    collective.city,
+    collective.cross_streets,
+    collectiveAudienceLabel(collective.audience),
+    collectiveChildcareLabel(collective),
+    collectiveStatusLabel(collective),
+    collective.is_closed === true ? "Yes" : "No",
+    attendeeCount(collective)
+  ].map(csvField).join(","));
+  return `\uFEFF${[header, ...rows].join("\r\n")}`;
+}
+
+function myDashboardCsv() {
+  const header = [
+    "Type",
+    "Title",
+    "City",
+    "Cross Streets",
+    "Status",
+    "Closed",
+    "Attendees"
+  ].map(csvField).join(",");
+  const communityRows = sortedGroups(myCommunitiesCache).map((group) => [
+    "Community",
+    group.title,
+    group.city,
+    group.cross_streets,
+    statusLabel(group.status),
+    group.is_closed === true ? "Yes" : "No",
+    ""
+  ].map(csvField).join(","));
+  const collectiveRows = sortedCollectives(myCollectivesCache).map((collective) => [
+    "Collective",
+    `${fieldValue(collective.primary_host_last_name || "Host")} Collective`,
+    collective.city,
+    collective.cross_streets,
+    collectiveStatusLabel(collective),
+    collective.is_closed === true ? "Yes" : "No",
+    attendeeCount(collective)
+  ].map(csvField).join(","));
+  return `\uFEFF${[header, ...communityRows, ...collectiveRows].join("\r\n")}`;
+}
+
+function attendeeListCsv(attendees) {
+  const header = [
+    "First Name",
+    "Last Name",
+    "Phone",
+    "Email",
+    "Adults",
+    "Kids",
+    "Signed Up At"
+  ].map(csvField).join(",");
+  const rows = attendees.map((attendee) => [
+    attendee.first_name,
+    attendee.last_name,
+    attendee.phone,
+    attendee.email,
+    attendee.adult_count,
+    attendee.child_count,
+    attendee.signed_up_at
+  ].map(csvField).join(","));
+  return `\uFEFF${[header, ...rows].join("\r\n")}`;
+}
+
+function downloadFilename(prefix = "lifegate-community-groups") {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
-  return `lifegate-community-groups-${year}-${month}-${day}.csv`;
+  return `${prefix}-${year}-${month}-${day}.csv`;
 }
 
-function saveCsv(csv) {
+function saveCsv(csv, filename = downloadFilename()) {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
 
   link.href = url;
-  link.download = downloadFilename();
+  link.download = filename;
   link.style.display = "none";
   document.body.append(link);
   link.click();
@@ -783,12 +911,18 @@ function renderCollectiveCard(collective, options = {}) {
   const { showContactDetails = false } = options;
   const card = createElement("article", "portal-community-card");
   const header = createElement("div", "portal-community-card-header");
-  const title = createElement("h4", "", "Collective Host");
+  const hostLastName = fieldValue(collective.primary_host_last_name || "Host");
+  const title = createElement("h4", "", `${hostLastName} Collective`);
   const badges = createElement("div", "portal-badges");
 
   badges.append(
     createElement("span", "portal-badge portal-badge-inactive", "Collective"),
-    createElement("span", `portal-badge portal-badge-${collectiveStatus(collective)}`, collectiveStatusLabel(collective))
+    createElement("span", `portal-badge portal-badge-${collectiveStatus(collective)}`, collectiveStatusLabel(collective)),
+    createElement(
+      "span",
+      collective.is_closed === true ? "portal-badge portal-badge-closed" : "portal-badge portal-badge-open",
+      collectiveAvailabilityLabel(collective)
+    )
   );
   header.append(title, badges);
   card.append(header);
@@ -797,6 +931,7 @@ function renderCollectiveCard(collective, options = {}) {
   addDetail(card, "Cross Streets", fieldValue(collective.cross_streets));
   addDetail(card, "Audience", collectiveAudienceLabel(collective.audience));
   addDetail(card, "Childcare", collectiveChildcareLabel(collective));
+  addDetail(card, "Attendees", String(attendeeCount(collective)));
 
   if (showContactDetails) {
     addDetail(card, "Primary Host", `${fieldValue(collective.primary_host_first_name)} ${fieldValue(collective.primary_host_last_name)}`.trim());
@@ -811,7 +946,10 @@ function renderCollectiveCard(collective, options = {}) {
   const editLink = createElement("a", "portal-edit-btn", "Edit");
   editLink.href = collectiveEditUrl(collective);
   editLink.setAttribute("aria-label", "Edit Collective Host");
-  actions.append(editLink);
+  const attendeesButton = createElement("button", "portal-edit-btn", `Attendees (${attendeeCount(collective)})`);
+  attendeesButton.type = "button";
+  attendeesButton.addEventListener("click", () => openAttendeesModal(collective, attendeesButton));
+  actions.append(editLink, attendeesButton);
   card.append(actions);
 
   return card;
@@ -823,7 +961,9 @@ function renderEmptyState(container, message) {
 }
 
 function renderMyCommunities(groups, collectives = []) {
-  const totalCount = groups.length + collectives.length;
+  myCommunitiesCache = Array.isArray(groups) ? groups : [];
+  myCollectivesCache = Array.isArray(collectives) ? collectives : [];
+  const totalCount = myCommunitiesCache.length + myCollectivesCache.length;
   ownedCount.textContent = String(totalCount);
 
   if (totalCount === 0) {
@@ -832,10 +972,10 @@ function renderMyCommunities(groups, collectives = []) {
   }
 
   myList.innerHTML = "";
-  sortedGroups(groups).forEach((group) => {
+  sortedGroups(myCommunitiesCache).forEach((group) => {
     myList.append(renderCommunityCard(group, { typeLabel: "Community" }));
   });
-  sortedCollectives(collectives).forEach((collective) => {
+  sortedCollectives(myCollectivesCache).forEach((collective) => {
     myList.append(renderCollectiveCard(collective));
   });
 }
@@ -882,24 +1022,303 @@ function renderAdminCollectives() {
   });
 }
 
+function setAttendeesStatus(message, tone = "info") {
+  attendeesStatus.textContent = message || "";
+  attendeesStatus.dataset.tone = tone;
+}
+
+function attendeesModalIsOpen() {
+  return !attendeesModal.hidden;
+}
+
+function focusableAttendeesModalElements() {
+  return Array.from(attendeesModal.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  )).filter((element) => !element.disabled && !element.hidden && element.offsetParent !== null);
+}
+
+function handleAttendeesModalKeydown(event) {
+  if (!attendeesModalIsOpen()) return;
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeAttendeesModal();
+    return;
+  }
+
+  if (event.key !== "Tab") return;
+
+  const focusableElements = focusableAttendeesModalElements();
+  if (focusableElements.length === 0) {
+    event.preventDefault();
+    attendeesModalPanel.focus();
+    return;
+  }
+
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+
+  if (event.shiftKey && document.activeElement === firstElement) {
+    event.preventDefault();
+    lastElement.focus();
+  } else if (!event.shiftKey && document.activeElement === lastElement) {
+    event.preventDefault();
+    firstElement.focus();
+  }
+}
+
+function updateCollectiveAttendeeCount(collectiveId, count) {
+  [myCollectivesCache, adminCollectives].forEach((collection) => {
+    collection.forEach((collective) => {
+      if (String(collective.id) === String(collectiveId)) {
+        collective.attendee_count = count;
+      }
+    });
+  });
+  if (activeAttendeeCollective && String(activeAttendeeCollective.id) === String(collectiveId)) {
+    activeAttendeeCollective.attendee_count = count;
+  }
+}
+
+function refreshCollectiveCards() {
+  renderMyCommunities(myCommunitiesCache, myCollectivesCache);
+  if (!collectivesTab.hidden) {
+    renderAdminCollectives();
+  }
+}
+
+async function openAttendeesModal(collective, trigger = null) {
+  activeAttendeeCollective = collective;
+  activeAttendees = [];
+  attendeesModalReturnFocus = trigger || document.activeElement;
+  attendeesTitle.textContent = `Attendees (${attendeeCount(collective)})`;
+  attendeesList.innerHTML = "";
+  setAttendeesStatus("Loading attendees...", "info");
+  attendeesModal.hidden = false;
+  attendeesModalPanel.focus();
+
+  try {
+    activeAttendees = await getCollectiveAttendees(collective.id);
+    updateCollectiveAttendeeCount(collective.id, activeAttendees.length);
+    renderAttendees();
+    setAttendeesStatus(activeAttendees.length === 0 ? "No attendees are signed up yet." : "", "info");
+    refreshCollectiveCards();
+  } catch (error) {
+    console.error("Collective attendees failed to load:", error);
+    setAttendeesStatus("Attendees could not be loaded. Please refresh and try again.", "error");
+  }
+}
+
+function closeAttendeesModal() {
+  attendeesModal.hidden = true;
+  activeAttendeeCollective = null;
+  activeAttendees = [];
+  attendeesList.innerHTML = "";
+  setAttendeesStatus("");
+  if (attendeesModalReturnFocus && document.contains(attendeesModalReturnFocus)) {
+    attendeesModalReturnFocus.focus();
+  } else if (currentTabName === "collectives" && !collectivesTab.hidden) {
+    collectivesTab.focus();
+  } else {
+    myTab.focus();
+  }
+  attendeesModalReturnFocus = null;
+}
+
+function attendeeFullName(attendee) {
+  return `${fieldValue(attendee.first_name)} ${fieldValue(attendee.last_name)}`.trim();
+}
+
+function renderAttendees() {
+  attendeesList.innerHTML = "";
+  attendeesTitle.textContent = `Attendees (${activeAttendees.length})`;
+
+  if (activeAttendees.length === 0) {
+    attendeesList.append(createElement("p", "portal-empty-state", "No attendees are signed up yet."));
+    return;
+  }
+
+  activeAttendees.forEach((attendee) => {
+    attendeesList.append(renderAttendeeRow(attendee));
+  });
+}
+
+function renderAttendeeRow(attendee) {
+  const row = createElement("article", "portal-attendee-row");
+  const details = createElement("div", "portal-attendee-details");
+  details.append(
+    createElement("h4", "", attendeeFullName(attendee)),
+    createElement("p", "", `Phone: ${fieldValue(attendee.phone)}`),
+    createElement("p", "", `Email: ${fieldValue(attendee.email)}`),
+    createElement("p", "", `Adults: ${fieldValue(attendee.adult_count)} | Kids: ${fieldValue(attendee.child_count)}`),
+    createElement("p", "", `Signed Up: ${formatDateTime(attendee.signed_up_at)}`)
+  );
+
+  const actions = createElement("div", "portal-attendee-actions");
+  const copyButton = createElement("button", "portal-secondary-btn", "Copy Email");
+  copyButton.type = "button";
+  copyButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(String(attendee.email || ""));
+      setAttendeesStatus("Email copied.", "success");
+    } catch {
+      setAttendeesStatus("Email could not be copied.", "error");
+    }
+  });
+  const editButton = createElement("button", "portal-secondary-btn", "Edit");
+  editButton.type = "button";
+  editButton.addEventListener("click", () => renderAttendeeEditRow(attendee, row));
+  const removeButton = createElement("button", "portal-secondary-btn portal-danger-btn", "Remove");
+  removeButton.type = "button";
+  removeButton.addEventListener("click", () => removeAttendee(attendee));
+  actions.append(copyButton, editButton, removeButton);
+  row.append(details, actions);
+  return row;
+}
+
+function countOptions(min, max, selectedValue) {
+  const fragment = document.createDocumentFragment();
+  for (let index = min; index <= max; index += 1) {
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = String(index);
+    option.selected = Number(selectedValue) === index;
+    fragment.append(option);
+  }
+  return fragment;
+}
+
+function renderAttendeeEditRow(attendee, row) {
+  const form = createElement("form", "portal-attendee-edit-form");
+  form.noValidate = true;
+  const fields = [
+    ["first_name", "First Name", "text", attendee.first_name],
+    ["last_name", "Last Name", "text", attendee.last_name],
+    ["phone", "Phone", "tel", attendee.phone],
+    ["email", "Email", "email", attendee.email]
+  ];
+
+  fields.forEach(([name, label, type, value]) => {
+    const group = createElement("label", "portal-attendee-edit-field");
+    group.textContent = label;
+    const input = document.createElement("input");
+    input.name = name;
+    input.type = type;
+    input.value = value || "";
+    input.required = true;
+    group.append(input);
+    form.append(group);
+  });
+
+  const adultGroup = createElement("label", "portal-attendee-edit-field");
+  adultGroup.textContent = "Adults";
+  const adultSelect = document.createElement("select");
+  adultSelect.name = "adult_count";
+  adultSelect.append(countOptions(1, 10, attendee.adult_count));
+  adultGroup.append(adultSelect);
+
+  const childGroup = createElement("label", "portal-attendee-edit-field");
+  childGroup.textContent = "Kids";
+  const childSelect = document.createElement("select");
+  childSelect.name = "child_count";
+  childSelect.append(countOptions(0, 10, attendee.child_count));
+  childGroup.append(childSelect);
+  form.append(adultGroup, childGroup);
+
+  const actions = createElement("div", "portal-attendee-actions");
+  const saveButton = createElement("button", "portal-secondary-btn", "✓");
+  saveButton.type = "submit";
+  saveButton.setAttribute("aria-label", "Save attendee changes");
+  const cancelButton = createElement("button", "portal-secondary-btn", "X");
+  cancelButton.type = "button";
+  cancelButton.setAttribute("aria-label", "Cancel attendee edit");
+  cancelButton.addEventListener("click", () => row.replaceWith(renderAttendeeRow(attendee)));
+  actions.append(saveButton, cancelButton);
+  form.append(actions);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!confirm("Are you sure you want to save these changes?")) return;
+
+    const formData = new FormData(form);
+    const changes = {
+      first_name: String(formData.get("first_name") || "").trim(),
+      last_name: String(formData.get("last_name") || "").trim(),
+      phone: String(formData.get("phone") || "").trim(),
+      email: String(formData.get("email") || "").trim(),
+      adult_count: Number(formData.get("adult_count")),
+      child_count: Number(formData.get("child_count"))
+    };
+
+    saveButton.disabled = true;
+    cancelButton.disabled = true;
+    setAttendeesStatus("Saving attendee...", "info");
+    try {
+      const updated = await updateCollectiveAttendee(attendee.id, changes);
+      activeAttendees = activeAttendees.map((item) => item.id === updated.id ? updated : item);
+      renderAttendees();
+      setAttendeesStatus("Attendee saved.", "success");
+    } catch (error) {
+      console.error("Attendee update failed:", error);
+      setAttendeesStatus(error.message || "Attendee could not be saved.", "error");
+      saveButton.disabled = false;
+      cancelButton.disabled = false;
+    }
+  });
+
+  row.replaceChildren(form);
+  form.querySelector("input")?.focus();
+}
+
+async function removeAttendee(attendee) {
+  const fullName = attendeeFullName(attendee);
+  if (!confirm(`Are you sure you want to remove ‘${fullName}’ from your Collective?`)) return;
+
+  setAttendeesStatus("Removing attendee...", "info");
+  try {
+    await removeCollectiveAttendee(attendee.id);
+    activeAttendees = activeAttendees.filter((item) => item.id !== attendee.id);
+    if (activeAttendeeCollective) {
+      updateCollectiveAttendeeCount(activeAttendeeCollective.id, activeAttendees.length);
+      refreshCollectiveCards();
+    }
+    renderAttendees();
+    setAttendeesStatus("Attendee removed.", "success");
+  } catch (error) {
+    console.error("Attendee removal failed:", error);
+    setAttendeesStatus(error.message || "Attendee could not be removed.", "error");
+  }
+}
+
+function exportActiveAttendees() {
+  if (!activeAttendeeCollective) return;
+  const hostName = fieldValue(activeAttendeeCollective.primary_host_last_name || "Host")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "") || "Host";
+  saveCsv(attendeeListCsv(activeAttendees), `${hostName}-Collective-Fall-2026-Attendees.csv`);
+  setAttendeesStatus("Attendee CSV downloaded.", "success");
+}
+
 async function downloadContactList() {
   if (isDownloadingList) return;
 
   isDownloadingList = true;
   downloadListButton.disabled = true;
   downloadListButton.textContent = "Preparing...";
-  setStatus("Preparing contact list...", "info");
+  setStatus("Preparing list...", "info");
 
   try {
-    const groups = await getAdminGroups();
-    adminGroups = groups;
-    adminCount.textContent = String(adminGroups.length);
-    renderAdminCommunities();
-    saveCsv(contactListCsv(groups));
-    setStatus("Contact list downloaded.", "success");
+    if (currentTabName === "collectives") {
+      saveCsv(collectiveListCsv(filteredAdminCollectives()), downloadFilename("lifegate-collectives"));
+    } else if (currentTabName === "admin") {
+      saveCsv(contactListCsv(filteredAdminGroups()), downloadFilename("lifegate-community-groups"));
+    } else {
+      saveCsv(myDashboardCsv(), downloadFilename("lifegate-my-dashboard"));
+    }
+    setStatus("List downloaded.", "success");
   } catch (error) {
     console.error("Contact list download failed:", error);
-    setStatus("We could not prepare the contact list. Please refresh and try again.", "error");
+    setStatus("We could not prepare the list. Please refresh and try again.", "error");
   } finally {
     isDownloadingList = false;
     downloadListButton.disabled = false;
@@ -929,7 +1348,7 @@ function showContactPortal() {
   adminTab.hidden = true;
   collectivesTab.hidden = true;
   sendMessageLink.hidden = true;
-  downloadListButton.hidden = true;
+  downloadListButton.hidden = false;
   adminPanel.hidden = true;
   collectivesPanel.hidden = true;
 }
@@ -940,7 +1359,7 @@ function showAdminLoadFailure() {
   adminTab.hidden = false;
   collectivesTab.hidden = true;
   sendMessageLink.hidden = true;
-  downloadListButton.hidden = true;
+  downloadListButton.hidden = false;
   adminPanel.hidden = true;
   collectivesPanel.hidden = true;
   renderEmptyState(adminList, "Community data could not be loaded. Please refresh and try again.");
@@ -1029,6 +1448,14 @@ profileModal.addEventListener("click", (event) => {
   }
 });
 document.addEventListener("keydown", handleProfileModalKeydown);
+attendeesCloseButton.addEventListener("click", closeAttendeesModal);
+attendeesExportButton.addEventListener("click", exportActiveAttendees);
+attendeesModal.addEventListener("click", (event) => {
+  if (event.target === attendeesModal) {
+    closeAttendeesModal();
+  }
+});
+document.addEventListener("keydown", handleAttendeesModalKeydown);
 
 [profileFirstInput, profileLastInput].forEach((input) => {
   input.addEventListener("input", () => {

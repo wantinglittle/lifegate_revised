@@ -258,6 +258,14 @@
   color: var(--white-color);
 }
 
+.collective-card-actions button:disabled {
+  background: #777;
+  border-color: #777;
+  color: var(--white-color);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
 .collective-info-window {
   color: var(--black-color);
   display: grid;
@@ -289,7 +297,15 @@
   font-weight: 700;
 }
 
-.collective-info-contact {
+.collective-info-actions {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 0.25rem;
+}
+
+.collective-info-contact,
+.collective-info-signup {
   background: var(--black-color);
   border: 1px solid var(--black-color);
   border-radius: 8px;
@@ -298,15 +314,23 @@
   font: inherit;
   font-size: 0.9rem;
   font-weight: 800;
-  margin-top: 0.25rem;
   padding: 0.5rem 0.7rem;
   width: 100%;
 }
 
 .collective-info-contact:hover,
-.collective-info-contact:focus-visible {
+.collective-info-contact:focus-visible,
+.collective-info-signup:hover,
+.collective-info-signup:focus-visible {
   background: var(--hover-color);
   border-color: var(--hover-color);
+}
+
+.collective-info-signup:disabled {
+  background: #777;
+  border-color: #777;
+  cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .collectives-map-panel {
@@ -432,6 +456,124 @@
   position: absolute;
 }
 
+.collective-signup-modal-content {
+  max-width: 620px;
+}
+
+.collective-signup-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.collective-signup-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.collective-signup-form .form-group {
+  margin-bottom: 0;
+}
+
+.collective-signup-form label {
+  font-weight: 700;
+}
+
+.collective-signup-form input,
+.collective-signup-form select {
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font: inherit;
+  min-height: 2.6rem;
+  padding: 0.55rem 0.65rem;
+  width: 100%;
+}
+
+.collective-signup-privacy {
+  align-items: flex-start;
+  background: #f5f7f8;
+  border: 1px solid #d7dfe4;
+  border-radius: 8px;
+  display: flex;
+  gap: 0.55rem;
+  line-height: 1.35;
+  padding: 0.75rem;
+}
+
+.collective-signup-privacy input {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  min-height: auto;
+  width: auto;
+}
+
+.collective-signup-recaptcha {
+  min-height: 78px;
+}
+
+.collective-signup-conflict {
+  background: #fff8e5;
+  border: 1px solid #e3c978;
+  border-radius: 8px;
+  color: var(--black-color);
+  padding: 0.8rem;
+}
+
+.collective-signup-conflict p {
+  margin: 0 0 0.7rem;
+}
+
+.collective-signup-conflict label {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.collective-signup-conflict input {
+  margin-bottom: 0.7rem;
+}
+
+.collective-signup-conflict-actions,
+.collective-signup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.collective-signup-actions button,
+.collective-signup-conflict-actions button {
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0.7rem 1rem;
+}
+
+#collective-signup-submit,
+#collective-signup-move {
+  background: var(--blue-color);
+  color: var(--white-color);
+}
+
+#collective-signup-cancel,
+#collective-signup-keep {
+  background: #eeeeee;
+  color: var(--black-color);
+}
+
+#collective-signup-status[data-tone="error"] {
+  color: #8a1f11;
+}
+
+#collective-signup-status[data-tone="success"] {
+  color: #245b2a;
+}
+
+#collective-signup-website {
+  left: -9999px;
+  position: absolute;
+}
+
 @media (max-width: 860px) {
   .collectives-wrapper > header {
     align-items: flex-start;
@@ -535,5 +677,14 @@
 
   .collective-card-actions button {
     flex: 1 1 9rem;
+  }
+
+  .collective-signup-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .collective-signup-actions button,
+  .collective-signup-conflict-actions button {
+    flex: 1 1 100%;
   }
 }

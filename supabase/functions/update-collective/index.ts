@@ -32,6 +32,7 @@ type Collective = {
   id: string;
   approval_status: string;
   listing_status: string;
+  is_closed: boolean;
   approved_at: string | null;
   approved_by: string | null;
   city: string;
@@ -195,6 +196,21 @@ async function loadPortalUsers(supabaseUrl: string, key: string, userIds: string
   return users;
 }
 
+async function loadAttendeeCount(supabaseUrl: string, key: string, collectiveId: string): Promise<number> {
+  const params = new URLSearchParams({
+    select: "id",
+    collective_id: `eq.${collectiveId}`
+  });
+  const response = await fetch(`${supabaseUrl}/rest/v1/fall_2026_collective_attendees?${params}`, {
+    method: "HEAD",
+    headers: supabaseHeaders(key, { Prefer: "count=exact" })
+  });
+  if (!response.ok) return 0;
+  const range = response.headers.get("content-range") || "";
+  const count = Number(range.split("/")[1] || "0");
+  return Number.isFinite(count) ? count : 0;
+}
+
 async function geocode(values: { cross_streets: string; city: string; zip_code: string }): Promise<{
   latitude: number;
   longitude: number;
@@ -280,10 +296,12 @@ async function buildResponseRecord(
   const secondaryHost = hosts.find((host) => !host.is_primary) || null;
   const primaryUser = primaryHost?.user_id ? portalUsers.get(primaryHost.user_id) || null : null;
   const secondaryUser = secondaryHost?.user_id ? portalUsers.get(secondaryHost.user_id) || null : null;
+  const attendeeCount = await loadAttendeeCount(supabaseUrl, key, collective.id);
 
   return {
     ...collective,
     status: displayStatus(collective),
+    attendee_count: attendeeCount,
     primary_host_user_id: primaryHost?.user_id || null,
     primary_host_email: primaryUser?.email || primaryHost?.pending_email || null,
     primary_host_first_name: primaryUser?.first_name || primaryHost?.pending_first_name || null,
@@ -335,8 +353,8 @@ Deno.serve(async (request: Request) => {
     if (!isAdmin && !isLinkedHost) return jsonResponse(origin, 403, { error: "Collective access denied." });
 
     const allowedKeys = isAdmin
-      ? new Set(["city", "zip_code", "cross_streets", "audience", "childcare_option", "listing_status", "approval_status", "primary_host_phone"])
-      : new Set(["city", "zip_code", "cross_streets", "audience", "childcare_option", "listing_status"]);
+      ? new Set(["city", "zip_code", "cross_streets", "audience", "childcare_option", "listing_status", "approval_status", "primary_host_phone", "is_closed"])
+      : new Set(["city", "zip_code", "cross_streets", "audience", "childcare_option", "listing_status", "is_closed"]);
     const unknownError = assertNoUnknownKeys(changes, allowedKeys);
     if (unknownError) return jsonResponse(origin, 400, { error: unknownError });
 
@@ -378,6 +396,11 @@ Deno.serve(async (request: Request) => {
       const childcareOption = normalizeString(changes.childcare_option, 80);
       if (!VALID_CHILDCARE_OPTIONS.has(childcareOption)) return jsonResponse(origin, 400, { error: "Childcare option is invalid." });
       patch.childcare_option = childcareOption;
+    }
+
+    if ("is_closed" in changes) {
+      if (typeof changes.is_closed !== "boolean") return jsonResponse(origin, 400, { error: "Closed status is invalid." });
+      patch.is_closed = changes.is_closed;
     }
 
     if ("primary_host_phone" in changes) {

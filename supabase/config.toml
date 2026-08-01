@@ -13,5 +13,8 @@ verify_jwt = false
 [functions.contact-collective-hosts]
 verify_jwt = false
 
+[functions.signup-collective-attendee]
+verify_jwt = false
+
 [functions.update-collective]
 verify_jwt = false

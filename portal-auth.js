@@ -53,7 +53,7 @@ export async function sendPortalMagicLink(email) {
   return supabase.auth.signInWithOtp({
     email: normalizeEmail(email),
     options: {
-      shouldCreateUser: false,
+      shouldCreateUser: true,
       emailRedirectTo: portalCallbackUrl()
     }
   });
@@ -110,6 +110,16 @@ export async function getAdminGroups() {
 
 export async function getAdminCollectives() {
   const { data, error } = await supabase.rpc("get_admin_collectives");
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getCollectiveAttendees(collectiveId) {
+  const { data, error } = await supabase.rpc("get_collective_attendees", {
+    p_collective_id: collectiveId
+  });
   if (error) {
     throw error;
   }
@@ -179,6 +189,27 @@ export async function updateCollective(collectiveId, changes) {
     throw error;
   }
   return data?.collective || null;
+}
+
+export async function updateCollectiveAttendee(attendeeId, changes) {
+  const { data, error } = await supabase.rpc("update_collective_attendee", {
+    p_attendee_id: attendeeId,
+    p_changes: changes
+  });
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data[0] : data;
+}
+
+export async function removeCollectiveAttendee(attendeeId) {
+  const { data, error } = await supabase.rpc("remove_collective_attendee", {
+    p_attendee_id: attendeeId
+  });
+  if (error) {
+    throw error;
+  }
+  return Array.isArray(data) ? data[0] : data;
 }
 
 export async function getCollectivesSettingsAdmin() {

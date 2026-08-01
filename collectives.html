@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://maps.googleapis.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="preconnect" href="https://cdn.emailjs.com">
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script>
@@ -53,8 +54,7 @@
           <div class="collectives-filter-shell">
             <div id="collectives-filter-panel" class="collectives-filter-panel">
               <div class="collectives-filter-field">
-                <label for="collectives-audience-filter">Audience</label>
-                <select id="collectives-audience-filter">
+                <select id="collectives-audience-filter" aria-label="Filter by audience">
                   <option value="">All Audiences</option>
                   <option value="Everyone Welcome">Everyone Welcome</option>
                   <option value="Men">Men</option>
@@ -63,8 +63,7 @@
                 </select>
               </div>
               <div class="collectives-filter-field">
-                <label for="collectives-childcare-filter">Childcare</label>
-                <select id="collectives-childcare-filter">
+                <select id="collectives-childcare-filter" aria-label="Filter by childcare">
                   <option value="">All Childcare Options</option>
                   <option value="Childcare Available | Sitter Provided">Childcare Available | Sitter Provided</option>
                   <option value="Children Welcome | No Sitter Provided">Children Welcome | No Sitter Provided</option>
@@ -112,6 +111,93 @@
           </div>
           <button type="submit">Send Message</button>
           <p id="collective-contact-status" class="collectives-form-status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+
+    <div id="collective-signup-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="collective-signup-title">
+      <div class="modal-content collective-signup-modal-content">
+        <span class="close-signup" role="button" tabindex="0" aria-label="Close signup form">&times;</span>
+        <h3 id="collective-signup-title">Sign Up for a Collective</h3>
+        <form id="collective-signup-form" class="collective-signup-form" novalidate>
+          <input type="hidden" id="collective-signup-id">
+          <input type="text" id="collective-signup-website" name="website" autocomplete="off" tabindex="-1" aria-hidden="true">
+          <div class="collective-signup-grid">
+            <div class="form-group">
+              <label for="collective-signup-first-name">First Name</label>
+              <input type="text" id="collective-signup-first-name" autocomplete="given-name" maxlength="80" required>
+            </div>
+            <div class="form-group">
+              <label for="collective-signup-last-name">Last Name</label>
+              <input type="text" id="collective-signup-last-name" autocomplete="family-name" maxlength="80" required>
+            </div>
+            <div class="form-group">
+              <label for="collective-signup-phone">Phone</label>
+              <input type="tel" id="collective-signup-phone" autocomplete="tel" maxlength="14" required>
+            </div>
+            <div class="form-group">
+              <label for="collective-signup-email">Email</label>
+              <input type="email" id="collective-signup-email" autocomplete="email" maxlength="254" required>
+            </div>
+            <div class="form-group">
+              <label for="collective-signup-email-confirm">Re-enter Email</label>
+              <input type="email" id="collective-signup-email-confirm" autocomplete="email" maxlength="254" required>
+            </div>
+            <div class="form-group">
+              <label for="collective-signup-adults">Adults 13+</label>
+              <select id="collective-signup-adults" required>
+                <option value="">Select</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="collective-signup-kids">Kids 12 and under</label>
+              <select id="collective-signup-kids" required>
+                <option value="">Select</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+          </div>
+          <label class="collective-signup-privacy">
+            <input id="collective-signup-privacy" type="checkbox" required>
+            <span>I agree that Lifegate may share this information with the Collective hosts so they can contact me about the gathering.</span>
+          </label>
+          <div class="collective-signup-recaptcha">
+            <div class="g-recaptcha" data-sitekey="6Lc4OpArAAAAAB28oRvNoDbwJS0Z4N71F6zxFcGe"></div>
+          </div>
+          <div id="collective-signup-conflict" class="collective-signup-conflict" hidden>
+            <p id="collective-signup-conflict-text"></p>
+            <label for="collective-signup-confirmation-code">Confirmation Code</label>
+            <input id="collective-signup-confirmation-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+            <div class="collective-signup-conflict-actions">
+              <button id="collective-signup-keep" type="button">Keep Current Signup</button>
+              <button id="collective-signup-move" type="button">Move My Signup</button>
+            </div>
+          </div>
+          <p id="collective-signup-status" class="collectives-form-status" aria-live="polite"></p>
+          <div class="collective-signup-actions">
+            <button id="collective-signup-submit" type="submit">Sign Up</button>
+            <button id="collective-signup-cancel" type="button">Cancel</button>
+          </div>
         </form>
       </div>
     </div>
