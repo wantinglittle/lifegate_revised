@@ -1,10 +1,10 @@
 begin;
 
 alter table public.collectives
-  add column if not exists childcare_option text;
+  drop constraint if exists collectives_audience_allowed;
 
 alter table public.collectives
-  drop constraint if exists collectives_audience_allowed;
+  add column if not exists childcare_option text;
 
 alter table public.collectives
   drop constraint if exists collectives_childcare_option_allowed;
@@ -15,17 +15,35 @@ where audience = 'All';
 
 update public.collectives
 set childcare_option = case
-  when childcare_option in (
-    'Childcare Available | Sitter Provided',
-    'Children Welcome | No Sitter Provided',
-    'Childcare Not Provided'
-  ) then childcare_option
   when childcare_provided = true then 'Childcare Available | Sitter Provided'
   else 'Childcare Not Provided'
-end;
+end
+where childcare_option is null;
 
-update public.collectives
-set childcare_provided = childcare_option = 'Childcare Available | Sitter Provided';
+do $$
+begin
+  if exists (
+    select 1
+    from public.collectives
+    where audience not in ('Everyone Welcome', 'Men', 'Women', 'Couples')
+  ) then
+    raise exception 'Collectives audience values must be Everyone Welcome, Men, Women, or Couples.' using errcode = '23514';
+  end if;
+
+  if exists (
+    select 1
+    from public.collectives
+    where childcare_option is null
+      or childcare_option not in (
+        'Childcare Available | Sitter Provided',
+        'Children Welcome | No Sitter Provided',
+        'Childcare Not Provided'
+      )
+  ) then
+    raise exception 'Collectives childcare_option values must be valid and non-null.' using errcode = '23514';
+  end if;
+end;
+$$;
 
 alter table public.collectives
   alter column childcare_option set default 'Childcare Not Provided',
@@ -44,7 +62,7 @@ alter table public.collectives
   ));
 
 comment on column public.collectives.childcare_option is
-  'Collectives childcare selection. Kept in sync with childcare_provided during staged rollout.';
+  'Collectives childcare selection. The legacy childcare_provided column is retained temporarily for staged Edge Function rollout compatibility.';
 
 create or replace function private.sync_collectives_childcare_columns()
 returns trigger
