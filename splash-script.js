@@ -137,6 +137,39 @@ async function updateCollectivesPromo() {
     }
 }
 
+function setupCollectivesInfoModal() {
+    const openButton = document.getElementById('collectives-more-info');
+    const modal = document.getElementById('collectives-info-modal');
+    const panel = modal?.querySelector('.collectives-info-panel');
+    const closeButton = document.getElementById('collectives-info-close');
+    if (!openButton || !modal || !panel || !closeButton) return;
+
+    function openModal() {
+        modal.hidden = false;
+        panel.focus();
+    }
+
+    function closeModal() {
+        modal.hidden = true;
+        openButton.focus();
+    }
+
+    openButton.addEventListener('click', openModal);
+    closeButton.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (!modal.hidden && event.key === 'Escape') {
+            closeModal();
+        }
+    });
+}
+
 // Button click handlers (updated to use direct links)
 function handleExploreClick() {
     console.log('Explore Communities clicked');
@@ -164,6 +197,7 @@ function initializePage() {
     // Populate communities
     populateCommunities();
     updateCollectivesPromo();
+    setupCollectivesInfoModal();
     
     // Add scroll event listener for parallax effect
     window.addEventListener('scroll', updateScrollEffect);

@@ -14,7 +14,13 @@ import {
 } from './portal-auth.js';
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const AUDIENCES = ["All", "Men", "Women"];
+const COMMUNITY_AUDIENCES = ["All", "Men", "Women"];
+const COLLECTIVE_AUDIENCES = ["Everyone Welcome", "Men", "Women", "Couples"];
+const CHILDCARE_OPTIONS = [
+  "Childcare Available | Sitter Provided",
+  "Children Welcome | No Sitter Provided",
+  "Childcare Not Provided"
+];
 const AGE_GROUPS = ["All-ages", "Kids", "Teens", "Adult"];
 const ADMIN_STATUSES = ["pending", "active", "inactive"];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -37,6 +43,7 @@ const fields = {
   day: document.getElementById("edit-day"),
   meeting_time: document.getElementById("edit-meeting-time"),
   audience: document.getElementById("edit-audience"),
+  childcare_option: document.getElementById("edit-childcare-option"),
   age_group: document.getElementById("edit-age-group"),
   city: document.getElementById("edit-city"),
   zip_code: document.getElementById("edit-zip-code"),
@@ -58,6 +65,7 @@ const errorFields = {
   day: document.getElementById("edit-day-error"),
   meeting_time: document.getElementById("edit-meeting-time-error"),
   audience: document.getElementById("edit-audience-error"),
+  childcare_option: document.getElementById("edit-childcare-option-error"),
   age_group: document.getElementById("edit-age-group-error"),
   city: document.getElementById("edit-city-error"),
   zip_code: document.getElementById("edit-zip-code-error"),
@@ -116,6 +124,28 @@ function normalizeNumber(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function normalizeCollectiveAudience(value) {
+  return value === "All" ? "Everyone Welcome" : normalizeText(value) || "Everyone Welcome";
+}
+
+function normalizeChildcareOption(record) {
+  const option = normalizeText(record.childcare_option);
+  if (CHILDCARE_OPTIONS.includes(option)) return option;
+  return record.childcare_provided === true
+    ? "Childcare Available | Sitter Provided"
+    : "Childcare Not Provided";
+}
+
+function setSelectOptions(select, values) {
+  select.innerHTML = "";
+  values.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.append(option);
+  });
+}
+
 function normalizeRecord(record) {
   if (recordType === "collective") {
     const approvalStatus = record.approval_status || "pending";
@@ -126,8 +156,8 @@ function normalizeRecord(record) {
       zip_code: normalizeText(record.zip_code),
       cross_streets: normalizeText(record.cross_streets),
       formatted_location: normalizeNullableText(record.formatted_location),
-      audience: record.audience || "All",
-      childcare_provided: record.childcare_provided === true,
+      audience: normalizeCollectiveAudience(record.audience),
+      childcare_option: normalizeChildcareOption(record),
       primary_host_phone: normalizeText(record.primary_host_phone),
       approval_status: approvalStatus,
       listing_status: listingStatus,
@@ -192,6 +222,7 @@ function showErrorSummary(errors) {
 
 function populateForm(record) {
   const statusControl = document.getElementById("status-control");
+  setSelectOptions(fields.audience, recordType === "collective" ? COLLECTIVE_AUDIENCES : COMMUNITY_AUDIENCES);
   if (recordType === "collective") {
     fields.title.value = "Collective Host";
     fields.description.value = "7-week Collective gathering";
@@ -201,12 +232,12 @@ function populateForm(record) {
     fields.day.value = "";
     fields.meeting_time.value = "";
     fields.audience.value = record.audience;
+    fields.childcare_option.value = record.childcare_option;
     fields.age_group.value = "Adult";
     fields.city.value = record.city;
     fields.zip_code.value = record.zip_code;
     fields.cross_streets.value = record.cross_streets;
     fields.additional_info.value = record.formatted_location || "";
-    fields.is_closed.checked = record.childcare_provided;
     fields.status.value = ADMIN_STATUSES.includes(record.status) ? record.status : "pending";
     fields.status.disabled = editMode !== "admin" && record.approval_status === "pending";
     if (statusControl) {
@@ -265,15 +296,14 @@ function configureMode(isAdmin) {
     fields.additional_info.closest(".form-group"),
     fields.owner_user_id.closest(".form-group")
   ];
+  const isClosedRow = fields.is_closed.closest(".portal-check-row");
+  const childcareOptionGroup = fields.childcare_option.closest(".form-group");
+  isClosedRow.hidden = recordType === "collective";
+  childcareOptionGroup.hidden = recordType !== "collective";
   const isClosedLabel = document.querySelector('label[for="edit-is-closed"]');
   const isClosedHelp = document.getElementById("edit-is-closed-help");
-  if (recordType === "collective") {
-    isClosedLabel.textContent = "Childcare Provided";
-    isClosedHelp.textContent = "Check this when childcare is provided for this Collective.";
-  } else {
-    isClosedLabel.textContent = "Group is Closed";
-    isClosedHelp.textContent = "Check this when the group is not accepting new members. If the community is visible on the website, visitors will see that it is currently closed. Closed status does not hide the group.";
-  }
+  isClosedLabel.textContent = "Group is Closed";
+  isClosedHelp.textContent = "Check this when the group is not accepting new members. If the community is visible on the website, visitors will see that it is currently closed. Closed status does not hide the group.";
   const contactFieldset = fields.contact_name.closest("fieldset");
   const coordinateFields = [
     fields.latitude.closest(".form-group"),
@@ -338,8 +368,8 @@ function readFormValues() {
       city: readRequiredText("city", "City", 120, errors),
       zip_code: readRequiredText("zip_code", "ZIP code", null, errors),
       cross_streets: readRequiredText("cross_streets", "Cross streets", null, errors),
-      audience: readRequiredSelect("audience", AUDIENCES, "Audience", errors),
-      childcare_provided: fields.is_closed.checked,
+      audience: readRequiredSelect("audience", COLLECTIVE_AUDIENCES, "Audience", errors),
+      childcare_option: readRequiredSelect("childcare_option", CHILDCARE_OPTIONS, "Childcare", errors),
       status: readRequiredSelect("status", ADMIN_STATUSES, "Status", errors)
     };
 
@@ -369,7 +399,7 @@ function readFormValues() {
     contact_phone: readRequiredText("contact_phone", "Contact phone", null, errors),
     day: readNullableSelect("day", WEEKDAYS, "Day", errors),
     meeting_time: normalizeText(fields.meeting_time.value) || null,
-    audience: readRequiredSelect("audience", AUDIENCES, "Audience", errors),
+    audience: readRequiredSelect("audience", COMMUNITY_AUDIENCES, "Audience", errors),
     age_group: readRequiredSelect("age_group", AGE_GROUPS, "Age group", errors),
     city: readRequiredText("city", "City", 120, errors),
     zip_code: readRequiredText("zip_code", "ZIP code", null, errors),
@@ -435,7 +465,7 @@ function buildPatch(values) {
       "zip_code",
       "cross_streets",
       "audience",
-      "childcare_provided"
+      "childcare_option"
     ];
 
     commonFields.forEach((fieldName) => {

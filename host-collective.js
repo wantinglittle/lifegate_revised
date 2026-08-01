@@ -3,6 +3,12 @@ import { SUPABASE_URL } from './supabase-config.js';
 
 const FUNCTION_URL = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/submit-collective`;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const AUDIENCE_OPTIONS = ["Everyone Welcome", "Men", "Women", "Couples"];
+const CHILDCARE_OPTIONS = [
+  "Childcare Available | Sitter Provided",
+  "Children Welcome | No Sitter Provided",
+  "Childcare Not Provided"
+];
 
 const form = document.getElementById("collective-host-form");
 const submitButton = document.getElementById("collective-submit");
@@ -18,7 +24,7 @@ const fields = {
   zipCode: document.getElementById("collective-zip"),
   crossStreets: document.getElementById("collective-cross-streets"),
   audience: document.getElementById("collective-audience"),
-  childcareProvided: document.getElementById("collective-childcare")
+  childcareOption: document.getElementById("collective-childcare")
 };
 
 function setFieldError(input, message) {
@@ -42,7 +48,7 @@ function readValues() {
     zipCode: normalizeText(fields.zipCode.value),
     crossStreets: normalizeText(fields.crossStreets.value),
     audience: fields.audience.value,
-    childcareProvided: fields.childcareProvided.value === "true"
+    childcareOption: fields.childcareOption.value
   };
 }
 
@@ -68,9 +74,9 @@ function validate(values) {
   } else if (/\d{2,}\s+\S+/.test(values.crossStreets)) {
     errors.set(fields.crossStreets, "Enter nearby cross streets only, not an exact home address.");
   }
-  if (!["Men", "Women", "All"].includes(values.audience)) errors.set(fields.audience, "Select an audience.");
-  if (!["true", "false"].includes(fields.childcareProvided.value)) {
-    errors.set(fields.childcareProvided, "Select whether childcare is provided.");
+  if (!AUDIENCE_OPTIONS.includes(values.audience)) errors.set(fields.audience, "Select an audience.");
+  if (!CHILDCARE_OPTIONS.includes(values.childcareOption)) {
+    errors.set(fields.childcareOption, "Select a childcare option.");
   }
 
   errors.forEach((message, input) => setFieldError(input, message));

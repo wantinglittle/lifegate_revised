@@ -568,6 +568,18 @@ function fieldValue(value) {
   return String(value);
 }
 
+function collectiveAudienceLabel(value) {
+  return value === "All" ? "Everyone Welcome" : fieldValue(value);
+}
+
+function collectiveChildcareLabel(collective) {
+  const option = fieldValue(collective.childcare_option);
+  if (option !== "N/A") return option;
+  return collective.childcare_provided === true
+    ? "Childcare Available | Sitter Provided"
+    : "Childcare Not Provided";
+}
+
 function csvField(value) {
   const text = value === null || value === undefined ? "" : String(value);
   return `"${text.replace(/"/g, '""')}"`;
@@ -785,8 +797,8 @@ function renderCollectiveCard(collective, options = {}) {
 
   addDetail(card, "City", fieldValue(collective.city));
   addDetail(card, "Cross Streets", fieldValue(collective.cross_streets));
-  addDetail(card, "Audience", fieldValue(collective.audience));
-  addDetail(card, "Childcare", collective.childcare_provided === true ? "Yes" : "No");
+  addDetail(card, "Audience", collectiveAudienceLabel(collective.audience));
+  addDetail(card, "Childcare", collectiveChildcareLabel(collective));
 
   if (showContactDetails) {
     addDetail(card, "Primary Host", `${fieldValue(collective.primary_host_first_name)} ${fieldValue(collective.primary_host_last_name)}`.trim());

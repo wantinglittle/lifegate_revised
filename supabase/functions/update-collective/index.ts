@@ -3,7 +3,12 @@ const ALLOWED_PRODUCTION_ORIGINS = new Set([
   "https://www.lifegatecommunity.com"
 ]);
 
-const VALID_AUDIENCES = new Set(["All", "Men", "Women"]);
+const VALID_AUDIENCES = new Set(["Everyone Welcome", "Men", "Women", "Couples"]);
+const VALID_CHILDCARE_OPTIONS = new Set([
+  "Childcare Available | Sitter Provided",
+  "Children Welcome | No Sitter Provided",
+  "Childcare Not Provided"
+]);
 const VALID_APPROVAL_STATUSES = new Set(["pending", "approved"]);
 const VALID_LISTING_STATUSES = new Set(["active", "inactive"]);
 
@@ -34,7 +39,8 @@ type Collective = {
   cross_streets: string;
   formatted_location: string | null;
   audience: string;
-  childcare_provided: boolean;
+  childcare_option: string;
+  childcare_provided?: boolean;
   primary_host_phone: string;
   latitude: number | null;
   longitude: number | null;
@@ -330,8 +336,8 @@ Deno.serve(async (request: Request) => {
     if (!isAdmin && !isLinkedHost) return jsonResponse(origin, 403, { error: "Collective access denied." });
 
     const allowedKeys = isAdmin
-      ? new Set(["city", "zip_code", "cross_streets", "audience", "childcare_provided", "listing_status", "approval_status", "primary_host_phone"])
-      : new Set(["city", "zip_code", "cross_streets", "audience", "childcare_provided", "listing_status"]);
+      ? new Set(["city", "zip_code", "cross_streets", "audience", "childcare_option", "listing_status", "approval_status", "primary_host_phone"])
+      : new Set(["city", "zip_code", "cross_streets", "audience", "childcare_option", "listing_status"]);
     const unknownError = assertNoUnknownKeys(changes, allowedKeys);
     if (unknownError) return jsonResponse(origin, 400, { error: unknownError });
 
@@ -364,16 +370,16 @@ Deno.serve(async (request: Request) => {
     }
 
     if ("audience" in changes) {
-      const audience = normalizeString(changes.audience, 10);
+      const audience = normalizeString(changes.audience, 32);
       if (!VALID_AUDIENCES.has(audience)) return jsonResponse(origin, 400, { error: "Audience is invalid." });
       patch.audience = audience;
     }
 
-    if ("childcare_provided" in changes) {
-      if (typeof changes.childcare_provided !== "boolean") {
-        return jsonResponse(origin, 400, { error: "childcare_provided must be a boolean." });
-      }
-      patch.childcare_provided = changes.childcare_provided;
+    if ("childcare_option" in changes) {
+      const childcareOption = normalizeString(changes.childcare_option, 80);
+      if (!VALID_CHILDCARE_OPTIONS.has(childcareOption)) return jsonResponse(origin, 400, { error: "Childcare option is invalid." });
+      patch.childcare_option = childcareOption;
+      patch.childcare_provided = childcareOption === "Childcare Available | Sitter Provided";
     }
 
     if ("primary_host_phone" in changes) {

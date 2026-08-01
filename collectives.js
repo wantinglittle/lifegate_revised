@@ -5,11 +5,17 @@ const PUBLIC_COLLECTIVES_RPC = "get_public_collectives";
 const CONTACT_FUNCTION_URL = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/contact-collective-hosts`;
 const initialCenter = { lat: 39.7392, lng: -104.9903 };
 const initialZoom = 9;
+const CHILDCARE_OPTIONS = [
+  "Childcare Available | Sitter Provided",
+  "Children Welcome | No Sitter Provided",
+  "Childcare Not Provided"
+];
 
 let map;
 let markers = new Map();
 let activeCard = null;
 let selectedCollective = null;
+let allCollectives = [];
 
 function rpcUrl(name) {
   return `${SUPABASE_URL.replace(/\/+$/, "")}/rest/v1/rpc/${name}`;
@@ -36,11 +42,20 @@ function fieldValue(value) {
 }
 
 function audienceLabel(value) {
-  return value === "All" ? "All" : fieldValue(value);
+  return value === "All" ? "Everyone Welcome" : fieldValue(value);
 }
 
-function childcareLabel(value) {
-  return value === true ? "Yes" : "No";
+function childcareOption(collective) {
+  const value = fieldValue(collective.childcare_option);
+  if (CHILDCARE_OPTIONS.includes(value)) return value;
+  if (collective.childcare_provided === true) return "Childcare Available | Sitter Provided";
+  return "Childcare Not Provided";
+}
+
+function compactChildcareLabel(value) {
+  if (value === "Childcare Available | Sitter Provided") return "Sitter Provided";
+  if (value === "Children Welcome | No Sitter Provided") return "Children Welcome · No Sitter";
+  return "Childcare Not Provided";
 }
 
 function createElement(tagName, className, text) {
@@ -54,6 +69,21 @@ function detail(label, value) {
   const paragraph = createElement("p", "collective-card-detail");
   const strong = createElement("strong", "", `${label}:`);
   paragraph.append(strong, document.createTextNode(` ${value}`));
+  return paragraph;
+}
+
+function pairedDetails(firstLabel, firstValue, secondLabel, secondValue, secondTitle = "") {
+  const paragraph = createElement("p", "collective-card-detail collective-card-detail-pair");
+  const first = document.createElement("span");
+  const firstStrong = createElement("strong", "", `${firstLabel}:`);
+  first.append(firstStrong, document.createTextNode(` ${firstValue}`));
+
+  const second = document.createElement("span");
+  if (secondTitle) second.title = secondTitle;
+  const secondStrong = createElement("strong", "", `${secondLabel}:`);
+  second.append(secondStrong, document.createTextNode(` ${secondValue}`));
+
+  paragraph.append(first, second);
   return paragraph;
 }
 
@@ -107,8 +137,110 @@ function setupMobileViewSwitch() {
   setMobileView("list");
 }
 
+function filterValues() {
+  return {
+    audience: document.getElementById("collectives-audience-filter")?.value || "",
+    childcare: document.getElementById("collectives-childcare-filter")?.value || ""
+  };
+}
+
+function activeFilterCount(filters = filterValues()) {
+  return Number(Boolean(filters.audience)) + Number(Boolean(filters.childcare));
+}
+
+function filteredCollectives(filters = filterValues()) {
+  return allCollectives.filter((collective) => {
+    const matchesAudience = !filters.audience || audienceLabel(collective.audience) === filters.audience;
+    const matchesChildcare = !filters.childcare || childcareOption(collective) === filters.childcare;
+    return matchesAudience && matchesChildcare;
+  });
+}
+
+function updateFilterControls(filters = filterValues()) {
+  const count = activeFilterCount(filters);
+  const clearButton = document.getElementById("collectives-clear-filters");
+  const toggleButton = document.getElementById("collectives-filter-toggle");
+  if (clearButton) clearButton.disabled = count === 0;
+  if (toggleButton) toggleButton.textContent = count > 0 ? `Filters (${count})` : "Filters";
+}
+
+function clearSelection() {
+  if (activeCard) activeCard.classList.remove("is-selected");
+  markers.forEach((marker) => marker.element?.classList.remove("is-active"));
+  activeCard = null;
+  selectedCollective = null;
+}
+
+function restoreSelection() {
+  if (!selectedCollective) return;
+  activeCard = document.querySelector(`[data-collective-id="${CSS.escape(selectedCollective.id)}"]`);
+  if (activeCard) activeCard.classList.add("is-selected");
+  markers.get(selectedCollective.id)?.element?.classList.add("is-active");
+}
+
+function fitMapToCollectives(collectives) {
+  if (!map || !window.google?.maps) return;
+  if (collectives.length === 0) {
+    map.setCenter(initialCenter);
+    map.setZoom(initialZoom);
+    return;
+  }
+  if (collectives.length === 1) {
+    map.setCenter({ lat: collectives[0].latitude, lng: collectives[0].longitude });
+    map.setZoom(11);
+    return;
+  }
+
+  const bounds = new google.maps.LatLngBounds();
+  collectives.forEach((collective) => {
+    bounds.extend({ lat: collective.latitude, lng: collective.longitude });
+  });
+  map.fitBounds(bounds, 56);
+}
+
+async function applyCollectiveFilters() {
+  const filters = filterValues();
+  const collectives = filteredCollectives(filters);
+  const visibleIds = new Set(collectives.map((collective) => collective.id));
+  if (selectedCollective && !visibleIds.has(selectedCollective.id)) clearSelection();
+
+  updateFilterControls(filters);
+  renderList(collectives, allCollectives.length);
+  await renderMarkers(collectives);
+  restoreSelection();
+  fitMapToCollectives(collectives);
+}
+
+function setupCollectiveFilters() {
+  const audienceFilter = document.getElementById("collectives-audience-filter");
+  const childcareFilter = document.getElementById("collectives-childcare-filter");
+  const clearButton = document.getElementById("collectives-clear-filters");
+  const toggleButton = document.getElementById("collectives-filter-toggle");
+  const panel = document.getElementById("collectives-filter-panel");
+
+  [audienceFilter, childcareFilter].forEach((filter) => {
+    filter?.addEventListener("change", () => {
+      applyCollectiveFilters();
+    });
+  });
+
+  clearButton?.addEventListener("click", () => {
+    if (audienceFilter) audienceFilter.value = "";
+    if (childcareFilter) childcareFilter.value = "";
+    applyCollectiveFilters();
+  });
+
+  toggleButton?.addEventListener("click", () => {
+    const isOpen = panel?.classList.toggle("is-open") || false;
+    toggleButton.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  updateFilterControls();
+}
+
 function selectCollective(collective, card) {
   if (activeCard) activeCard.classList.remove("is-selected");
+  markers.forEach((marker) => marker.element?.classList.remove("is-active"));
   activeCard = card;
   selectedCollective = collective;
   if (activeCard) activeCard.classList.add("is-selected");
@@ -136,15 +268,20 @@ function openContactModal(collective) {
   document.getElementById("collective-contact-name").focus();
 }
 
-function renderList(collectives) {
+function renderList(collectives, totalCount = collectives.length) {
   const list = document.getElementById("collectives-list");
-  document.getElementById("collectives-count").textContent = `${collectives.length} active host${collectives.length === 1 ? "" : "s"}`;
+  const activeFilters = activeFilterCount();
   list.innerHTML = "";
 
   if (collectives.length === 0) {
+    const emptyMessage = totalCount > 0 && activeFilters > 0
+      ? "No Collectives match these filters."
+      : "No active Collectives are currently listed.";
     list.append(
-      createElement("p", "collectives-empty", "No active Collectives are currently listed."),
-      createElement("p", "collectives-empty-note", "New host locations will appear here when available.")
+      createElement("p", "collectives-empty", emptyMessage),
+      createElement("p", "collectives-empty-note", totalCount > 0 && activeFilters > 0
+        ? "Try changing or clearing the filters."
+        : "New host locations will appear here when available.")
     );
     return;
   }
@@ -162,11 +299,16 @@ function renderList(collectives) {
     card.tabIndex = 0;
     card.setAttribute("role", "button");
     card.setAttribute("aria-label", `View ${fieldValue(collective.primary_host_last_name)} Collective on map`);
+    const fullChildcare = childcareOption(collective);
     card.append(
       createElement("h3", "", `${fieldValue(collective.primary_host_last_name)} Collective`),
-      detail("Cross Streets", fieldValue(collective.cross_streets)),
-      detail("Audience", audienceLabel(collective.audience)),
-      detail("Childcare provided", childcareLabel(collective.childcare_provided))
+      pairedDetails(
+        "Audience",
+        audienceLabel(collective.audience),
+        "Childcare",
+        compactChildcareLabel(fullChildcare),
+        fullChildcare
+      )
     );
 
     const actions = createElement("div", "collective-card-actions");
@@ -289,6 +431,7 @@ function setupContactModal() {
 export async function initCollectivesPage(options = {}) {
   setupContactModal();
   setupMobileViewSwitch();
+  setupCollectiveFilters();
 
   try {
     const stateRows = await callRpc(PUBLIC_STATE_RPC);
@@ -306,9 +449,8 @@ export async function initCollectivesPage(options = {}) {
       });
     }
 
-    const collectives = await callRpc(PUBLIC_COLLECTIVES_RPC);
-    renderList(collectives);
-    await renderMarkers(collectives);
+    allCollectives = await callRpc(PUBLIC_COLLECTIVES_RPC);
+    await applyCollectiveFilters();
   } catch (error) {
     console.error("Collectives failed to load:", error);
     showOffseason();

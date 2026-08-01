@@ -3,7 +3,12 @@ const ALLOWED_PRODUCTION_ORIGINS = new Set([
   "https://www.lifegatecommunity.com"
 ]);
 
-const VALID_AUDIENCES = new Set(["All", "Men", "Women"]);
+const VALID_AUDIENCES = new Set(["Everyone Welcome", "Men", "Women", "Couples"]);
+const VALID_CHILDCARE_OPTIONS = new Set([
+  "Childcare Available | Sitter Provided",
+  "Children Welcome | No Sitter Provided",
+  "Childcare Not Provided"
+]);
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^\([0-9]{3}\) [0-9]{3}-[0-9]{4}$/;
 
@@ -26,7 +31,7 @@ type Submission = {
   zipCode: string;
   crossStreets: string;
   audience: string;
-  childcareProvided: boolean;
+  childcareOption: string;
 };
 
 function isAllowedLocalOrigin(origin: string): boolean {
@@ -79,8 +84,8 @@ function buildSubmission(body: RequestBody): { submission?: Submission; error?: 
     city: normalizeString(body.city, 120),
     zipCode: normalizeString(body.zipCode, 5),
     crossStreets: normalizeString(body.crossStreets, 200),
-    audience: normalizeString(body.audience, 10),
-    childcareProvided: body.childcareProvided === true
+    audience: normalizeString(body.audience, 32),
+    childcareOption: normalizeString(body.childcareOption, 80)
   };
 
   if (!submission.primaryFirstName) return { error: "Primary host first name is required." };
@@ -98,6 +103,7 @@ function buildSubmission(body: RequestBody): { submission?: Submission; error?: 
     return { error: "Please enter nearby cross streets only, not an exact home address." };
   }
   if (!VALID_AUDIENCES.has(submission.audience)) return { error: "Audience is invalid." };
+  if (!VALID_CHILDCARE_OPTIONS.has(submission.childcareOption)) return { error: "Childcare option is invalid." };
   return { submission };
 }
 
@@ -214,7 +220,8 @@ async function insertCollective(
     cross_streets: submission.crossStreets,
     formatted_location: coords.formattedLocation,
     audience: submission.audience,
-    childcare_provided: submission.childcareProvided,
+    childcare_option: submission.childcareOption,
+    childcare_provided: submission.childcareOption === "Childcare Available | Sitter Provided",
     primary_host_phone: submission.primaryPhone,
     latitude: coords.latitude,
     longitude: coords.longitude

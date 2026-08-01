@@ -46,12 +46,33 @@
           <button id="collectives-list-tab" class="collectives-view-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="collectives-list-panel" data-view="list">LIST</button>
           <button id="collectives-map-tab" class="collectives-view-tab" type="button" role="tab" aria-selected="false" aria-controls="collectives-map-panel" data-view="map">MAP</button>
         </div>
+        <div class="collectives-mobile-filter-bar">
+          <button id="collectives-filter-toggle" class="collectives-filter-toggle" type="button" aria-expanded="false" aria-controls="collectives-filter-panel">Filters</button>
+        </div>
         <div id="collectives-list-panel" class="collectives-list-panel">
-          <div class="collectives-list-header">
-            <div>
-              <h2>Collectives</h2>
+          <div class="collectives-filter-shell">
+            <div id="collectives-filter-panel" class="collectives-filter-panel">
+              <div class="collectives-filter-field">
+                <label for="collectives-audience-filter">Audience</label>
+                <select id="collectives-audience-filter">
+                  <option value="">All Audiences</option>
+                  <option value="Everyone Welcome">Everyone Welcome</option>
+                  <option value="Men">Men</option>
+                  <option value="Women">Women</option>
+                  <option value="Couples">Couples</option>
+                </select>
+              </div>
+              <div class="collectives-filter-field">
+                <label for="collectives-childcare-filter">Childcare</label>
+                <select id="collectives-childcare-filter">
+                  <option value="">All Childcare Options</option>
+                  <option value="Childcare Available | Sitter Provided">Childcare Available | Sitter Provided</option>
+                  <option value="Children Welcome | No Sitter Provided">Children Welcome | No Sitter Provided</option>
+                  <option value="Childcare Not Provided">Childcare Not Provided</option>
+                </select>
+              </div>
+              <button id="collectives-clear-filters" class="collectives-clear-filters" type="button" disabled>Clear Filters</button>
             </div>
-            <span id="collectives-count" class="collectives-count">0 active hosts</span>
           </div>
           <div id="collectives-list" class="collectives-list" aria-live="polite"></div>
         </div>

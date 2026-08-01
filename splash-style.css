@@ -324,6 +324,30 @@ body {
     margin: 0;
 }
 
+.collectives-more-info-button {
+    background: transparent;
+    border: 0;
+    color: #13233d;
+    cursor: pointer;
+    display: inline;
+    font: inherit;
+    font-weight: 800;
+    margin-left: 0.25rem;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.collectives-more-info-button:hover,
+.collectives-more-info-button:focus-visible {
+    color: #20395f;
+}
+
+.collectives-more-info-button:focus-visible {
+    outline: 3px solid rgba(19, 35, 61, 0.35);
+    outline-offset: 3px;
+}
+
 .collectives-promo-button {
     background: #13233d;
     color: #fff;
@@ -356,6 +380,94 @@ body {
 .collectives-supporting-line i {
     color: #13233d;
     flex-shrink: 0;
+}
+
+.collectives-info-modal {
+    align-items: center;
+    background: rgba(25, 25, 25, 0.72);
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    left: 0;
+    padding: 1rem;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 1000;
+}
+
+.collectives-info-modal[hidden] {
+    display: none;
+}
+
+.collectives-info-panel {
+    background: var(--white-color);
+    border: 1px solid rgba(19, 35, 61, 0.18);
+    border-radius: 8px;
+    box-shadow: 0 18px 45px rgba(25, 25, 25, 0.28);
+    color: var(--black-color);
+    max-width: 580px;
+    padding: 1.6rem;
+    position: relative;
+    width: min(100%, 580px);
+}
+
+.collectives-info-panel:focus-visible {
+    outline: 3px solid rgba(19, 35, 61, 0.35);
+    outline-offset: 3px;
+}
+
+.collectives-info-close {
+    background: transparent;
+    border: 0;
+    color: var(--black-color);
+    cursor: pointer;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    position: absolute;
+    right: 0.9rem;
+    top: 0.7rem;
+}
+
+.collectives-info-close:focus-visible {
+    outline: 3px solid rgba(19, 35, 61, 0.35);
+    outline-offset: 3px;
+}
+
+.collectives-info-panel h2 {
+    color: #13233d;
+    font-size: 1.45rem;
+    margin: 0 2rem 0.75rem 0;
+}
+
+.collectives-info-panel p {
+    color: #263246;
+    line-height: 1.55;
+    margin: 0 0 1rem;
+}
+
+.collectives-info-dates {
+    border-top: 1px solid rgba(19, 35, 61, 0.16);
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+    padding-top: 1rem;
+}
+
+.collectives-info-dates div {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.collectives-info-dates dt {
+    color: #13233d;
+    font-weight: 800;
+}
+
+.collectives-info-dates dd {
+    color: #263246;
+    margin: 0;
 }
 
 @media (min-width: 640px) {
@@ -705,10 +817,34 @@ body {
 }
 
 @media (max-width: 610px) {
+    .hero-content {
+        transform: translateY(-12px);
+    }
+
+    .hero-logo {
+        margin-top: 18px;
+        margin-bottom: 12px;
+    }
+
     .logo-image {
         width: 350px;
+        max-width: calc(100vw - 40px);
     }
+
     .hero-text {
         width: 400px;
+        max-width: calc(100vw - 32px);
+    }
+
+    .hero-subtitle {
+        display: none;
+    }
+
+    .cta-buttons {
+        gap: 16px;
+    }
+
+    .collectives-promo {
+        margin-top: 1.3rem;
     }
 }

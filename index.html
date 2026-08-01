@@ -167,8 +167,11 @@
                             <i class="fas fa-house-user"></i>
                         </div>
                         <div class="collectives-promo-copy">
-                            <h2>VIEW COLLECTIVES HOSTS</h2>
-                            <p>See who is hosting a Collective and find a gathering near you.</p>
+                            <h2>JOIN US FOR COLLECTIVES</h2>
+                            <p>
+                                See who is hosting a Collective and find a gathering near you.
+                                <button id="collectives-more-info" class="collectives-more-info-button" type="button">More info...</button>
+                            </p>
                         </div>
                         <a href="collectives/" class="btn collectives-promo-button">
                             <i class="fas fa-users"></i>
@@ -255,6 +258,26 @@
                 </div>
             </div>
         </footer>
+    </div>
+
+    <div id="collectives-info-modal" class="collectives-info-modal" role="dialog" aria-modal="true" aria-labelledby="collectives-info-title" hidden>
+        <div class="collectives-info-panel" role="document" tabindex="-1">
+            <button id="collectives-info-close" class="collectives-info-close" type="button" aria-label="Close Collectives information">&times;</button>
+            <h2 id="collectives-info-title">Fall 2026 Collectives</h2>
+            <p>
+                Our Fall 2026 Collectives season runs for 7 weeks and is built around Defiant Lights, Nirup's upcoming book on how following Jesus' call to live differently remakes us and restores our world. Meetings are weekly at time and location determined by each host. Message the host for more info.
+            </p>
+            <dl class="collectives-info-dates">
+                <div>
+                    <dt>Start date:</dt>
+                    <dd>September 23, 2026 (Launch Party)</dd>
+                </div>
+                <div>
+                    <dt>Ends:</dt>
+                    <dd>November 11, 2026 (Wrap Party)</dd>
+                </div>
+            </dl>
+        </div>
     </div>
 
     <script src="splash-script.js"></script>
