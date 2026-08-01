@@ -50,7 +50,6 @@ function audienceLabel(value) {
 function childcareOption(collective) {
   const value = fieldValue(collective.childcare_option);
   if (CHILDCARE_OPTIONS.includes(value)) return value;
-  if (collective.childcare_provided === true) return "Childcare Available | Sitter Provided";
   return "Childcare Not Provided";
 }
 

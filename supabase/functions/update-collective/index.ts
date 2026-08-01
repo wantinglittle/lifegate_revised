@@ -40,7 +40,6 @@ type Collective = {
   formatted_location: string | null;
   audience: string;
   childcare_option: string;
-  childcare_provided?: boolean;
   primary_host_phone: string;
   latitude: number | null;
   longitude: number | null;
@@ -379,7 +378,6 @@ Deno.serve(async (request: Request) => {
       const childcareOption = normalizeString(changes.childcare_option, 80);
       if (!VALID_CHILDCARE_OPTIONS.has(childcareOption)) return jsonResponse(origin, 400, { error: "Childcare option is invalid." });
       patch.childcare_option = childcareOption;
-      patch.childcare_provided = childcareOption === "Childcare Available | Sitter Provided";
     }
 
     if ("primary_host_phone" in changes) {

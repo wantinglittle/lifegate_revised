@@ -221,7 +221,6 @@ async function insertCollective(
     formatted_location: coords.formattedLocation,
     audience: submission.audience,
     childcare_option: submission.childcareOption,
-    childcare_provided: submission.childcareOption === "Childcare Available | Sitter Provided",
     primary_host_phone: submission.primaryPhone,
     latitude: coords.latitude,
     longitude: coords.longitude

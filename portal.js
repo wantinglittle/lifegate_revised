@@ -575,9 +575,7 @@ function collectiveAudienceLabel(value) {
 function collectiveChildcareLabel(collective) {
   const option = fieldValue(collective.childcare_option);
   if (option !== "N/A") return option;
-  return collective.childcare_provided === true
-    ? "Childcare Available | Sitter Provided"
-    : "Childcare Not Provided";
+  return "Childcare Not Provided";
 }
 
 function csvField(value) {

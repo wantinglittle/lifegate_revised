@@ -131,9 +131,7 @@ function normalizeCollectiveAudience(value) {
 function normalizeChildcareOption(record) {
   const option = normalizeText(record.childcare_option);
   if (CHILDCARE_OPTIONS.includes(option)) return option;
-  return record.childcare_provided === true
-    ? "Childcare Available | Sitter Provided"
-    : "Childcare Not Provided";
+  return "Childcare Not Provided";
 }
 
 function setSelectOptions(select, values) {
