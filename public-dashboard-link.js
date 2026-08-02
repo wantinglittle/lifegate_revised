@@ -12,7 +12,7 @@ async function updateDashboardLinks() {
         link.textContent = "My Dashboard";
         link.href = "portal.html";
       } else {
-        link.textContent = "Log In";
+        link.textContent = link.dataset.loggedOutLabel || "Log In";
         link.href = "portal-login.html";
       }
     });
