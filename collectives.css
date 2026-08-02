@@ -576,20 +576,33 @@
 
 @media (max-width: 860px) {
   .collectives-wrapper > header {
-    align-items: flex-start;
+    align-items: center;
+    flex-direction: column;
     gap: 0.75rem;
+    justify-content: center;
     padding: 0.9rem 1rem;
+    text-align: center;
+    width: 100%;
+  }
+
+  .collectives-wrapper .header-logo,
+  .collectives-wrapper .header-content,
+  .collectives-wrapper .header-actions {
     width: 100%;
   }
 
   .collectives-wrapper .header-content {
-    flex-basis: 100%;
-    order: 3;
-    text-align: left;
+    flex-basis: auto;
+    order: 0;
+    text-align: center;
   }
 
   .collectives-wrapper .header-content h1 {
     font-size: 1.75rem;
+  }
+
+  .collectives-wrapper .public-header-actions {
+    justify-content: center;
   }
 
   .collectives-main {

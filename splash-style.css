@@ -799,13 +799,45 @@ body {
     }
 
     .collectives-promo-panel {
-        grid-template-columns: 1fr;
-        justify-items: center;
+        align-items: center;
+        column-gap: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        row-gap: 0.75rem;
         padding: 1.25rem;
+        text-align: left;
+    }
+
+    .collectives-promo-copy {
+        display: contents;
+    }
+
+    .collectives-promo-icon {
+        border-radius: 14px;
+        font-size: 1.65rem;
+        height: 3.15rem;
+        width: 3.15rem;
+    }
+
+    .collectives-promo-copy h2 {
+        flex: 0 0 auto;
+        line-height: 1.05;
+        margin-bottom: 0;
+    }
+
+    .collectives-promo-copy h2 span {
+        display: block;
+    }
+
+    .collectives-promo-copy p {
+        flex: 0 0 100%;
+        margin-top: 0;
         text-align: center;
     }
 
     .collectives-promo-button {
+        flex: 0 0 100%;
         justify-content: center;
         width: 100%;
     }
@@ -822,8 +854,8 @@ body {
     }
 
     .hero-logo {
-        margin-top: 18px;
-        margin-bottom: 12px;
+        margin-top: 56px;
+        margin-bottom: 4px;
     }
 
     .logo-image {
@@ -832,8 +864,15 @@ body {
     }
 
     .hero-text {
-        width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        width: min(400px, calc(100vw - 32px));
         max-width: calc(100vw - 32px);
+    }
+
+    .hero-tagline {
+        text-align: center;
+        width: 100%;
     }
 
     .hero-subtitle {
@@ -847,4 +886,5 @@ body {
     .collectives-promo {
         margin-top: 1.3rem;
     }
+
 }
