@@ -40,6 +40,15 @@ const fields = {
   contact_name: document.getElementById("edit-contact-name"),
   contact_email: document.getElementById("edit-contact-email"),
   contact_phone: document.getElementById("edit-contact-phone"),
+  primary_host_first_name: document.getElementById("edit-primary-host-first-name"),
+  primary_host_last_name: document.getElementById("edit-primary-host-last-name"),
+  primary_host_email: document.getElementById("edit-primary-host-email"),
+  primary_host_phone: document.getElementById("edit-primary-host-phone"),
+  secondary_host_first_name: document.getElementById("edit-secondary-host-first-name"),
+  secondary_host_last_name: document.getElementById("edit-secondary-host-last-name"),
+  secondary_host_email: document.getElementById("edit-secondary-host-email"),
+  secondary_host_phone: document.getElementById("edit-secondary-host-phone"),
+  remove_secondary_host: document.getElementById("edit-secondary-host-remove"),
   day: document.getElementById("edit-day"),
   meeting_time: document.getElementById("edit-meeting-time"),
   audience: document.getElementById("edit-audience"),
@@ -62,6 +71,15 @@ const errorFields = {
   contact_name: document.getElementById("edit-contact-name-error"),
   contact_email: document.getElementById("edit-contact-email-error"),
   contact_phone: document.getElementById("edit-contact-phone-error"),
+  primary_host_first_name: document.getElementById("edit-primary-host-first-name-error"),
+  primary_host_last_name: document.getElementById("edit-primary-host-last-name-error"),
+  primary_host_email: document.getElementById("edit-primary-host-email-error"),
+  primary_host_phone: document.getElementById("edit-primary-host-phone-error"),
+  secondary_host_first_name: document.getElementById("edit-secondary-host-first-name-error"),
+  secondary_host_last_name: document.getElementById("edit-secondary-host-last-name-error"),
+  secondary_host_email: document.getElementById("edit-secondary-host-email-error"),
+  secondary_host_phone: document.getElementById("edit-secondary-host-phone-error"),
+  remove_secondary_host: document.getElementById("edit-secondary-host-remove-error"),
   day: document.getElementById("edit-day-error"),
   meeting_time: document.getElementById("edit-meeting-time-error"),
   audience: document.getElementById("edit-audience-error"),
@@ -156,10 +174,30 @@ function normalizeRecord(record) {
       formatted_location: normalizeNullableText(record.formatted_location),
       audience: normalizeCollectiveAudience(record.audience),
       childcare_option: normalizeChildcareOption(record),
+      primary_host_id: record.primary_host_id || null,
+      primary_host_user_id: record.primary_host_user_id || null,
+      primary_host_is_primary: record.primary_host_is_primary !== false,
+      primary_host_first_name: normalizeText(record.primary_host_first_name),
+      primary_host_last_name: normalizeText(record.primary_host_last_name),
+      primary_host_email: normalizeText(record.primary_host_email),
       primary_host_phone: normalizeText(record.primary_host_phone),
+      secondary_host_id: record.secondary_host_id || null,
+      secondary_host_user_id: record.secondary_host_user_id || null,
+      secondary_host_is_primary: false,
+      secondary_host_first_name: normalizeText(record.secondary_host_first_name),
+      secondary_host_last_name: normalizeText(record.secondary_host_last_name),
+      secondary_host_email: normalizeText(record.secondary_host_email),
+      secondary_host_phone: normalizeText(record.secondary_host_phone),
+      my_host_id: record.my_host_id || null,
+      my_host_is_primary: record.my_host_is_primary === true,
+      my_host_first_name: normalizeText(record.my_host_first_name),
+      my_host_last_name: normalizeText(record.my_host_last_name),
+      my_host_email: normalizeText(record.my_host_email),
+      my_host_phone: normalizeText(record.my_host_phone),
       approval_status: approvalStatus,
       listing_status: listingStatus,
       status: approvalStatus === "pending" ? "pending" : listingStatus,
+      is_closed: record.is_closed === true,
       latitude: normalizeNumber(record.latitude),
       longitude: normalizeNumber(record.longitude)
     };
@@ -225,8 +263,21 @@ function populateForm(record) {
     fields.title.value = "Collective Host";
     fields.description.value = "7-week Collective gathering";
     fields.contact_name.value = "Collective Host";
-    fields.contact_email.value = "collectives@lifegatecommunity.com";
-    fields.contact_phone.value = record.primary_host_phone;
+    fields.contact_email.value = "";
+    fields.contact_phone.value = "";
+    fields.primary_host_first_name.value = editMode === "admin" ? record.primary_host_first_name : record.my_host_first_name;
+    fields.primary_host_last_name.value = editMode === "admin" ? record.primary_host_last_name : record.my_host_last_name;
+    fields.primary_host_email.value = editMode === "admin" ? record.primary_host_email : record.my_host_email;
+    fields.primary_host_phone.value = editMode === "admin" ? record.primary_host_phone : record.my_host_phone;
+    fields.secondary_host_first_name.value = record.secondary_host_first_name;
+    fields.secondary_host_last_name.value = record.secondary_host_last_name;
+    fields.secondary_host_email.value = record.secondary_host_email;
+    fields.secondary_host_phone.value = record.secondary_host_phone;
+    fields.remove_secondary_host.checked = false;
+    fields.remove_secondary_host.closest(".portal-check-row").hidden =
+      editMode !== "admin" || !record.secondary_host_id;
+    fields.primary_host_email.disabled = editMode !== "admin";
+    fields.secondary_host_email.disabled = false;
     fields.day.value = "";
     fields.meeting_time.value = "";
     fields.audience.value = record.audience;
@@ -246,7 +297,6 @@ function populateForm(record) {
     fields.latitude.value = record.latitude === null ? "" : String(record.latitude);
     fields.longitude.value = record.longitude === null ? "" : String(record.longitude);
     fields.owner_user_id.value = "";
-    fields.contact_phone.value = record.primary_host_phone;
     return;
   }
 
@@ -258,6 +308,10 @@ function populateForm(record) {
   fields.contact_name.value = record.contact_name;
   fields.contact_email.value = record.contact_email;
   fields.contact_phone.value = record.contact_phone;
+  fields.contact_email.disabled = false;
+  fields.secondary_host_email.disabled = false;
+  fields.remove_secondary_host.checked = false;
+  fields.remove_secondary_host.closest(".portal-check-row").hidden = true;
   fields.day.value = record.day || "";
   fields.meeting_time.value = record.meeting_time || "";
   fields.audience.value = record.audience;
@@ -296,6 +350,21 @@ function configureMode(isAdmin) {
   ];
   const isClosedRow = fields.is_closed.closest(".portal-check-row");
   const childcareOptionGroup = fields.childcare_option.closest(".form-group");
+  const primaryHostHeading = document.getElementById("edit-primary-host-heading");
+  const secondaryHostHeading = document.getElementById("edit-secondary-host-heading");
+  const primaryHostGroups = [
+    fields.primary_host_first_name.closest(".form-group"),
+    fields.primary_host_last_name.closest(".form-group"),
+    fields.primary_host_email.closest(".form-group"),
+    fields.primary_host_phone.closest(".form-group")
+  ];
+  const secondaryNameGroups = [
+    fields.secondary_host_first_name.closest(".form-group"),
+    fields.secondary_host_last_name.closest(".form-group")
+  ];
+  const secondaryEmailGroup = fields.secondary_host_email.closest(".form-group");
+  const secondaryPhoneGroup = fields.secondary_host_phone.closest(".form-group");
+  const secondaryRemoveGroup = fields.remove_secondary_host.closest(".portal-check-row");
   isClosedRow.hidden = false;
   childcareOptionGroup.hidden = recordType !== "collective";
   const isClosedLabel = document.querySelector('label[for="edit-is-closed"]');
@@ -305,6 +374,7 @@ function configureMode(isAdmin) {
     ? "Check this when the Collective is not accepting attendee signups. Closed status does not hide the Collective."
     : "Check this when the group is not accepting new members. If the community is visible on the website, visitors will see that it is currently closed. Closed status does not hide the group.";
   const contactFieldset = fields.contact_name.closest("fieldset");
+  const contactLegend = document.getElementById("portal-contact-legend");
   const coordinateFields = [
     fields.latitude.closest(".form-group"),
     fields.longitude.closest(".form-group"),
@@ -316,10 +386,25 @@ function configureMode(isAdmin) {
   coordinateFields.forEach((element) => {
     if (element) element.hidden = recordType === "collective";
   });
-  contactFieldset.hidden = recordType === "collective" && editMode !== "admin";
+  contactFieldset.hidden = false;
+  contactLegend.textContent = recordType === "collective"
+    ? editMode === "admin" ? "Host Information" : "My Host Information"
+    : "Contact Information";
   fields.contact_name.closest(".form-group").hidden = recordType === "collective";
   fields.contact_email.closest(".form-group").hidden = recordType === "collective";
-  fields.contact_phone.closest(".form-group").hidden = recordType !== "collective" ? false : editMode !== "admin";
+  fields.contact_phone.closest(".form-group").hidden = recordType === "collective";
+  primaryHostHeading.hidden = recordType !== "collective" || editMode !== "admin";
+  primaryHostHeading.textContent = "Primary Host";
+  primaryHostGroups.forEach((element) => {
+    element.hidden = recordType !== "collective";
+  });
+  secondaryHostHeading.hidden = recordType !== "collective" || editMode !== "admin";
+  secondaryNameGroups.forEach((element) => {
+    element.hidden = recordType !== "collective" || editMode !== "admin";
+  });
+  secondaryEmailGroup.hidden = recordType !== "collective" || editMode !== "admin";
+  secondaryPhoneGroup.hidden = recordType !== "collective" || editMode !== "admin";
+  secondaryRemoveGroup.hidden = true;
 }
 
 function readRequiredText(fieldName, label, maxLength, errors) {
@@ -379,14 +464,53 @@ function readFormValues() {
     }
 
     if (editMode === "admin") {
-      values.primary_host_phone = readRequiredText("contact_phone", "Primary host phone", null, errors);
+      values.primary_host_first_name = readRequiredText("primary_host_first_name", "Primary host first name", 80, errors);
+      values.primary_host_last_name = readRequiredText("primary_host_last_name", "Primary host last name", 80, errors);
+      values.primary_host_email = normalizeText(fields.primary_host_email.value).toLowerCase();
+      values.primary_host_phone = readRequiredText("primary_host_phone", "Primary host phone", 40, errors);
+      values.secondary_host_first_name = normalizeText(fields.secondary_host_first_name.value);
+      values.secondary_host_last_name = normalizeText(fields.secondary_host_last_name.value);
+      values.secondary_host_email = normalizeText(fields.secondary_host_email.value).toLowerCase();
+      values.secondary_host_phone = normalizeText(fields.secondary_host_phone.value);
+      values.remove_secondary_host = fields.remove_secondary_host.checked;
+      if (!values.primary_host_email) {
+        errors.primary_host_email = "Primary host email is required.";
+      } else if (!EMAIL_PATTERN.test(values.primary_host_email)) {
+        errors.primary_host_email = "Enter a valid primary host email.";
+      }
+      if (values.secondary_host_email && !EMAIL_PATTERN.test(values.secondary_host_email)) {
+        errors.secondary_host_email = "Enter a valid second host email.";
+      }
+      const hasSecondaryHostValues = Boolean(
+        values.secondary_host_first_name ||
+        values.secondary_host_last_name ||
+        values.secondary_host_phone
+      );
+      if (!values.remove_secondary_host && (hasSecondaryHostValues || originalRecord.secondary_host_id) && !values.secondary_host_email) {
+        errors.secondary_host_email = "Enter a second host email before adding a second host phone.";
+      }
+      if (values.remove_secondary_host && !originalRecord.secondary_host_id) {
+        errors.remove_secondary_host = "There is no second host to remove.";
+      }
       if (originalRecord.approval_status === "approved" && values.status === "pending") {
         errors.status = "Approved collectives cannot be returned to Pending.";
       }
-    } else if (originalRecord.approval_status === "pending" && values.status !== "pending") {
-      errors.status = "Pending collectives cannot change status until approval.";
-    } else if (originalRecord.approval_status === "approved" && values.status === "pending") {
-      errors.status = "Hosts cannot set status to Pending.";
+    } else {
+      values.my_host_first_name = readRequiredText("primary_host_first_name", "First name", 80, errors);
+      values.my_host_last_name = readRequiredText("primary_host_last_name", "Last name", 80, errors);
+      values.my_host_phone = normalizeText(fields.primary_host_phone.value);
+      values.my_host_email = originalRecord.my_host_email;
+      fields.primary_host_email.value = originalRecord.my_host_email;
+      if (!values.my_host_phone) {
+        errors.primary_host_phone = "Phone is required.";
+      } else if (values.my_host_phone.length > 40) {
+        errors.primary_host_phone = "Phone must be 40 characters or fewer.";
+      }
+      if (originalRecord.approval_status === "pending" && values.status !== "pending") {
+        errors.status = "Pending collectives cannot change status until approval.";
+      } else if (originalRecord.approval_status === "approved" && values.status === "pending") {
+        errors.status = "Hosts cannot set status to Pending.";
+      }
     }
 
     return { values, errors };
@@ -477,8 +601,28 @@ function buildPatch(values) {
     });
 
     if (editMode === "admin") {
-      if (!valuesAreEqual(values.primary_host_phone, originalRecord.primary_host_phone)) {
+      const primaryHostChanged = !valuesAreEqual(values.primary_host_first_name, originalRecord.primary_host_first_name) ||
+        !valuesAreEqual(values.primary_host_last_name, originalRecord.primary_host_last_name) ||
+        !valuesAreEqual(values.primary_host_email, originalRecord.primary_host_email) ||
+        !valuesAreEqual(values.primary_host_phone, originalRecord.primary_host_phone);
+      const secondaryHostChanged = !valuesAreEqual(values.secondary_host_first_name, originalRecord.secondary_host_first_name) ||
+        !valuesAreEqual(values.secondary_host_last_name, originalRecord.secondary_host_last_name) ||
+        !valuesAreEqual(values.secondary_host_email, originalRecord.secondary_host_email) ||
+        !valuesAreEqual(values.secondary_host_phone, originalRecord.secondary_host_phone);
+
+      if (primaryHostChanged) {
+        patch.primary_host_first_name = values.primary_host_first_name;
+        patch.primary_host_last_name = values.primary_host_last_name;
+        patch.primary_host_email = values.primary_host_email;
         patch.primary_host_phone = values.primary_host_phone;
+      }
+      if (values.remove_secondary_host) {
+        patch.remove_secondary_host = true;
+      } else if (secondaryHostChanged) {
+        patch.secondary_host_first_name = values.secondary_host_first_name || null;
+        patch.secondary_host_last_name = values.secondary_host_last_name || null;
+        patch.secondary_host_email = values.secondary_host_email;
+        patch.secondary_host_phone = values.secondary_host_phone || null;
       }
       if (!valuesAreEqual(values.status, originalRecord.status)) {
         if (values.status === "pending") {
@@ -491,6 +635,16 @@ function buildPatch(values) {
       }
     } else if (originalRecord.approval_status === "approved" && !valuesAreEqual(values.status, originalRecord.status)) {
       patch.listing_status = values.status;
+    }
+    if (editMode !== "admin") {
+      const myHostChanged = !valuesAreEqual(values.my_host_first_name, originalRecord.my_host_first_name) ||
+        !valuesAreEqual(values.my_host_last_name, originalRecord.my_host_last_name) ||
+        !valuesAreEqual(values.my_host_phone, originalRecord.my_host_phone);
+      if (myHostChanged) {
+        patch.my_host_first_name = values.my_host_first_name;
+        patch.my_host_last_name = values.my_host_last_name;
+        patch.my_host_phone = values.my_host_phone;
+      }
     }
 
     return patch;

@@ -1,6 +1,8 @@
 
 node_modules/
 
+.codex-tmp/
+
 supabase/.temp/
 supabase/functions/.env
 supabase/functions/.env.*

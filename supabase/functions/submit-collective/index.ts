@@ -240,6 +240,7 @@ async function insertCollective(
       pending_first_name: primaryUserId ? null : submission.primaryFirstName,
       pending_last_name: primaryUserId ? null : submission.primaryLastName,
       pending_email: primaryUserId ? null : submission.primaryEmail,
+      phone: submission.primaryPhone,
       is_primary: true
     }
   ];
@@ -247,7 +248,10 @@ async function insertCollective(
     hostRows.push({
       collective_id: id,
       user_id: secondaryUserId,
+      pending_first_name: null,
+      pending_last_name: null,
       pending_email: secondaryUserId ? null : submission.secondaryEmail,
+      phone: null,
       is_primary: false
     });
   }

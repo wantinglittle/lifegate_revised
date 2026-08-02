@@ -11,6 +11,7 @@ const VALID_CHILDCARE_OPTIONS = new Set([
 ]);
 const VALID_APPROVAL_STATUSES = new Set(["pending", "approved"]);
 const VALID_LISTING_STATUSES = new Set(["active", "inactive"]);
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type RequestBody = Record<string, unknown>;
 type JsonObject = Record<string, unknown>;
@@ -41,17 +42,26 @@ type Collective = {
   formatted_location: string | null;
   audience: string;
   childcare_option: string;
-  primary_host_phone: string;
+  primary_host_phone: string | null;
   latitude: number | null;
   longitude: number | null;
 };
 
 type HostRow = {
+  id: string;
   user_id: string | null;
   pending_first_name: string | null;
   pending_last_name: string | null;
   pending_email: string | null;
+  phone: string | null;
   is_primary: boolean;
+};
+
+type HostInput = {
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  phone: string | null;
 };
 
 function isAllowedLocalOrigin(origin: string): boolean {
@@ -88,6 +98,10 @@ function jsonResponse(origin: string | null, status: number, body: Record<string
 
 function normalizeString(value: unknown, maxLength: number): string {
   return (typeof value === "string" ? value.trim() : "").slice(0, maxLength);
+}
+
+function normalizeEmail(value: unknown): string {
+  return normalizeString(value, 254).toLowerCase();
 }
 
 function nullableString(value: unknown, maxLength: number): string | null {
@@ -129,7 +143,7 @@ async function getAuthenticatedUser(request: Request, supabaseUrl: string): Prom
   });
   if (!response.ok) return null;
   const user = await response.json();
-  return typeof user?.id === "string" ? { id: user.id, email: normalizeString(user.email, 254).toLowerCase() } : null;
+  return typeof user?.id === "string" ? { id: user.id, email: normalizeEmail(user.email) } : null;
 }
 
 async function loadPortalUser(supabaseUrl: string, key: string, userId: string): Promise<PortalUser | null> {
@@ -144,6 +158,21 @@ async function loadPortalUser(supabaseUrl: string, key: string, userId: string):
   if (!response.ok) throw new Error(`Portal user lookup failed: ${await response.text()}`);
   const rows = await response.json();
   return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+}
+
+async function findPortalUserByEmail(supabaseUrl: string, key: string, email: string): Promise<PortalUser | null> {
+  const params = new URLSearchParams({
+    select: "user_id,email,first_name,last_name,is_admin",
+    email: `ilike.${email}`,
+    limit: "2"
+  });
+  const response = await fetch(`${supabaseUrl}/rest/v1/portal_users?${params}`, {
+    headers: supabaseHeaders(key)
+  });
+  if (!response.ok) throw new Error(`Portal email lookup failed: ${await response.text()}`);
+  const rows = await response.json();
+  if (!Array.isArray(rows)) return null;
+  return rows.find((row) => normalizeEmail(row?.email) === email) || null;
 }
 
 async function loadCollective(supabaseUrl: string, key: string, collectiveId: string): Promise<Collective | null> {
@@ -162,7 +191,7 @@ async function loadCollective(supabaseUrl: string, key: string, collectiveId: st
 
 async function loadHosts(supabaseUrl: string, key: string, collectiveId: string): Promise<HostRow[]> {
   const params = new URLSearchParams({
-    select: "user_id,pending_first_name,pending_last_name,pending_email,is_primary",
+    select: "id,user_id,pending_first_name,pending_last_name,pending_email,phone,is_primary",
     collective_id: `eq.${collectiveId}`,
     order: "is_primary.desc,created_at.asc"
   });
@@ -194,6 +223,70 @@ async function loadPortalUsers(supabaseUrl: string, key: string, userIds: string
     });
   }
   return users;
+}
+
+async function updatePortalUserNames(
+  supabaseUrl: string,
+  key: string,
+  userId: string,
+  firstName: string | null,
+  lastName: string | null
+): Promise<void> {
+  const params = new URLSearchParams({ user_id: `eq.${userId}` });
+  const response = await fetch(`${supabaseUrl}/rest/v1/portal_users?${params}`, {
+    method: "PATCH",
+    headers: supabaseHeaders(key, { Prefer: "return=minimal" }),
+    body: JSON.stringify({ first_name: firstName, last_name: lastName })
+  });
+  if (!response.ok) throw new Error(`Portal user name update failed: ${await response.text()}`);
+}
+
+async function updateHostRow(
+  supabaseUrl: string,
+  key: string,
+  hostId: string,
+  patch: JsonObject
+): Promise<void> {
+  if (Object.keys(patch).length === 0) return;
+  const params = new URLSearchParams({ id: `eq.${hostId}` });
+  const response = await fetch(`${supabaseUrl}/rest/v1/collective_hosts?${params}`, {
+    method: "PATCH",
+    headers: supabaseHeaders(key, { Prefer: "return=minimal" }),
+    body: JSON.stringify(patch)
+  });
+  if (!response.ok) throw new Error(`Collective host update failed: ${await response.text()}`);
+}
+
+async function createHostRow(
+  supabaseUrl: string,
+  key: string,
+  collectiveId: string,
+  input: HostInput,
+  linkedUser: PortalUser | null
+): Promise<void> {
+  const response = await fetch(`${supabaseUrl}/rest/v1/collective_hosts`, {
+    method: "POST",
+    headers: supabaseHeaders(key, { Prefer: "return=minimal" }),
+    body: JSON.stringify({
+      collective_id: collectiveId,
+      user_id: linkedUser?.user_id || null,
+      pending_first_name: linkedUser ? null : input.firstName,
+      pending_last_name: linkedUser ? null : input.lastName,
+      pending_email: linkedUser ? null : input.email,
+      phone: input.phone,
+      is_primary: false
+    })
+  });
+  if (!response.ok) throw new Error(`Second host create failed: ${await response.text()}`);
+}
+
+async function deleteHostRow(supabaseUrl: string, key: string, hostId: string): Promise<void> {
+  const params = new URLSearchParams({ id: `eq.${hostId}` });
+  const response = await fetch(`${supabaseUrl}/rest/v1/collective_hosts?${params}`, {
+    method: "DELETE",
+    headers: supabaseHeaders(key, { Prefer: "return=minimal" })
+  });
+  if (!response.ok) throw new Error(`Collective host delete failed: ${await response.text()}`);
 }
 
 async function loadAttendeeCount(supabaseUrl: string, key: string, collectiveId: string): Promise<number> {
@@ -263,6 +356,53 @@ function assertNoUnknownKeys(changes: JsonObject, allowedKeys: Set<string>): str
   return unknownKey ? `Field "${unknownKey}" cannot be updated here.` : null;
 }
 
+function effectiveHostEmail(host: HostRow | null, users: Map<string, PortalUser>): string {
+  if (!host) return "";
+  const linkedEmail = host.user_id ? users.get(host.user_id)?.email || "" : "";
+  return normalizeEmail(linkedEmail || host.pending_email);
+}
+
+function effectiveHostFirstName(host: HostRow | null, users: Map<string, PortalUser>): string | null {
+  if (!host) return null;
+  return host.user_id ? users.get(host.user_id)?.first_name || null : host.pending_first_name;
+}
+
+function effectiveHostLastName(host: HostRow | null, users: Map<string, PortalUser>): string | null {
+  if (!host) return null;
+  return host.user_id ? users.get(host.user_id)?.last_name || null : host.pending_last_name;
+}
+
+function readHostInput(changes: JsonObject, prefix: "primary" | "secondary"): HostInput {
+  return {
+    firstName: nullableString(changes[`${prefix}_host_first_name`], 80),
+    lastName: nullableString(changes[`${prefix}_host_last_name`], 80),
+    email: normalizeEmail(changes[`${prefix}_host_email`]),
+    phone: nullableString(changes[`${prefix}_host_phone`], 40)
+  };
+}
+
+function hostInputHasAnyValue(input: HostInput): boolean {
+  return Boolean(input.firstName || input.lastName || input.email || input.phone);
+}
+
+function assertNoHostConflict(
+  inputEmail: string,
+  linkedUser: PortalUser | null,
+  otherHost: HostRow | null,
+  portalUsers: Map<string, PortalUser>,
+  label: string
+): string | null {
+  if (!otherHost) return null;
+  if (linkedUser && otherHost.user_id === linkedUser.user_id) {
+    return `${label} matches the other host on this Collective.`;
+  }
+  const otherEmail = effectiveHostEmail(otherHost, portalUsers);
+  if (otherEmail && otherEmail === inputEmail) {
+    return `${label} email matches the other host on this Collective.`;
+  }
+  return null;
+}
+
 async function updateCollectiveRow(
   supabaseUrl: string,
   key: string,
@@ -284,31 +424,115 @@ async function updateCollectiveRow(
   return rows[0];
 }
 
+async function applyAdminHostInput(
+  supabaseUrl: string,
+  key: string,
+  collectiveId: string,
+  host: HostRow | null,
+  otherHost: HostRow | null,
+  portalUsers: Map<string, PortalUser>,
+  input: HostInput,
+  isPrimary: boolean
+): Promise<string | null> {
+  const label = isPrimary ? "Primary host" : "Second host";
+  if (!input.email || !EMAIL_PATTERN.test(input.email)) return `${label} email is invalid.`;
+  if (isPrimary && (!input.firstName || !input.lastName || !input.phone)) {
+    return "Primary host first name, last name, email, and phone are required.";
+  }
+  if (input.phone === "") input.phone = null;
+
+  const linkedUser = await findPortalUserByEmail(supabaseUrl, key, input.email);
+  const conflict = assertNoHostConflict(input.email, linkedUser, otherHost, portalUsers, label);
+  if (conflict) return conflict;
+
+  if (linkedUser && (input.firstName !== null || input.lastName !== null)) {
+    await updatePortalUserNames(supabaseUrl, key, linkedUser.user_id, input.firstName, input.lastName);
+  }
+
+  if (!host) {
+    if (isPrimary) return "Primary host row is missing.";
+    await createHostRow(supabaseUrl, key, collectiveId, input, linkedUser);
+    return null;
+  }
+
+  const patch: JsonObject = {
+    user_id: linkedUser?.user_id || null,
+    pending_first_name: linkedUser ? null : input.firstName,
+    pending_last_name: linkedUser ? null : input.lastName,
+    pending_email: linkedUser ? null : input.email,
+    phone: input.phone,
+    is_primary: host.is_primary
+  };
+  await updateHostRow(supabaseUrl, key, host.id, patch);
+  return null;
+}
+
+async function applyLinkedHostInput(
+  supabaseUrl: string,
+  key: string,
+  portalUser: PortalUser,
+  host: HostRow,
+  changes: JsonObject
+): Promise<string | null> {
+  const firstName = nullableString(changes.my_host_first_name, 80);
+  const lastName = nullableString(changes.my_host_last_name, 80);
+  const phone = nullableString(changes.my_host_phone, 40);
+  if (!firstName || !lastName || !phone) {
+    return "First name, last name, and phone are required.";
+  }
+  await updatePortalUserNames(supabaseUrl, key, portalUser.user_id, firstName, lastName);
+  await updateHostRow(supabaseUrl, key, host.id, { phone });
+  return null;
+}
+
 async function buildResponseRecord(
   supabaseUrl: string,
   key: string,
-  collective: Collective
+  collective: Collective,
+  viewerUserId: string,
+  isAdmin: boolean
 ): Promise<JsonObject> {
   const hosts = await loadHosts(supabaseUrl, key, collective.id);
   const userIds = hosts.map((host) => host.user_id || "").filter(Boolean);
   const portalUsers = await loadPortalUsers(supabaseUrl, key, userIds);
   const primaryHost = hosts.find((host) => host.is_primary) || null;
   const secondaryHost = hosts.find((host) => !host.is_primary) || null;
-  const primaryUser = primaryHost?.user_id ? portalUsers.get(primaryHost.user_id) || null : null;
-  const secondaryUser = secondaryHost?.user_id ? portalUsers.get(secondaryHost.user_id) || null : null;
+  const myHost = hosts.find((host) => host.user_id === viewerUserId) || null;
   const attendeeCount = await loadAttendeeCount(supabaseUrl, key, collective.id);
 
-  return {
+  const response: JsonObject = {
     ...collective,
     status: displayStatus(collective),
     attendee_count: attendeeCount,
-    primary_host_user_id: primaryHost?.user_id || null,
-    primary_host_email: primaryUser?.email || primaryHost?.pending_email || null,
-    primary_host_first_name: primaryUser?.first_name || primaryHost?.pending_first_name || null,
-    primary_host_last_name: primaryUser?.last_name || primaryHost?.pending_last_name || null,
-    secondary_host_user_id: secondaryHost?.user_id || null,
-    secondary_host_email: secondaryUser?.email || secondaryHost?.pending_email || null
+    primary_host_phone: myHost?.is_primary ? myHost.phone : null,
+    primary_host_last_name: effectiveHostLastName(primaryHost, portalUsers) || "Host",
+    my_host_id: myHost?.id || null,
+    my_host_user_id: myHost?.user_id || null,
+    my_host_is_primary: myHost?.is_primary === true,
+    my_host_first_name: effectiveHostFirstName(myHost, portalUsers),
+    my_host_last_name: effectiveHostLastName(myHost, portalUsers),
+    my_host_email: effectiveHostEmail(myHost, portalUsers) || null,
+    my_host_phone: myHost?.phone || null
   };
+
+  if (isAdmin) {
+    response.primary_host_id = primaryHost?.id || null;
+    response.primary_host_user_id = primaryHost?.user_id || null;
+    response.primary_host_is_primary = primaryHost?.is_primary === true;
+    response.primary_host_email = effectiveHostEmail(primaryHost, portalUsers) || null;
+    response.primary_host_phone = primaryHost?.phone || collective.primary_host_phone || null;
+    response.primary_host_first_name = effectiveHostFirstName(primaryHost, portalUsers);
+    response.primary_host_last_name = effectiveHostLastName(primaryHost, portalUsers);
+    response.secondary_host_id = secondaryHost?.id || null;
+    response.secondary_host_user_id = secondaryHost?.user_id || null;
+    response.secondary_host_is_primary = secondaryHost?.is_primary === true;
+    response.secondary_host_email = effectiveHostEmail(secondaryHost, portalUsers) || null;
+    response.secondary_host_first_name = effectiveHostFirstName(secondaryHost, portalUsers);
+    response.secondary_host_last_name = effectiveHostLastName(secondaryHost, portalUsers);
+    response.secondary_host_phone = secondaryHost?.phone || null;
+  }
+
+  return response;
 }
 
 Deno.serve(async (request: Request) => {
@@ -349,12 +573,41 @@ Deno.serve(async (request: Request) => {
     if (!collective) return jsonResponse(origin, 404, { error: "Collective not found." });
 
     const isAdmin = portalUser.is_admin === true;
-    const isLinkedHost = hosts.some((host) => host.user_id === user.id);
-    if (!isAdmin && !isLinkedHost) return jsonResponse(origin, 403, { error: "Collective access denied." });
+    const linkedHost = hosts.find((host) => host.user_id === user.id) || null;
+    if (!isAdmin && !linkedHost) return jsonResponse(origin, 403, { error: "Collective access denied." });
 
     const allowedKeys = isAdmin
-      ? new Set(["city", "zip_code", "cross_streets", "audience", "childcare_option", "listing_status", "approval_status", "primary_host_phone", "is_closed"])
-      : new Set(["city", "zip_code", "cross_streets", "audience", "childcare_option", "listing_status", "is_closed"]);
+      ? new Set([
+        "city",
+        "zip_code",
+        "cross_streets",
+        "audience",
+        "childcare_option",
+        "listing_status",
+        "approval_status",
+        "primary_host_first_name",
+        "primary_host_last_name",
+        "primary_host_email",
+        "primary_host_phone",
+        "secondary_host_first_name",
+        "secondary_host_last_name",
+        "secondary_host_email",
+        "secondary_host_phone",
+        "remove_secondary_host",
+        "is_closed"
+      ])
+      : new Set([
+        "city",
+        "zip_code",
+        "cross_streets",
+        "audience",
+        "childcare_option",
+        "listing_status",
+        "is_closed",
+        "my_host_first_name",
+        "my_host_last_name",
+        "my_host_phone"
+      ]);
     const unknownError = assertNoUnknownKeys(changes, allowedKeys);
     if (unknownError) return jsonResponse(origin, 400, { error: unknownError });
 
@@ -403,11 +656,8 @@ Deno.serve(async (request: Request) => {
       patch.is_closed = changes.is_closed;
     }
 
-    if ("primary_host_phone" in changes) {
-      const phone = normalizeString(changes.primary_host_phone, 40);
-      if (!phone) return jsonResponse(origin, 400, { error: "Primary host phone is required." });
-      patch.primary_host_phone = phone;
-    }
+    const primaryHost = hosts.find((host) => host.is_primary) || null;
+    const secondaryHost = hosts.find((host) => !host.is_primary) || null;
 
     let nextApprovalStatus = collective.approval_status;
     if ("approval_status" in changes) {
@@ -434,12 +684,62 @@ Deno.serve(async (request: Request) => {
       patch.listing_status = listingStatus;
     }
 
-    if (Object.keys(patch).length === 0) {
-      return jsonResponse(origin, 200, { collective: await buildResponseRecord(supabaseUrl, supabaseKey, collective) });
+    let hostChanged = false;
+    if (isAdmin) {
+      const portalUsers = await loadPortalUsers(supabaseUrl, supabaseKey, hosts.map((host) => host.user_id || ""));
+
+      if (
+        "primary_host_first_name" in changes ||
+        "primary_host_last_name" in changes ||
+        "primary_host_email" in changes ||
+        "primary_host_phone" in changes
+      ) {
+        const input = readHostInput(changes, "primary");
+        const error = await applyAdminHostInput(supabaseUrl, supabaseKey, collectiveId, primaryHost, secondaryHost, portalUsers, input, true);
+        if (error) return jsonResponse(origin, 400, { error });
+        hostChanged = true;
+      }
+
+      const removeSecondary = changes.remove_secondary_host === true;
+      if (removeSecondary) {
+        if (!secondaryHost) return jsonResponse(origin, 400, { error: "There is no second host to remove." });
+        await deleteHostRow(supabaseUrl, supabaseKey, secondaryHost.id);
+        hostChanged = true;
+      } else if (
+        "secondary_host_first_name" in changes ||
+        "secondary_host_last_name" in changes ||
+        "secondary_host_email" in changes ||
+        "secondary_host_phone" in changes
+      ) {
+        const input = readHostInput(changes, "secondary");
+        if (!hostInputHasAnyValue(input) && !secondaryHost) {
+          // Nothing to add.
+        } else {
+          if (!input.email) return jsonResponse(origin, 400, { error: "Second host email is required." });
+          const error = await applyAdminHostInput(supabaseUrl, supabaseKey, collectiveId, secondaryHost, primaryHost, portalUsers, input, false);
+          if (error) return jsonResponse(origin, 400, { error });
+          hostChanged = true;
+        }
+      }
+    } else if ("my_host_first_name" in changes || "my_host_last_name" in changes || "my_host_phone" in changes) {
+      if (!linkedHost) return jsonResponse(origin, 403, { error: "Collective host access denied." });
+      const error = await applyLinkedHostInput(supabaseUrl, supabaseKey, portalUser, linkedHost, changes);
+      if (error) return jsonResponse(origin, 400, { error });
+      hostChanged = true;
     }
 
-    const updated = await updateCollectiveRow(supabaseUrl, supabaseKey, collectiveId, patch);
-    return jsonResponse(origin, 200, { collective: await buildResponseRecord(supabaseUrl, supabaseKey, updated) });
+    if (Object.keys(patch).length === 0 && !hostChanged) {
+      return jsonResponse(origin, 200, {
+        collective: await buildResponseRecord(supabaseUrl, supabaseKey, collective, user.id, isAdmin)
+      });
+    }
+
+    const updated = Object.keys(patch).length > 0
+      ? await updateCollectiveRow(supabaseUrl, supabaseKey, collectiveId, patch)
+      : collective;
+    return jsonResponse(origin, 200, {
+      collective: await buildResponseRecord(supabaseUrl, supabaseKey, updated, user.id, isAdmin)
+    });
   } catch (err) {
     console.error("update-collective failed.", err instanceof Error ? err.message : err);
     const message = err instanceof Error && err.message.startsWith("We could not place")

@@ -49,7 +49,11 @@ const COLLECTIVE_SEARCH_FIELDS = [
   "primary_host_email",
   "primary_host_first_name",
   "primary_host_last_name",
-  "secondary_host_email"
+  "primary_host_phone",
+  "secondary_host_first_name",
+  "secondary_host_last_name",
+  "secondary_host_email",
+  "secondary_host_phone"
 ];
 
 const portalRole = document.getElementById("portal-role");
@@ -937,8 +941,15 @@ function renderCollectiveCard(collective, options = {}) {
     addDetail(card, "Primary Host", `${fieldValue(collective.primary_host_first_name)} ${fieldValue(collective.primary_host_last_name)}`.trim());
     addEmailDetail(card, "Primary Host Email", collective.primary_host_email);
     addDetail(card, "Primary Phone", fieldValue(collective.primary_host_phone));
+    const secondaryHostName = `${fieldValue(collective.secondary_host_first_name)} ${fieldValue(collective.secondary_host_last_name)}`.trim();
+    if (secondaryHostName) {
+      addDetail(card, "Second Host", secondaryHostName);
+    }
     if (collective.secondary_host_email) {
       addEmailDetail(card, "Second Host Email", collective.secondary_host_email);
+    }
+    if (collective.secondary_host_phone) {
+      addDetail(card, "Second Host Phone", fieldValue(collective.secondary_host_phone));
     }
   }
 

@@ -130,25 +130,86 @@
             </div>
           </fieldset>
 
-          <fieldset class="portal-edit-section">
-            <legend>Contact Information</legend>
+          <fieldset id="portal-contact-section" class="portal-edit-section">
+            <legend id="portal-contact-legend">Contact Information</legend>
             <div class="portal-form-grid">
-              <div class="form-group">
+              <div id="edit-contact-name-group" class="form-group">
                 <label for="edit-contact-name">Contact Name</label>
                 <input id="edit-contact-name" name="contact_name" type="text" required aria-describedby="edit-contact-name-error" />
                 <p id="edit-contact-name-error" class="portal-field-error"></p>
               </div>
 
-              <div class="form-group">
+              <div id="edit-contact-email-group" class="form-group">
                 <label for="edit-contact-email">Contact Email</label>
                 <input id="edit-contact-email" name="contact_email" type="email" required aria-describedby="edit-contact-email-error" />
                 <p id="edit-contact-email-error" class="portal-field-error"></p>
               </div>
 
-              <div class="form-group">
+              <div id="edit-contact-phone-group" class="form-group">
                 <label for="edit-contact-phone">Contact Phone</label>
                 <input id="edit-contact-phone" name="contact_phone" type="tel" required aria-describedby="edit-contact-phone-error" />
                 <p id="edit-contact-phone-error" class="portal-field-error"></p>
+              </div>
+
+              <h3 id="edit-primary-host-heading" class="portal-wide-field" hidden>Primary Host</h3>
+
+              <div id="edit-primary-host-first-name-group" class="form-group" hidden>
+                <label for="edit-primary-host-first-name">First Name</label>
+                <input id="edit-primary-host-first-name" name="primary_host_first_name" type="text" maxlength="80" aria-describedby="edit-primary-host-first-name-error" />
+                <p id="edit-primary-host-first-name-error" class="portal-field-error"></p>
+              </div>
+
+              <div id="edit-primary-host-last-name-group" class="form-group" hidden>
+                <label for="edit-primary-host-last-name">Last Name</label>
+                <input id="edit-primary-host-last-name" name="primary_host_last_name" type="text" maxlength="80" aria-describedby="edit-primary-host-last-name-error" />
+                <p id="edit-primary-host-last-name-error" class="portal-field-error"></p>
+              </div>
+
+              <div id="edit-primary-host-email-group" class="form-group" hidden>
+                <label for="edit-primary-host-email">Email</label>
+                <input id="edit-primary-host-email" name="primary_host_email" type="email" aria-describedby="edit-primary-host-email-error" />
+                <p id="edit-primary-host-email-error" class="portal-field-error"></p>
+              </div>
+
+              <div id="edit-primary-host-phone-group" class="form-group" hidden>
+                <label for="edit-primary-host-phone">Phone</label>
+                <input id="edit-primary-host-phone" name="primary_host_phone" type="tel" aria-describedby="edit-primary-host-phone-error" />
+                <p id="edit-primary-host-phone-error" class="portal-field-error"></p>
+              </div>
+
+              <h3 id="edit-secondary-host-heading" class="portal-wide-field" hidden>Second Host <span class="portal-muted">(Optional)</span></h3>
+
+              <div id="edit-secondary-host-first-name-group" class="form-group" hidden>
+                <label for="edit-secondary-host-first-name">First Name</label>
+                <input id="edit-secondary-host-first-name" name="secondary_host_first_name" type="text" maxlength="80" aria-describedby="edit-secondary-host-first-name-error" />
+                <p id="edit-secondary-host-first-name-error" class="portal-field-error"></p>
+              </div>
+
+              <div id="edit-secondary-host-last-name-group" class="form-group" hidden>
+                <label for="edit-secondary-host-last-name">Last Name</label>
+                <input id="edit-secondary-host-last-name" name="secondary_host_last_name" type="text" maxlength="80" aria-describedby="edit-secondary-host-last-name-error" />
+                <p id="edit-secondary-host-last-name-error" class="portal-field-error"></p>
+              </div>
+
+              <div id="edit-secondary-host-email-group" class="form-group" hidden>
+                <label for="edit-secondary-host-email">Second Host Email</label>
+                <input id="edit-secondary-host-email" name="secondary_host_email" type="email" aria-describedby="edit-secondary-host-email-error" />
+                <p id="edit-secondary-host-email-error" class="portal-field-error"></p>
+              </div>
+
+              <div id="edit-secondary-host-phone-group" class="form-group" hidden>
+                <label for="edit-secondary-host-phone">Second Host Phone</label>
+                <input id="edit-secondary-host-phone" name="secondary_host_phone" type="tel" aria-describedby="edit-secondary-host-phone-error" />
+                <p id="edit-secondary-host-phone-error" class="portal-field-error"></p>
+              </div>
+
+              <div id="edit-secondary-host-remove-group" class="portal-check-row portal-wide-field" hidden>
+                <input id="edit-secondary-host-remove" name="remove_secondary_host" type="checkbox" aria-describedby="edit-secondary-host-remove-help edit-secondary-host-remove-error" />
+                <div>
+                  <label for="edit-secondary-host-remove">Remove Second Host</label>
+                  <p id="edit-secondary-host-remove-help" class="portal-help-text">Removes only the optional second host relationship from this Collective.</p>
+                  <p id="edit-secondary-host-remove-error" class="portal-field-error"></p>
+                </div>
               </div>
             </div>
           </fieldset>
