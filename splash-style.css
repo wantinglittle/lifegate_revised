@@ -844,6 +844,7 @@ body {
 
     .collectives-supporting-line {
         align-items: flex-start;
+        display: none;
     }
 
 }
