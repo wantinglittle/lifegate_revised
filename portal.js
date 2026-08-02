@@ -601,6 +601,13 @@ function fieldValue(value) {
   return String(value);
 }
 
+function hostFullName(firstName, lastName, fallback = "Host") {
+  const parts = [firstName, lastName]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+  return parts.join(" ") || fallback;
+}
+
 function collectiveAudienceLabel(value) {
   return value === "All" ? "Everyone Welcome" : fieldValue(value);
 }
@@ -666,23 +673,37 @@ function contactListCsv(groups) {
 
 function collectiveListCsv(collectives) {
   const header = [
-    "Host Last Name",
     "City",
     "Cross Streets",
     "Audience",
     "Childcare",
     "Status",
-    "Closed",
-    "Attendees"
+    "Open/Closed",
+    "Primary Host First Name",
+    "Primary Host Last Name",
+    "Primary Host Email",
+    "Primary Host Phone",
+    "Second Host First Name",
+    "Second Host Last Name",
+    "Second Host Email",
+    "Second Host Phone",
+    "Attendee Count"
   ].map(csvField).join(",");
   const rows = collectives.map((collective) => [
-    collective.primary_host_last_name,
     collective.city,
     collective.cross_streets,
     collectiveAudienceLabel(collective.audience),
     collectiveChildcareLabel(collective),
     collectiveStatusLabel(collective),
-    collective.is_closed === true ? "Yes" : "No",
+    collective.is_closed === true ? "Closed" : "Open",
+    collective.primary_host_first_name,
+    collective.primary_host_last_name,
+    collective.primary_host_email,
+    collective.primary_host_phone,
+    collective.secondary_host_first_name,
+    collective.secondary_host_last_name,
+    collective.secondary_host_email,
+    collective.secondary_host_phone,
     attendeeCount(collective)
   ].map(csvField).join(","));
   return `\uFEFF${[header, ...rows].join("\r\n")}`;
@@ -709,7 +730,7 @@ function myDashboardCsv() {
   ].map(csvField).join(","));
   const collectiveRows = sortedCollectives(myCollectivesCache).map((collective) => [
     "Collective",
-    `${fieldValue(collective.primary_host_last_name || "Host")} Collective`,
+    `${hostFullName("", collective.primary_host_last_name)} Collective`,
     collective.city,
     collective.cross_streets,
     collectiveStatusLabel(collective),
@@ -915,7 +936,7 @@ function renderCollectiveCard(collective, options = {}) {
   const { showContactDetails = false } = options;
   const card = createElement("article", "portal-community-card");
   const header = createElement("div", "portal-community-card-header");
-  const hostLastName = fieldValue(collective.primary_host_last_name || "Host");
+  const hostLastName = String(collective.primary_host_last_name || "").trim() || "Host";
   const title = createElement("h4", "", `${hostLastName} Collective`);
   const badges = createElement("div", "portal-badges");
 
@@ -938,10 +959,10 @@ function renderCollectiveCard(collective, options = {}) {
   addDetail(card, "Attendees", String(attendeeCount(collective)));
 
   if (showContactDetails) {
-    addDetail(card, "Primary Host", `${fieldValue(collective.primary_host_first_name)} ${fieldValue(collective.primary_host_last_name)}`.trim());
+    addDetail(card, "Primary Host", hostFullName(collective.primary_host_first_name, collective.primary_host_last_name));
     addEmailDetail(card, "Primary Host Email", collective.primary_host_email);
     addDetail(card, "Primary Phone", fieldValue(collective.primary_host_phone));
-    const secondaryHostName = `${fieldValue(collective.secondary_host_first_name)} ${fieldValue(collective.secondary_host_last_name)}`.trim();
+    const secondaryHostName = hostFullName(collective.secondary_host_first_name, collective.secondary_host_last_name, "");
     if (secondaryHostName) {
       addDetail(card, "Second Host", secondaryHostName);
     }
@@ -1303,7 +1324,7 @@ async function removeAttendee(attendee) {
 
 function exportActiveAttendees() {
   if (!activeAttendeeCollective) return;
-  const hostName = fieldValue(activeAttendeeCollective.primary_host_last_name || "Host")
+  const hostName = hostFullName(activeAttendeeCollective.primary_host_first_name, activeAttendeeCollective.primary_host_last_name)
     .replace(/[^a-z0-9]+/gi, "-")
     .replace(/^-|-$/g, "") || "Host";
   saveCsv(attendeeListCsv(activeAttendees), `${hostName}-Collective-Fall-2026-Attendees.csv`);
