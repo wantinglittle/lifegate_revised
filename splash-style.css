@@ -851,7 +851,7 @@ body {
 
 @media (max-width: 610px) {
     .hero-content {
-        transform: translateY(-12px);
+        transform: translateY(-40px);
     }
 
     .hero-logo {
