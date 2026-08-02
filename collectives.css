@@ -369,20 +369,37 @@
   display: flex;
   font-size: 0.9rem;
   font-weight: 800;
-  gap: 0.55rem;
+  gap: 0;
+  height: 52px;
   justify-content: center;
   max-width: calc(100vw - 2rem);
-  padding: 0.75rem 0.95rem;
+  overflow: hidden;
+  padding: 0;
   position: fixed;
   right: 1.25rem;
-  transition: background-color 0.3s, transform 0.3s;
+  transition: background-color 0.2s ease, gap 0.2s ease, padding 0.2s ease, transform 0.2s ease, width 0.2s ease;
+  width: 52px;
   z-index: 950;
 }
 
-.collectives-message-bubble:hover,
-.collectives-message-bubble:focus-visible {
+.collectives-message-bubble:focus,
+.collectives-message-bubble:focus-visible,
+.collectives-message-bubble:focus-within {
   background: var(--hover-color);
+  gap: 0.55rem;
+  padding: 0 0.95rem;
   transform: translateY(-1px);
+  width: min(178px, calc(100vw - 2rem));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .collectives-message-bubble:hover {
+    background: var(--hover-color);
+    gap: 0.55rem;
+    padding: 0 0.95rem;
+    transform: translateY(-1px);
+    width: min(178px, calc(100vw - 2rem));
+  }
 }
 
 .collectives-message-icon {
@@ -393,6 +410,29 @@
   height: 0.9rem;
   position: relative;
   width: 1.1rem;
+}
+
+.collectives-message-label {
+  display: inline-block;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.2s ease, opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.collectives-message-bubble:focus .collectives-message-label,
+.collectives-message-bubble:focus-visible .collectives-message-label,
+.collectives-message-bubble:focus-within .collectives-message-label {
+  max-width: 8rem;
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .collectives-message-bubble:hover .collectives-message-label {
+    max-width: 8rem;
+    opacity: 1;
+  }
 }
 
 .collectives-message-icon::after {
@@ -408,9 +448,16 @@
   width: 0.35rem;
 }
 
-.collectives-message-bubble:hover .collectives-message-icon::after,
-.collectives-message-bubble:focus-visible .collectives-message-icon::after {
+.collectives-message-bubble:focus .collectives-message-icon::after,
+.collectives-message-bubble:focus-visible .collectives-message-icon::after,
+.collectives-message-bubble:focus-within .collectives-message-icon::after {
   background: var(--hover-color);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .collectives-message-bubble:hover .collectives-message-icon::after {
+    background: var(--hover-color);
+  }
 }
 
 .collectives-message-bubble:focus-visible,
@@ -570,7 +617,45 @@
   padding: 0.7rem 1rem;
 }
 
-#collective-signup-submit,
+#collective-signup-submit {
+  background: #d8dee4;
+  color: #4d5660;
+  cursor: not-allowed;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+#collective-signup-submit:not(:disabled),
+#collective-signup-submit[data-state="submitting"] {
+  background: var(--black-color);
+  color: var(--white-color);
+}
+
+#collective-signup-submit:not(:disabled) {
+  cursor: pointer;
+}
+
+#collective-signup-submit:not(:disabled):hover,
+#collective-signup-submit:not(:disabled):focus-visible {
+  background: var(--hover-color);
+  box-shadow: 0 8px 18px rgba(25, 25, 25, 0.18);
+  transform: translateY(-1px);
+}
+
+#collective-signup-submit:disabled:not([data-state="submitting"]) {
+  box-shadow: none;
+  transform: none;
+}
+
+#collective-signup-submit[data-state="submitting"] {
+  cursor: wait;
+  opacity: 0.9;
+}
+
+#collective-signup-submit:focus-visible {
+  outline: 3px solid rgba(25, 25, 25, 0.35);
+  outline-offset: 3px;
+}
+
 #collective-signup-move {
   background: var(--blue-color);
   color: var(--white-color);

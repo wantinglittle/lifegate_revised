@@ -536,20 +536,37 @@ main {
     display: flex;
     font-size: 0.9rem;
     font-weight: 800;
-    gap: 0.55rem;
+    gap: 0;
+    height: 52px;
     justify-content: center;
     max-width: calc(100vw - 2rem);
-    padding: 0.75rem 0.95rem;
+    overflow: hidden;
+    padding: 0;
     position: fixed;
     right: 1.25rem;
-    transition: background-color 0.3s, transform 0.3s;
+    transition: background-color 0.2s ease, gap 0.2s ease, padding 0.2s ease, transform 0.2s ease, width 0.2s ease;
+    width: 52px;
     z-index: 950;
 }
 
-.message-church-bubble:hover,
-.message-church-bubble:focus-visible {
+.message-church-bubble:focus,
+.message-church-bubble:focus-visible,
+.message-church-bubble:focus-within {
     background: var(--hover-color);
+    gap: 0.55rem;
+    padding: 0 0.95rem;
     transform: translateY(-1px);
+    width: min(178px, calc(100vw - 2rem));
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .message-church-bubble:hover {
+        background: var(--hover-color);
+        gap: 0.55rem;
+        padding: 0 0.95rem;
+        transform: translateY(-1px);
+        width: min(178px, calc(100vw - 2rem));
+    }
 }
 
 .message-church-bubble:focus-visible {
@@ -567,6 +584,29 @@ main {
     width: 1.1rem;
 }
 
+.message-church-label {
+    display: inline-block;
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-width 0.2s ease, opacity 0.15s ease;
+    white-space: nowrap;
+}
+
+.message-church-bubble:focus .message-church-label,
+.message-church-bubble:focus-visible .message-church-label,
+.message-church-bubble:focus-within .message-church-label {
+    max-width: 8rem;
+    opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .message-church-bubble:hover .message-church-label {
+        max-width: 8rem;
+        opacity: 1;
+    }
+}
+
 .message-church-icon::after {
     background: var(--black-color);
     border-bottom: 2px solid currentColor;
@@ -580,9 +620,16 @@ main {
     width: 0.35rem;
 }
 
-.message-church-bubble:hover .message-church-icon::after,
-.message-church-bubble:focus-visible .message-church-icon::after {
+.message-church-bubble:focus .message-church-icon::after,
+.message-church-bubble:focus-visible .message-church-icon::after,
+.message-church-bubble:focus-within .message-church-icon::after {
     background: var(--hover-color);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .message-church-bubble:hover .message-church-icon::after {
+        background: var(--hover-color);
+    }
 }
 
 .view-on-map-btn {

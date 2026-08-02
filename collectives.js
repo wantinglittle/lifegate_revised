@@ -23,6 +23,7 @@ let allCollectives = [];
 let signupCollective = null;
 let signupConfirmationToken = "";
 let signupLastFocused = null;
+let signupSubmitting = false;
 
 function rpcUrl(name) {
   return `${SUPABASE_URL.replace(/\/+$/, "")}/rest/v1/rpc/${name}`;
@@ -362,14 +363,33 @@ function signupStatus(message, tone = "") {
   status.dataset.tone = tone;
 }
 
+function isValidSignupEmail(email) {
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+}
+
+function isValidSignupPhone(phone) {
+  return phone.replace(/\D/g, "").length === 10;
+}
+
+function isSignupConflictActive() {
+  return Boolean(signupConfirmationToken && !document.getElementById("collective-signup-conflict")?.hidden);
+}
+
+function updateSignupSubmitState() {
+  const submitButton = document.getElementById("collective-signup-submit");
+  if (!submitButton) return;
+  const isEligible = !isSignupConflictActive() && !validateSignupPayload(signupPayload());
+  submitButton.disabled = signupSubmitting || !isEligible;
+  submitButton.textContent = signupSubmitting ? "Signing Up..." : "Sign Up";
+  submitButton.dataset.state = signupSubmitting ? "submitting" : (isEligible ? "ready" : "disabled");
+}
+
 function setSignupSubmitting(isSubmitting) {
+  signupSubmitting = isSubmitting;
   const submitButton = document.getElementById("collective-signup-submit");
   const moveButton = document.getElementById("collective-signup-move");
-  if (submitButton) {
-    submitButton.disabled = isSubmitting;
-    submitButton.textContent = isSubmitting ? "Submitting..." : "Sign Up";
-  }
   if (moveButton) moveButton.disabled = isSubmitting;
+  updateSignupSubmitState();
 }
 
 function setSignupConflict(message, token = "") {
@@ -383,6 +403,7 @@ function setSignupConflict(message, token = "") {
   const submitButton = document.getElementById("collective-signup-submit");
   if (submitButton) submitButton.hidden = Boolean(message);
   if (message) codeInput?.focus();
+  updateSignupSubmitState();
 }
 
 function setSignupSuccessState(isVisible) {
@@ -400,10 +421,12 @@ function resetSignupModalState() {
   modal?.setAttribute("aria-labelledby", "collective-signup-title");
   if (title) title.hidden = false;
   signupConfirmationToken = "";
+  signupSubmitting = false;
   setSignupSuccessState(false);
   setSignupConflict("");
   signupStatus("");
   resetRecaptcha();
+  updateSignupSubmitState();
 }
 
 function showSignupSuccess(payload, isReassignment) {
@@ -459,6 +482,7 @@ function openSignupModal(collective) {
   document.getElementById("collective-signup-id").value = collective.id;
   document.getElementById("collective-signup-title").textContent = `Sign Up for ${fieldValue(collective.primary_host_last_name)} Collective`;
   document.getElementById("collective-signup-modal").style.display = "block";
+  updateSignupSubmitState();
   document.getElementById("collective-signup-first-name").focus();
 }
 
@@ -479,8 +503,7 @@ function signupPayload() {
     emailConfirm: document.getElementById("collective-signup-email-confirm").value.trim(),
     adultCount: document.getElementById("collective-signup-adults").value,
     childCount: document.getElementById("collective-signup-kids").value,
-    // The privacy checkbox UI is temporarily commented out, but the Edge Function still expects this flag.
-    privacyAccepted: true,
+    privacyAccepted: document.getElementById("collective-signup-privacy")?.checked ?? true,
     website: document.getElementById("collective-signup-website").value.trim(),
     recaptchaToken: window.grecaptcha?.getResponse?.() || ""
   };
@@ -490,9 +513,15 @@ function validateSignupPayload(payload) {
   if (!payload.firstName || !payload.lastName || !payload.phone || !payload.email || !payload.emailConfirm) {
     return "Please fill out all required fields.";
   }
+  if (!isValidSignupPhone(payload.phone)) return "Please enter a valid 10-digit phone number.";
+  if (!isValidSignupEmail(payload.email) || !isValidSignupEmail(payload.emailConfirm)) {
+    return "Please enter a valid email address.";
+  }
   if (payload.email.trim().toLowerCase() !== payload.emailConfirm.trim().toLowerCase()) {
     return "Email entries must match.";
   }
+  if (!payload.adultCount || !payload.childCount) return "Please select household counts.";
+  if (!payload.privacyAccepted) return "Please accept the privacy notice.";
   if (!payload.recaptchaToken) return "Please complete the reCAPTCHA.";
   return "";
 }
@@ -755,7 +784,11 @@ function setupSignupModal() {
     } else {
       event.target.value = "";
     }
+    updateSignupSubmitState();
   });
+
+  form.addEventListener("input", updateSignupSubmitState);
+  form.addEventListener("change", updateSignupSubmitState);
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -769,7 +802,11 @@ function setupSignupModal() {
     }
     submitSignup(signupConfirmationToken);
   });
+
+  updateSignupSubmitState();
 }
+
+window.collectiveSignupRecaptchaChanged = updateSignupSubmitState;
 
 export async function initCollectivesPage(options = {}) {
   setupContactModal();

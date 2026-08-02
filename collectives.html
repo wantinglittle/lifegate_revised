@@ -81,9 +81,9 @@
       </section>
     </main>
 
-    <button id="open-church-modal" class="collectives-message-bubble" type="button" aria-label="Message the church">
+    <button id="open-church-modal" class="collectives-message-bubble" type="button" aria-label="Message church">
       <span class="collectives-message-icon" aria-hidden="true"></span>
-      <span>Message church</span>
+      <span class="collectives-message-label">Message church</span>
     </button>
 
     <div id="collective-contact-modal" class="modal">
@@ -184,7 +184,7 @@
           </label>
           -->
           <div class="collective-signup-recaptcha">
-            <div class="g-recaptcha" data-sitekey="6Lc4OpArAAAAAB28oRvNoDbwJS0Z4N71F6zxFcGe"></div>
+            <div class="g-recaptcha" data-sitekey="6Lc4OpArAAAAAB28oRvNoDbwJS0Z4N71F6zxFcGe" data-callback="collectiveSignupRecaptchaChanged" data-expired-callback="collectiveSignupRecaptchaChanged" data-error-callback="collectiveSignupRecaptchaChanged"></div>
           </div>
           <div id="collective-signup-conflict" class="collective-signup-conflict" hidden>
             <p id="collective-signup-conflict-text"></p>
@@ -197,7 +197,7 @@
           </div>
           <p id="collective-signup-status" class="collectives-form-status" aria-live="polite"></p>
           <div class="collective-signup-actions">
-            <button id="collective-signup-submit" type="submit">Sign Up</button>
+            <button id="collective-signup-submit" type="submit" disabled>Sign Up</button>
             <button id="collective-signup-cancel" type="button">Cancel</button>
           </div>
         </form>
