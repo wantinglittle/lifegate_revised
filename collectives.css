@@ -639,6 +639,17 @@
   margin-top: -0.25rem;
 }
 
+#collective-signup-modal[data-signup-state="success"] #collective-signup-title,
+#collective-signup-modal[data-signup-state="success"] .close-signup,
+#collective-signup-modal[data-signup-state="success"] .collective-signup-form,
+#collective-signup-modal[data-signup-state="success"] .collective-signup-recaptcha,
+#collective-signup-modal[data-signup-state="success"] .collective-signup-capacity,
+#collective-signup-modal[data-signup-state="success"] .collective-signup-conflict,
+#collective-signup-modal[data-signup-state="success"] #collective-signup-status,
+#collective-signup-modal[data-signup-state="success"] .collective-signup-actions {
+  display: none;
+}
+
 .collective-signup-actions button,
 .collective-signup-conflict-actions button {
   border: 0;

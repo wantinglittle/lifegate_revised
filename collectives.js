@@ -27,6 +27,7 @@ let allCollectives = [];
 let signupCollective = null;
 let signupConfirmationToken = "";
 let signupLastFocused = null;
+let signupModalState = "form";
 let signupSubmitting = false;
 
 function rpcUrl(name) {
@@ -140,6 +141,10 @@ function setSignupCapacityMessage(message) {
 }
 
 function updateSignupCapacityMessage(payload = signupPayload()) {
+  if (signupModalState !== "form") {
+    setSignupCapacityMessage("");
+    return "";
+  }
   const message = signupCapacityMessage(payload);
   setSignupCapacityMessage(message);
   return message;
@@ -445,6 +450,40 @@ function signupStatus(message, tone = "") {
   status.dataset.tone = tone;
 }
 
+function setSignupModalState(state) {
+  signupModalState = ["form", "reassignment", "success"].includes(state) ? state : "form";
+  const modal = document.getElementById("collective-signup-modal");
+  const title = document.getElementById("collective-signup-title");
+  const form = document.getElementById("collective-signup-form");
+  const success = document.getElementById("collective-signup-success");
+  const closeButton = modal?.querySelector(".close-signup");
+  const isSuccess = signupModalState === "success";
+
+  if (modal) {
+    modal.dataset.signupState = signupModalState;
+    modal.setAttribute("aria-labelledby", isSuccess ? "collective-signup-success-title" : "collective-signup-title");
+  }
+  if (title) title.hidden = isSuccess;
+  if (closeButton) closeButton.hidden = isSuccess;
+  if (form) form.hidden = isSuccess;
+  if (success) success.hidden = !isSuccess;
+
+  if (signupModalState !== "form") setSignupCapacityMessage("");
+  if (isSuccess) signupStatus("");
+}
+
+function clearSignupSuccess() {
+  [
+    "collective-signup-success-title",
+    "collective-signup-success-body",
+    "collective-signup-success-email",
+    "collective-signup-success-followup"
+  ].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = "";
+  });
+}
+
 function isValidSignupEmail(email) {
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 }
@@ -486,28 +525,23 @@ function setSignupConflict(message, token = "") {
   if (conflict) conflict.hidden = !message;
   const submitButton = document.getElementById("collective-signup-submit");
   if (submitButton) submitButton.hidden = Boolean(message);
+  if (message) {
+    setSignupModalState("reassignment");
+  } else if (signupModalState === "reassignment") {
+    setSignupModalState("form");
+  }
   if (message) codeInput?.focus();
   updateSignupSubmitState();
 }
 
-function setSignupSuccessState(isVisible) {
-  const form = document.getElementById("collective-signup-form");
-  const success = document.getElementById("collective-signup-success");
-  if (form) form.hidden = isVisible;
-  if (success) success.hidden = !isVisible;
-}
-
 function resetSignupModalState() {
   const form = document.getElementById("collective-signup-form");
-  const modal = document.getElementById("collective-signup-modal");
-  const title = document.getElementById("collective-signup-title");
   form?.reset();
-  modal?.setAttribute("aria-labelledby", "collective-signup-title");
-  if (title) title.hidden = false;
   signupConfirmationToken = "";
   signupSubmitting = false;
-  setSignupSuccessState(false);
+  setSignupModalState("form");
   setSignupConflict("");
+  clearSignupSuccess();
   setSignupCapacityMessage("");
   signupStatus("");
   resetRecaptcha();
@@ -518,12 +552,11 @@ function showSignupSuccess(payload, isReassignment) {
   signupConfirmationToken = "";
   setSignupConflict("");
   signupStatus("");
+  setSignupCapacityMessage("");
   resetRecaptcha();
 
   const hostLastName = fieldValue(signupCollective?.primary_host_last_name || "Host");
   const email = payload.email.trim();
-  document.getElementById("collective-signup-title").hidden = true;
-  document.getElementById("collective-signup-modal")?.setAttribute("aria-labelledby", "collective-signup-success-title");
   document.getElementById("collective-signup-success-title").textContent = isReassignment
     ? "Your Signup Has Been Updated"
     : "You’re Signed Up!";
@@ -534,7 +567,7 @@ function showSignupSuccess(payload, isReassignment) {
   document.getElementById("collective-signup-success-followup").textContent = isReassignment
     ? "The new Collective hosts will follow up with additional details."
     : "The Collective hosts will follow up with additional details.";
-  setSignupSuccessState(true);
+  setSignupModalState("success");
   requestAnimationFrame(() => {
     document.getElementById("collective-signup-success-title")?.focus();
   });
@@ -631,7 +664,8 @@ async function submitSignup(confirmationToken = "") {
   const payload = signupPayload();
   const validationError = validateSignupPayload(payload);
   if (validationError) {
-    if (signupCapacityMessage(payload)) {
+    const capacityMessage = signupCapacityMessage(payload);
+    if (capacityMessage && signupModalState === "form") {
       updateSignupCapacityMessage(payload);
       signupStatus("");
     } else {
@@ -669,19 +703,19 @@ async function submitSignup(confirmationToken = "") {
           console.error("Collective capacity refresh failed:", refreshError);
         });
         const inlineMessage = updateSignupCapacityMessage(payload);
-        if (!inlineMessage && message === FULL_MESSAGE) {
+        if (signupModalState === "form" && !inlineMessage && message === FULL_MESSAGE) {
           setSignupCapacityMessage(INLINE_FULL_MESSAGE);
         }
-        signupStatus("");
+        signupStatus(signupModalState === "form" ? "" : message, signupModalState === "form" ? "" : "error");
         resetRecaptcha();
         return;
       }
       throw new Error(message);
     }
+    showSignupSuccess(payload, Boolean(confirmationToken));
     await refreshPublicCollectives().catch((refreshError) => {
       console.error("Collective capacity refresh failed:", refreshError);
     });
-    showSignupSuccess(payload, Boolean(confirmationToken));
   } catch (error) {
     console.error("Collective signup failed:", error);
     signupStatus(normalizePublicErrorMessage(error.message || "Signup could not be completed."), "error");

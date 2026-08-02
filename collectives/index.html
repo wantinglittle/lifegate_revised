@@ -116,7 +116,7 @@
       </div>
     </div>
 
-    <div id="collective-signup-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="collective-signup-title">
+    <div id="collective-signup-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="collective-signup-title" data-signup-state="form">
       <div class="modal-content collective-signup-modal-content">
         <span class="close-signup" role="button" tabindex="0" aria-label="Close signup form">&times;</span>
         <h3 id="collective-signup-title">Sign Up for a Collective</h3>
@@ -203,6 +203,14 @@
             <button id="collective-signup-cancel" type="button">Cancel</button>
           </div>
         </form>
+        <div id="collective-signup-success" class="collective-signup-success" hidden>
+          <div class="collective-signup-success-icon" aria-hidden="true">✓</div>
+          <h3 id="collective-signup-success-title" tabindex="-1">You’re Signed Up!</h3>
+          <p id="collective-signup-success-body"></p>
+          <p id="collective-signup-success-email"></p>
+          <p id="collective-signup-success-followup"></p>
+          <button id="collective-signup-success-close" type="button">Close</button>
+        </div>
       </div>
     </div>
 
