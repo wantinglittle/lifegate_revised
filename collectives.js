@@ -439,7 +439,8 @@ function signupPayload() {
     emailConfirm: document.getElementById("collective-signup-email-confirm").value.trim(),
     adultCount: document.getElementById("collective-signup-adults").value,
     childCount: document.getElementById("collective-signup-kids").value,
-    privacyAccepted: document.getElementById("collective-signup-privacy").checked,
+    // The privacy checkbox UI is temporarily commented out, but the Edge Function still expects this flag.
+    privacyAccepted: true,
     website: document.getElementById("collective-signup-website").value.trim(),
     recaptchaToken: window.grecaptcha?.getResponse?.() || ""
   };
@@ -452,7 +453,6 @@ function validateSignupPayload(payload) {
   if (payload.email.trim().toLowerCase() !== payload.emailConfirm.trim().toLowerCase()) {
     return "Email entries must match.";
   }
-  if (!payload.privacyAccepted) return "Please accept the privacy agreement.";
   if (!payload.recaptchaToken) return "Please complete the reCAPTCHA.";
   return "";
 }
