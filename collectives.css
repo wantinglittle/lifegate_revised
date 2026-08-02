@@ -389,16 +389,18 @@
   gap: 0.55rem;
   padding: 0 0.95rem;
   transform: translateY(-1px);
-  width: min(178px, calc(100vw - 2rem));
+  max-width: min(255px, calc(100vw - 2rem));
+  width: min(255px, calc(100vw - 2rem));
 }
 
-@media (hover: hover) and (pointer: fine) {
+@media (hover: hover) and (pointer: fine) and (min-width: 700px) {
   .collectives-message-bubble:hover {
     background: var(--hover-color);
     gap: 0.55rem;
     padding: 0 0.95rem;
     transform: translateY(-1px);
-    width: min(178px, calc(100vw - 2rem));
+    max-width: 255px;
+    width: 255px;
   }
 }
 
@@ -424,13 +426,13 @@
 .collectives-message-bubble:focus .collectives-message-label,
 .collectives-message-bubble:focus-visible .collectives-message-label,
 .collectives-message-bubble:focus-within .collectives-message-label {
-  max-width: 8rem;
+  max-width: 13rem;
   opacity: 1;
 }
 
-@media (hover: hover) and (pointer: fine) {
+@media (hover: hover) and (pointer: fine) and (min-width: 700px) {
   .collectives-message-bubble:hover .collectives-message-label {
-    max-width: 8rem;
+    max-width: 13rem;
     opacity: 1;
   }
 }

@@ -9,8 +9,17 @@ const VALID_CHILDCARE_OPTIONS = new Set([
   "Children Welcome | No Sitter Provided",
   "Childcare Not Provided"
 ]);
+const DEFAULT_FROM = "LifeGate Community <messages@lifegatecommunity.com>";
+const ADMIN_PORTAL_URL = "https://lifegatecommunity.com/portal.html";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^\([0-9]{3}\) [0-9]{3}-[0-9]{4}$/;
+const HTML_ENTITIES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  "\"": "&quot;",
+  "'": "&#39;"
+};
 
 type RequestBody = Record<string, unknown>;
 
@@ -72,6 +81,14 @@ function normalizeString(value: unknown, maxLength: number): string {
 
 function normalizeEmail(value: unknown): string {
   return normalizeString(value, 254).toLowerCase();
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => HTML_ENTITIES[char] || char);
+}
+
+function dedupeValidEmails(emails: string[]): string[] {
+  return Array.from(new Set(emails.map((email) => normalizeEmail(email)).filter((email) => EMAIL_PATTERN.test(email))));
 }
 
 function buildSubmission(body: RequestBody): { submission?: Submission; error?: string } {
@@ -177,6 +194,20 @@ async function findPortalUserByEmail(supabaseUrl: string, key: string, email: st
   return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
 }
 
+async function loadAdminRecipients(supabaseUrl: string, key: string): Promise<string[]> {
+  const params = new URLSearchParams({
+    select: "email",
+    is_admin: "eq.true"
+  });
+  const response = await fetch(`${supabaseUrl}/rest/v1/portal_users?${params}`, {
+    headers: supabaseHeaders(key)
+  });
+  if (!response.ok) throw new Error(`Admin recipient lookup failed: ${await response.text()}`);
+  const rows = await response.json();
+  const emails = Array.isArray(rows) ? rows.map((row) => String(row?.email || "")) : [];
+  return dedupeValidEmails(emails);
+}
+
 async function geocode(submission: Submission): Promise<{ latitude: number; longitude: number; formattedLocation: string }> {
   const apiKey = Deno.env.get("GOOGLE_GEOCODING_API_KEY") || Deno.env.get("GOOGLE_MAPS_API_KEY") || "";
   if (!apiKey) throw new Error("GOOGLE_GEOCODING_API_KEY is not configured.");
@@ -266,6 +297,188 @@ async function insertCollective(
   return id;
 }
 
+async function sendResendEmail(params: {
+  idempotencyKey: string;
+  to: string;
+  replyTo?: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<void> {
+  const apiKey = Deno.env.get("RESEND_API_KEY") || "";
+  if (!apiKey) throw new Error("RESEND_API_KEY is not configured.");
+  const body: Record<string, unknown> = {
+    from: Deno.env.get("COLLECTIVES_FROM_EMAIL") || DEFAULT_FROM,
+    to: [params.to],
+    subject: params.subject,
+    html: params.html,
+    text: params.text
+  };
+  if (params.replyTo) body.reply_to = params.replyTo;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": params.idempotencyKey
+    },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) throw new Error(`Resend request failed with status ${response.status}.`);
+}
+
+function adminNotification(submission: Submission): { subject: string; html: string; text: string } {
+  const primaryName = `${submission.primaryFirstName} ${submission.primaryLastName}`;
+  const subject = `New Collective Host Submission — ${primaryName}`;
+  const text = [
+    `New Collective Host Submission — ${primaryName}`,
+    "",
+    `Primary host: ${primaryName}`,
+    `Primary host email: ${submission.primaryEmail}`,
+    `Primary host phone: ${submission.primaryPhone}`,
+    submission.secondaryEmail ? `Second host email: ${submission.secondaryEmail}` : "",
+    `City: ${submission.city}`,
+    `ZIP code: ${submission.zipCode}`,
+    `Cross streets: ${submission.crossStreets}`,
+    `Audience: ${submission.audience}`,
+    `Childcare option: ${submission.childcareOption}`,
+    "Submission status: Pending Review",
+    "",
+    `Review in the Lifegate portal: ${ADMIN_PORTAL_URL}`
+  ].filter(Boolean).join("\n");
+  const html = `
+    <p><strong>New Collective Host Submission</strong></p>
+    <p>
+      <strong>Primary host:</strong> ${escapeHtml(primaryName)}<br>
+      <strong>Primary host email:</strong> ${escapeHtml(submission.primaryEmail)}<br>
+      <strong>Primary host phone:</strong> ${escapeHtml(submission.primaryPhone)}<br>
+      ${submission.secondaryEmail ? `<strong>Second host email:</strong> ${escapeHtml(submission.secondaryEmail)}<br>` : ""}
+      <strong>City:</strong> ${escapeHtml(submission.city)}<br>
+      <strong>ZIP code:</strong> ${escapeHtml(submission.zipCode)}<br>
+      <strong>Cross streets:</strong> ${escapeHtml(submission.crossStreets)}<br>
+      <strong>Audience:</strong> ${escapeHtml(submission.audience)}<br>
+      <strong>Childcare option:</strong> ${escapeHtml(submission.childcareOption)}<br>
+      <strong>Submission status:</strong> Pending Review
+    </p>
+    <p><a href="${ADMIN_PORTAL_URL}">Review in the Lifegate portal</a></p>
+  `;
+  return { subject, html, text };
+}
+
+function primaryHostConfirmation(submission: Submission): { subject: string; html: string; text: string } {
+  const subject = "We received your Collective host submission";
+  const text = [
+    "Your Collective submission was received",
+    "",
+    "Lifegate received your Collective host submission. It is currently pending administrator review and is not yet publicly visible.",
+    "You will be notified or can check the dashboard once it is approved.",
+    "",
+    `City: ${submission.city}`,
+    `Cross streets: ${submission.crossStreets}`,
+    `Audience: ${submission.audience}`,
+    `Childcare option: ${submission.childcareOption}`
+  ].join("\n");
+  const html = `
+    <h2>Your Collective submission was received</h2>
+    <p>Lifegate received your Collective host submission. It is currently pending administrator review and is not yet publicly visible.</p>
+    <p>You will be notified or can check the dashboard once it is approved.</p>
+    <p>
+      <strong>City:</strong> ${escapeHtml(submission.city)}<br>
+      <strong>Cross streets:</strong> ${escapeHtml(submission.crossStreets)}<br>
+      <strong>Audience:</strong> ${escapeHtml(submission.audience)}<br>
+      <strong>Childcare option:</strong> ${escapeHtml(submission.childcareOption)}
+    </p>
+  `;
+  return { subject, html, text };
+}
+
+function secondHostNotice(submission: Submission): { subject: string; html: string; text: string } {
+  const primaryName = `${submission.primaryFirstName} ${submission.primaryLastName}`;
+  const subject = "You were added as a Collective co-host";
+  const text = [
+    `${primaryName} listed you as a co-host for a Lifegate Collective.`,
+    "The Collective is currently pending review.",
+    "You can use this same email address to log in to the Lifegate portal. No separate signup or account-registration process is required.",
+    "Once linked through OTP login, you will be able to view and manage the Collective.",
+    "",
+    `Primary host: ${primaryName}`,
+    `City: ${submission.city}`,
+    `Cross streets: ${submission.crossStreets}`
+  ].join("\n");
+  const html = `
+    <p>${escapeHtml(primaryName)} listed you as a co-host for a Lifegate Collective.</p>
+    <p>The Collective is currently pending review.</p>
+    <p>You can use this same email address to log in to the Lifegate portal. No separate signup or account-registration process is required.</p>
+    <p>Once linked through OTP login, you will be able to view and manage the Collective.</p>
+    <p>
+      <strong>Primary host:</strong> ${escapeHtml(primaryName)}<br>
+      <strong>City:</strong> ${escapeHtml(submission.city)}<br>
+      <strong>Cross streets:</strong> ${escapeHtml(submission.crossStreets)}
+    </p>
+  `;
+  return { subject, html, text };
+}
+
+async function sendCollectiveNotifications(supabaseUrl: string, key: string, collectiveId: string, submission: Submission): Promise<number> {
+  const attempts: Array<{ category: "admin" | "primary_host" | "second_host"; to: string; message: { subject: string; html: string; text: string }; replyTo?: string }> = [];
+  const adminMessage = adminNotification(submission);
+  let failureCount = 0;
+  try {
+    const admins = await loadAdminRecipients(supabaseUrl, key);
+    for (const admin of admins) {
+      attempts.push({ category: "admin", to: admin, message: adminMessage, replyTo: submission.primaryEmail });
+    }
+  } catch (error) {
+    failureCount += 1;
+    console.warn("submit-collective admin recipient lookup failed.", {
+      collectiveId,
+      category: "admin",
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+
+  attempts.push({
+    category: "primary_host",
+    to: submission.primaryEmail,
+    message: primaryHostConfirmation(submission)
+  });
+
+  if (submission.secondaryEmail && submission.secondaryEmail !== submission.primaryEmail) {
+    attempts.push({
+      category: "second_host",
+      to: submission.secondaryEmail,
+      message: secondHostNotice(submission)
+    });
+  }
+
+  for (const attempt of attempts) {
+    try {
+      await sendResendEmail({
+        idempotencyKey: `submit-collective:${collectiveId}:${attempt.category}:${attempt.to}`,
+        to: attempt.to,
+        replyTo: attempt.replyTo,
+        ...attempt.message
+      });
+      console.info("submit-collective notification sent.", {
+        collectiveId,
+        category: attempt.category,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      failureCount += 1;
+      console.warn("submit-collective notification failed.", {
+        collectiveId,
+        category: attempt.category,
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+  return failureCount;
+}
+
 Deno.serve(async (request: Request) => {
   const origin = request.headers.get("origin");
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
@@ -316,12 +529,25 @@ Deno.serve(async (request: Request) => {
       secondaryUser?.user_id || null
     );
 
-    return jsonResponse(origin, 200, {
+    const emailFailureCount = await sendCollectiveNotifications(supabaseUrl, supabaseKey, id, submission).catch((error) => {
+      console.warn("submit-collective notification setup failed.", {
+        collectiveId: id,
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return 1;
+    });
+
+    const responseBody: Record<string, unknown> = {
       ok: true,
       id,
       primaryHostLinked: Boolean(primaryUserId),
       secondHostLinked: submission.secondaryEmail ? Boolean(secondaryUser?.user_id) : null
-    });
+    };
+    if (emailFailureCount > 0) {
+      responseBody.warning = "Collective submitted, but one or more notification emails could not be sent.";
+    }
+    return jsonResponse(origin, 200, responseBody);
   } catch (err) {
     console.error("submit-collective failed.", err instanceof Error ? err.message : err);
     const message = err instanceof Error && err.message.startsWith("We could not place")
