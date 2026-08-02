@@ -9,6 +9,7 @@ const initialZoom = 9;
 const CLOSED_MESSAGE = "We’re sorry, this group is currently closed due to capacity.";
 const FULL_MESSAGE = "We’re sorry, this Collective is currently full.";
 const NO_SPACE_MESSAGE = "We’re sorry, this Collective does not have enough remaining space for your group.";
+const INLINE_FULL_MESSAGE = "Sorry, this Collective is currently full.";
 const CAPACITY_MESSAGES = new Set([FULL_MESSAGE, NO_SPACE_MESSAGE]);
 const CHILDCARE_OPTIONS = [
   "Childcare Available | Sitter Provided",
@@ -117,6 +118,31 @@ function signupPartySize(payload) {
   const childCount = Number(payload.childCount);
   if (!Number.isInteger(adultCount) || !Number.isInteger(childCount)) return null;
   return adultCount + childCount;
+}
+
+function signupCapacityMessage(payload = signupPayload()) {
+  const spaces = remainingSpaces(signupCollective);
+  const partySize = signupPartySize(payload);
+  if (spaces === 0) return INLINE_FULL_MESSAGE;
+  if (spaces !== null && partySize !== null && partySize > spaces) {
+    return spaces === 1
+      ? "Sorry, there is only 1 spot left in this Collective."
+      : `Sorry, there are only ${spaces} spots left in this Collective.`;
+  }
+  return "";
+}
+
+function setSignupCapacityMessage(message) {
+  const element = document.getElementById("collective-signup-capacity");
+  if (!element) return;
+  element.textContent = message || "";
+  element.hidden = !message;
+}
+
+function updateSignupCapacityMessage(payload = signupPayload()) {
+  const message = signupCapacityMessage(payload);
+  setSignupCapacityMessage(message);
+  return message;
 }
 
 function normalizePublicErrorMessage(message) {
@@ -434,7 +460,9 @@ function isSignupConflictActive() {
 function updateSignupSubmitState() {
   const submitButton = document.getElementById("collective-signup-submit");
   if (!submitButton) return;
-  const isEligible = !isSignupConflictActive() && !validateSignupPayload(signupPayload());
+  const payload = signupPayload();
+  const capacityMessage = updateSignupCapacityMessage(payload);
+  const isEligible = !isSignupConflictActive() && !capacityMessage && !validateSignupPayload(payload);
   submitButton.disabled = signupSubmitting || !isEligible;
   submitButton.textContent = signupSubmitting ? "Signing Up..." : "Sign Up";
   submitButton.dataset.state = signupSubmitting ? "submitting" : (isEligible ? "ready" : "disabled");
@@ -480,6 +508,7 @@ function resetSignupModalState() {
   signupSubmitting = false;
   setSignupSuccessState(false);
   setSignupConflict("");
+  setSignupCapacityMessage("");
   signupStatus("");
   resetRecaptcha();
   updateSignupSubmitState();
@@ -592,11 +621,8 @@ function validateSignupPayload(payload) {
   }
   if (!payload.adultCount || !payload.childCount) return "Please select household counts.";
   if (!payload.privacyAccepted) return "Please accept the privacy notice.";
-  const spaces = remainingSpaces(signupCollective);
-  const partySize = signupPartySize(payload);
-  if (spaces !== null && partySize !== null && partySize > spaces) {
-    return `This Collective currently has space for ${spaces} more ${spaces === 1 ? "person" : "people"}.`;
-  }
+  const capacityMessage = signupCapacityMessage(payload);
+  if (capacityMessage) return capacityMessage;
   if (!payload.recaptchaToken) return "Please complete the reCAPTCHA.";
   return "";
 }
@@ -605,7 +631,12 @@ async function submitSignup(confirmationToken = "") {
   const payload = signupPayload();
   const validationError = validateSignupPayload(payload);
   if (validationError) {
-    signupStatus(validationError, "error");
+    if (signupCapacityMessage(payload)) {
+      updateSignupCapacityMessage(payload);
+      signupStatus("");
+    } else {
+      signupStatus(validationError, "error");
+    }
     return;
   }
   const confirmationCode = confirmationToken
@@ -637,6 +668,13 @@ async function submitSignup(confirmationToken = "") {
         await refreshPublicCollectives().catch((refreshError) => {
           console.error("Collective capacity refresh failed:", refreshError);
         });
+        const inlineMessage = updateSignupCapacityMessage(payload);
+        if (!inlineMessage && message === FULL_MESSAGE) {
+          setSignupCapacityMessage(INLINE_FULL_MESSAGE);
+        }
+        signupStatus("");
+        resetRecaptcha();
+        return;
       }
       throw new Error(message);
     }
