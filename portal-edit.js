@@ -854,7 +854,10 @@ async function saveChanges() {
     setStatus("Changes saved.", "success");
   } catch (error) {
     console.error("Community update failed:", error);
-    setStatus("Changes could not be saved. Please review the form and try again.", "error");
+    const message = recordType === "collective" && error.message
+      ? error.message
+      : "Changes could not be saved. Please review the form and try again.";
+    setStatus(message, "error");
   } finally {
     setSubmitting(false);
   }

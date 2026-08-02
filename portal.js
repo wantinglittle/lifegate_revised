@@ -629,7 +629,9 @@ function collectiveChildcareLabel(collective) {
 }
 
 function collectiveAvailabilityLabel(collective) {
-  return collective.is_closed === true ? "Closed to Signups" : "Open to Signups";
+  if (collective.is_closed === true) return "Closed to Signups";
+  if (collectiveIsFull(collective)) return "Full";
+  return "Open to Signups";
 }
 
 function attendeeCount(collective) {
@@ -637,9 +639,34 @@ function attendeeCount(collective) {
   return Number.isFinite(count) ? count : 0;
 }
 
+function registeredPeople(collective) {
+  const count = Number(collective?.registered_people || 0);
+  return Number.isFinite(count) ? count : 0;
+}
+
+function remainingSpaces(collective) {
+  const count = Number(collective?.remaining_spaces);
+  if (Number.isFinite(count)) return Math.max(count, 0);
+  const maxSize = Number(collective?.max_size);
+  return Number.isFinite(maxSize) ? Math.max(maxSize - registeredPeople(collective), 0) : null;
+}
+
+function collectiveIsFull(collective) {
+  return collective?.is_full === true || remainingSpaces(collective) === 0;
+}
+
 function collectiveMaxSizeLabel(collective) {
   const maxSize = Number(collective?.max_size);
   return Number.isInteger(maxSize) && maxSize >= 1 && maxSize <= 25 ? String(maxSize) : "N/A";
+}
+
+function registeredPeopleLabel(collective) {
+  return `${registeredPeople(collective)} of ${collectiveMaxSizeLabel(collective)}`;
+}
+
+function remainingSpacesLabel(collective) {
+  const spaces = remainingSpaces(collective);
+  return spaces === null ? "N/A" : String(spaces);
 }
 
 function formatDateTime(value) {
@@ -703,6 +730,8 @@ function collectiveListCsv(collectives) {
     "Second Host Email",
     "Second Host Phone",
     "Max Size",
+    "Registered People",
+    "Remaining Spaces",
     "Attendee Count"
   ].map(csvField).join(",");
   const rows = collectives.map((collective) => [
@@ -721,6 +750,8 @@ function collectiveListCsv(collectives) {
     collective.secondary_host_email,
     collective.secondary_host_phone,
     collectiveMaxSizeLabel(collective),
+    registeredPeople(collective),
+    remainingSpacesLabel(collective),
     attendeeCount(collective)
   ].map(csvField).join(","));
   return `\uFEFF${[header, ...rows].join("\r\n")}`;
@@ -735,6 +766,8 @@ function myDashboardCsv() {
     "Status",
     "Closed",
     "Max Size",
+    "Registered People",
+    "Remaining Spaces",
     "Attendees"
   ].map(csvField).join(",");
   const communityRows = sortedGroups(myCommunitiesCache).map((group) => [
@@ -744,6 +777,8 @@ function myDashboardCsv() {
     group.cross_streets,
     statusLabel(group.status),
     group.is_closed === true ? "Yes" : "No",
+    "",
+    "",
     "",
     ""
   ].map(csvField).join(","));
@@ -755,6 +790,8 @@ function myDashboardCsv() {
     collectiveStatusLabel(collective),
     collective.is_closed === true ? "Yes" : "No",
     collectiveMaxSizeLabel(collective),
+    registeredPeople(collective),
+    remainingSpacesLabel(collective),
     attendeeCount(collective)
   ].map(csvField).join(","));
   return `\uFEFF${[header, ...communityRows, ...collectiveRows].join("\r\n")}`;
@@ -965,7 +1002,7 @@ function renderCollectiveCard(collective, options = {}) {
     createElement("span", `portal-badge portal-badge-${collectiveStatus(collective)}`, collectiveStatusLabel(collective)),
     createElement(
       "span",
-      collective.is_closed === true ? "portal-badge portal-badge-closed" : "portal-badge portal-badge-open",
+      collective.is_closed === true || collectiveIsFull(collective) ? "portal-badge portal-badge-closed" : "portal-badge portal-badge-open",
       collectiveAvailabilityLabel(collective)
     )
   );
@@ -977,7 +1014,9 @@ function renderCollectiveCard(collective, options = {}) {
   addDetail(card, "Audience", collectiveAudienceLabel(collective.audience));
   addDetail(card, "Childcare", collectiveChildcareLabel(collective));
   addDetail(card, "Max Size", collectiveMaxSizeLabel(collective));
-  addDetail(card, "Attendees", String(attendeeCount(collective)));
+  addDetail(card, "Attendee Signups", String(attendeeCount(collective)));
+  addDetail(card, "Registered People", registeredPeopleLabel(collective));
+  addDetail(card, "Remaining Spaces", remainingSpacesLabel(collective));
 
   if (showContactDetails) {
     addDetail(card, "Primary Host", hostFullName(collective.primary_host_first_name, collective.primary_host_last_name));
@@ -1211,16 +1250,30 @@ function handleConfirmModalKeydown(event) {
   }
 }
 
-function updateCollectiveAttendeeCount(collectiveId, count) {
+function updateCollectiveAttendeeStats(collectiveId, attendees) {
+  const attendeeList = Array.isArray(attendees) ? attendees : [];
+  const attendeeTotal = attendeeList.length;
+  const peopleTotal = attendeeList.reduce((total, attendee) => {
+    const adultCount = Number(attendee?.adult_count || 0);
+    const childCount = Number(attendee?.child_count || 0);
+    return total + (Number.isFinite(adultCount) ? adultCount : 0) + (Number.isFinite(childCount) ? childCount : 0);
+  }, 0);
+
   [myCollectivesCache, adminCollectives].forEach((collection) => {
     collection.forEach((collective) => {
       if (String(collective.id) === String(collectiveId)) {
-        collective.attendee_count = count;
+        collective.attendee_count = attendeeTotal;
+        collective.registered_people = peopleTotal;
+        collective.remaining_spaces = Math.max(Number(collective.max_size || 0) - peopleTotal, 0);
+        collective.is_full = peopleTotal >= Number(collective.max_size || 0);
       }
     });
   });
   if (activeAttendeeCollective && String(activeAttendeeCollective.id) === String(collectiveId)) {
-    activeAttendeeCollective.attendee_count = count;
+    activeAttendeeCollective.attendee_count = attendeeTotal;
+    activeAttendeeCollective.registered_people = peopleTotal;
+    activeAttendeeCollective.remaining_spaces = Math.max(Number(activeAttendeeCollective.max_size || 0) - peopleTotal, 0);
+    activeAttendeeCollective.is_full = peopleTotal >= Number(activeAttendeeCollective.max_size || 0);
   }
 }
 
@@ -1243,7 +1296,7 @@ async function openAttendeesModal(collective, trigger = null) {
 
   try {
     activeAttendees = await getCollectiveAttendees(collective.id);
-    updateCollectiveAttendeeCount(collective.id, activeAttendees.length);
+    updateCollectiveAttendeeStats(collective.id, activeAttendees);
     renderAttendees();
     setAttendeesStatus(activeAttendees.length === 0 ? "No attendees are signed up yet." : "", "info");
     refreshCollectiveCards();
@@ -1399,6 +1452,10 @@ function renderAttendeeEditRow(attendee, row) {
     try {
       const updated = await updateCollectiveAttendee(attendee.id, changes);
       activeAttendees = activeAttendees.map((item) => item.id === updated.id ? updated : item);
+      if (activeAttendeeCollective) {
+        updateCollectiveAttendeeStats(activeAttendeeCollective.id, activeAttendees);
+        refreshCollectiveCards();
+      }
       renderAttendees();
       setAttendeesStatus("Attendee saved.", "success");
     } catch (error) {
@@ -1429,7 +1486,7 @@ async function removeAttendee(attendee) {
   await removeCollectiveAttendee(attendee.id);
   activeAttendees = activeAttendees.filter((item) => item.id !== attendee.id);
   if (activeAttendeeCollective) {
-    updateCollectiveAttendeeCount(activeAttendeeCollective.id, activeAttendees.length);
+    updateCollectiveAttendeeStats(activeAttendeeCollective.id, activeAttendees);
     refreshCollectiveCards();
   }
   renderAttendees();

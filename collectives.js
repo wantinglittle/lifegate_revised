@@ -7,6 +7,9 @@ const SIGNUP_FUNCTION_URL = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/si
 const initialCenter = { lat: 39.7392, lng: -104.9903 };
 const initialZoom = 9;
 const CLOSED_MESSAGE = "We’re sorry, this group is currently closed due to capacity.";
+const FULL_MESSAGE = "We’re sorry, this Collective is currently full.";
+const NO_SPACE_MESSAGE = "We’re sorry, this Collective does not have enough remaining space for your group.";
+const CAPACITY_MESSAGES = new Set([FULL_MESSAGE, NO_SPACE_MESSAGE]);
 const CHILDCARE_OPTIONS = [
   "Childcare Available | Sitter Provided",
   "Children Welcome | No Sitter Provided",
@@ -69,9 +72,55 @@ function isCollectiveClosed(collective) {
   return collective?.is_closed === true;
 }
 
+function remainingSpaces(collective) {
+  const spaces = Number(collective?.remaining_spaces);
+  return Number.isInteger(spaces) && spaces >= 0 ? spaces : null;
+}
+
+function isCollectiveFull(collective) {
+  return collective?.is_full === true || remainingSpaces(collective) === 0;
+}
+
+function isCollectiveUnavailable(collective) {
+  return isCollectiveClosed(collective) || isCollectiveFull(collective);
+}
+
 function capacityLabel(collective) {
   const maxSize = Number(collective?.max_size);
   return Number.isInteger(maxSize) && maxSize >= 1 && maxSize <= 25 ? `Up to ${maxSize} people` : "N/A";
+}
+
+function availabilityLabel(collective) {
+  if (isCollectiveClosed(collective)) return "Closed";
+  if (isCollectiveFull(collective)) return "Full";
+  const spaces = remainingSpaces(collective);
+  if (spaces !== null) return `${spaces} ${spaces === 1 ? "spot" : "spots"} remaining`;
+  return "Open";
+}
+
+function signupButtonLabel(collective) {
+  if (isCollectiveClosed(collective)) return "Closed";
+  if (isCollectiveFull(collective)) return "Full";
+  return "Sign Up";
+}
+
+function capacityStatusElement(collective) {
+  const status = availabilityLabel(collective);
+  const className = isCollectiveClosed(collective) || isCollectiveFull(collective)
+    ? "collective-capacity-status collective-capacity-status-full"
+    : "collective-capacity-status";
+  return createElement("p", className, status);
+}
+
+function signupPartySize(payload) {
+  const adultCount = Number(payload.adultCount);
+  const childCount = Number(payload.childCount);
+  if (!Number.isInteger(adultCount) || !Number.isInteger(childCount)) return null;
+  return adultCount + childCount;
+}
+
+function normalizePublicErrorMessage(message) {
+  return String(message || "").replace(/Weâ€™re/g, "We’re").replace(/We're/g, "We’re");
 }
 
 function createElement(tagName, className, text) {
@@ -308,9 +357,9 @@ function createInfoWindowContent(collective) {
     event.stopPropagation();
     openContactModal(collective);
   });
-  const signupButton = createElement("button", "collective-info-signup", isCollectiveClosed(collective) ? "Closed" : "Sign Up");
+  const signupButton = createElement("button", "collective-info-signup", signupButtonLabel(collective));
   signupButton.type = "button";
-  signupButton.disabled = isCollectiveClosed(collective);
+  signupButton.disabled = isCollectiveUnavailable(collective);
   signupButton.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -324,6 +373,7 @@ function createInfoWindowContent(collective) {
     detail("Audience", audienceLabel(collective.audience)),
     detail("Childcare", compactChildcareLabel(fullChildcare)),
     detail("Capacity", capacityLabel(collective)),
+    capacityStatusElement(collective),
     actions
   );
 
@@ -482,6 +532,20 @@ function openSignupModal(collective) {
     return;
   }
 
+  if (isCollectiveFull(collective)) {
+    const modal = document.getElementById("collective-signup-modal");
+    signupCollective = collective;
+    signupLastFocused = document.activeElement;
+    resetSignupModalState();
+    document.getElementById("collective-signup-id").value = collective.id;
+    document.getElementById("collective-signup-title").textContent = `Sign Up for ${fieldValue(collective.primary_host_last_name)} Collective`;
+    setSignupConflict("");
+    signupStatus(FULL_MESSAGE, "error");
+    modal.style.display = "block";
+    document.getElementById("collective-signup-cancel")?.focus();
+    return;
+  }
+
   signupCollective = collective;
   signupLastFocused = document.activeElement;
   resetSignupModalState();
@@ -528,6 +592,11 @@ function validateSignupPayload(payload) {
   }
   if (!payload.adultCount || !payload.childCount) return "Please select household counts.";
   if (!payload.privacyAccepted) return "Please accept the privacy notice.";
+  const spaces = remainingSpaces(signupCollective);
+  const partySize = signupPartySize(payload);
+  if (spaces !== null && partySize !== null && partySize > spaces) {
+    return `This Collective currently has space for ${spaces} more ${spaces === 1 ? "person" : "people"}.`;
+  }
   if (!payload.recaptchaToken) return "Please complete the reCAPTCHA.";
   return "";
 }
@@ -562,11 +631,22 @@ async function submitSignup(confirmationToken = "") {
       resetRecaptcha();
       return;
     }
-    if (!response.ok) throw new Error(result.error || "Signup failed.");
+    if (!response.ok) {
+      const message = normalizePublicErrorMessage(result.error || "Signup failed.");
+      if (result.capacityChanged === true || CAPACITY_MESSAGES.has(message)) {
+        await refreshPublicCollectives().catch((refreshError) => {
+          console.error("Collective capacity refresh failed:", refreshError);
+        });
+      }
+      throw new Error(message);
+    }
+    await refreshPublicCollectives().catch((refreshError) => {
+      console.error("Collective capacity refresh failed:", refreshError);
+    });
     showSignupSuccess(payload, Boolean(confirmationToken));
   } catch (error) {
     console.error("Collective signup failed:", error);
-    signupStatus(error.message || "Signup could not be completed.", "error");
+    signupStatus(normalizePublicErrorMessage(error.message || "Signup could not be completed."), "error");
     resetRecaptcha();
   } finally {
     setSignupSubmitting(false);
@@ -614,7 +694,8 @@ function renderList(collectives, totalCount = collectives.length) {
         compactChildcareLabel(fullChildcare),
         fullChildcare
       ),
-      detail("Capacity", capacityLabel(collective))
+      detail("Capacity", capacityLabel(collective)),
+      capacityStatusElement(collective)
     );
 
     const actions = createElement("div", "collective-card-actions");
@@ -622,9 +703,9 @@ function renderList(collectives, totalCount = collectives.length) {
     mapButton.type = "button";
     const contactButton = createElement("button", "", "Contact Host");
     contactButton.type = "button";
-    const signupButton = createElement("button", "", isCollectiveClosed(collective) ? "Closed" : "Sign Up");
+    const signupButton = createElement("button", "", signupButtonLabel(collective));
     signupButton.type = "button";
-    signupButton.disabled = isCollectiveClosed(collective);
+    signupButton.disabled = isCollectiveUnavailable(collective);
     actions.append(mapButton, contactButton, signupButton);
     card.append(actions);
 
@@ -672,6 +753,16 @@ async function renderMarkers(collectives) {
     });
     markers.set(collective.id, marker);
   });
+}
+
+async function refreshPublicCollectives() {
+  allCollectives = await callRpc(PUBLIC_COLLECTIVES_RPC);
+  if (signupCollective) {
+    const refreshed = allCollectives.find((collective) => String(collective.id) === String(signupCollective.id));
+    if (refreshed) signupCollective = refreshed;
+  }
+  await applyCollectiveFilters();
+  updateSignupSubmitState();
 }
 
 function setupContactModal() {
@@ -838,8 +929,7 @@ export async function initCollectivesPage(options = {}) {
       map.addListener("click", closeInfoWindow);
     }
 
-    allCollectives = await callRpc(PUBLIC_COLLECTIVES_RPC);
-    await applyCollectiveFilters();
+    await refreshPublicCollectives();
   } catch (error) {
     console.error("Collectives failed to load:", error);
     showOffseason();

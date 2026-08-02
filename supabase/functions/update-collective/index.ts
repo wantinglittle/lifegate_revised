@@ -14,6 +14,7 @@ const VALID_LISTING_STATUSES = new Set(["active", "inactive"]);
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_MAX_SIZE = 1;
 const MAX_MAX_SIZE = 25;
+const MAX_SIZE_BELOW_REGISTERED_PREFIX = "Max Size cannot be lower than the ";
 
 type RequestBody = Record<string, unknown>;
 type JsonObject = Record<string, unknown>;
@@ -67,6 +68,11 @@ type HostInput = {
   phone: string | null;
 };
 
+type AttendeeStats = {
+  attendeeCount: number;
+  registeredPeople: number;
+};
+
 function isAllowedLocalOrigin(origin: string): boolean {
   try {
     const parsed = new URL(origin);
@@ -110,6 +116,10 @@ function normalizeEmail(value: unknown): string {
 function nullableString(value: unknown, maxLength: number): string | null {
   const text = normalizeString(value, maxLength);
   return text || null;
+}
+
+function normalizePublicErrorMessage(value: string): string {
+  return value.replace(/Weâ€™re/g, "We’re").replace(/We're/g, "We’re");
 }
 
 function readMaxSize(value: unknown): number | null {
@@ -302,19 +312,24 @@ async function deleteHostRow(supabaseUrl: string, key: string, hostId: string): 
   if (!response.ok) throw new Error(`Collective host delete failed: ${await response.text()}`);
 }
 
-async function loadAttendeeCount(supabaseUrl: string, key: string, collectiveId: string): Promise<number> {
+async function loadAttendeeStats(supabaseUrl: string, key: string, collectiveId: string): Promise<AttendeeStats> {
   const params = new URLSearchParams({
-    select: "id",
+    select: "adult_count,child_count",
     collective_id: `eq.${collectiveId}`
   });
   const response = await fetch(`${supabaseUrl}/rest/v1/fall_2026_collective_attendees?${params}`, {
-    method: "HEAD",
-    headers: supabaseHeaders(key, { Prefer: "count=exact" })
+    headers: supabaseHeaders(key)
   });
-  if (!response.ok) return 0;
-  const range = response.headers.get("content-range") || "";
-  const count = Number(range.split("/")[1] || "0");
-  return Number.isFinite(count) ? count : 0;
+  if (!response.ok) return { attendeeCount: 0, registeredPeople: 0 };
+  const rows = await response.json();
+  if (!Array.isArray(rows)) return { attendeeCount: 0, registeredPeople: 0 };
+  return rows.reduce((stats, row) => {
+    const adultCount = Number(row?.adult_count || 0);
+    const childCount = Number(row?.child_count || 0);
+    stats.attendeeCount += 1;
+    stats.registeredPeople += (Number.isFinite(adultCount) ? adultCount : 0) + (Number.isFinite(childCount) ? childCount : 0);
+    return stats;
+  }, { attendeeCount: 0, registeredPeople: 0 });
 }
 
 async function geocode(values: { cross_streets: string; city: string; zip_code: string }): Promise<{
@@ -431,7 +446,16 @@ async function updateCollectiveRow(
     headers: supabaseHeaders(key, { Prefer: "return=representation" }),
     body: JSON.stringify(patch)
   });
-  if (!response.ok) throw new Error(`Collective update failed: ${await response.text()}`);
+  if (!response.ok) {
+    const text = await response.text();
+    let message = `Collective update failed: ${text}`;
+    try {
+      message = JSON.parse(text)?.message || message;
+    } catch {
+      // Use the raw text in the fallback message.
+    }
+    throw new Error(normalizePublicErrorMessage(message));
+  }
   const rows = await response.json();
   if (!Array.isArray(rows) || !rows[0]) throw new Error("Collective update did not return a row.");
   return rows[0];
@@ -511,12 +535,16 @@ async function buildResponseRecord(
   const primaryHost = hosts.find((host) => host.is_primary) || null;
   const secondaryHost = hosts.find((host) => !host.is_primary) || null;
   const myHost = hosts.find((host) => host.user_id === viewerUserId) || null;
-  const attendeeCount = await loadAttendeeCount(supabaseUrl, key, collective.id);
+  const attendeeStats = await loadAttendeeStats(supabaseUrl, key, collective.id);
+  const remainingSpaces = Math.max(Number(collective.max_size || 0) - attendeeStats.registeredPeople, 0);
 
   const response: JsonObject = {
     ...collective,
     status: displayStatus(collective),
-    attendee_count: attendeeCount,
+    attendee_count: attendeeStats.attendeeCount,
+    registered_people: attendeeStats.registeredPeople,
+    remaining_spaces: remainingSpaces,
+    is_full: attendeeStats.registeredPeople >= Number(collective.max_size || 0),
     primary_host_phone: myHost?.is_primary ? myHost.phone : null,
     primary_host_last_name: effectiveHostLastName(primaryHost, portalUsers) || "Host",
     my_host_id: myHost?.id || null,
@@ -763,9 +791,10 @@ Deno.serve(async (request: Request) => {
     });
   } catch (err) {
     console.error("update-collective failed.", err instanceof Error ? err.message : err);
-    const message = err instanceof Error && err.message.startsWith("We could not place")
-      ? err.message
+    const rawMessage = normalizePublicErrorMessage(err instanceof Error ? err.message : "");
+    const message = rawMessage.startsWith("We could not place") || rawMessage.startsWith(MAX_SIZE_BELOW_REGISTERED_PREFIX)
+      ? rawMessage
       : "Unable to update Collective right now.";
-    return jsonResponse(origin, 500, { error: message });
+    return jsonResponse(origin, rawMessage.startsWith(MAX_SIZE_BELOW_REGISTERED_PREFIX) ? 400 : 500, { error: normalizePublicErrorMessage(message) });
   }
 });

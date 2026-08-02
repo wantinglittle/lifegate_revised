@@ -6,6 +6,8 @@ const ALLOWED_PRODUCTION_ORIGINS = new Set([
 const DEFAULT_FROM = "LifeGate Community <messages@lifegatecommunity.com>";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TOKEN_TTL_MS = 15 * 60 * 1000;
+const FULL_MESSAGE = "We’re sorry, this Collective is currently full.";
+const NO_SPACE_MESSAGE = "We’re sorry, this Collective does not have enough remaining space for your group.";
 const CLOSED_MESSAGE = "We’re sorry, this group is currently closed due to capacity.";
 
 type RequestBody = Record<string, unknown>;
@@ -28,6 +30,8 @@ type CollectiveDetails = {
   crossStreets: string;
   displayName: string;
 };
+
+const CAPACITY_MESSAGES = new Set([CLOSED_MESSAGE, FULL_MESSAGE, NO_SPACE_MESSAGE]);
 
 function isAllowedLocalOrigin(origin: string): boolean {
   try {
@@ -86,6 +90,10 @@ function normalizeCount(value: unknown): number {
   if (typeof value === "number" && Number.isInteger(value)) return value;
   if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value.trim());
   return Number.NaN;
+}
+
+function normalizePublicErrorMessage(value: string): string {
+  return value.replace(/Weâ€™re/g, "We’re").replace(/We're/g, "We’re");
 }
 
 function resolveSupabaseElevatedKey(): string {
@@ -261,7 +269,7 @@ async function callSignupRpc(
     } catch {
       message = text || message;
     }
-    throw new Error(message);
+    throw new Error(normalizePublicErrorMessage(message));
   }
   return await response.json();
 }
@@ -573,9 +581,11 @@ Deno.serve(async (request: Request) => {
     });
   } catch (err) {
     console.error("signup-collective-attendee failed.", err instanceof Error ? err.message : err);
-    const message = err instanceof Error ? err.message : "Unable to complete signup right now.";
-    return jsonResponse(origin, message === CLOSED_MESSAGE ? 403 : 500, {
-      error: message === CLOSED_MESSAGE ? CLOSED_MESSAGE : "Unable to complete signup right now."
+    const message = normalizePublicErrorMessage(err instanceof Error ? err.message : "Unable to complete signup right now.");
+    const isCapacityMessage = CAPACITY_MESSAGES.has(message);
+    return jsonResponse(origin, isCapacityMessage ? 403 : 500, {
+      error: isCapacityMessage ? message : "Unable to complete signup right now.",
+      capacityChanged: message === FULL_MESSAGE || message === NO_SPACE_MESSAGE
     });
   }
 });

@@ -186,7 +186,7 @@ export async function updateCollective(collectiveId, changes) {
     }
   });
   if (error) {
-    throw error;
+    throw new Error(data?.error || error.context?.error || error.message || "Collective update failed.");
   }
   return data?.collective || null;
 }
