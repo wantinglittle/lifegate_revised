@@ -552,22 +552,20 @@ main {
 .message-church-bubble:focus,
 .message-church-bubble:focus-visible,
 .message-church-bubble:focus-within {
-    background: var(--hover-color);
-    gap: 0.55rem;
-    padding: 0 0.95rem;
-    transform: translateY(-1px);
-    max-width: min(255px, calc(100vw - 2rem));
-    width: min(255px, calc(100vw - 2rem));
+    box-shadow: 0 10px 28px rgba(25, 25, 25, 0.28);
+    gap: 0.7rem;
+    max-width: min(218px, calc(100vw - 2rem));
+    padding: 0 1.2rem;
+    width: min(218px, calc(100vw - 2rem));
 }
 
 @media (hover: hover) and (pointer: fine) and (min-width: 700px) {
     .message-church-bubble:hover {
-        background: var(--hover-color);
-        gap: 0.55rem;
-        padding: 0 0.95rem;
-        transform: translateY(-1px);
-        max-width: 255px;
-        width: 255px;
+        box-shadow: 0 10px 28px rgba(25, 25, 25, 0.28);
+        gap: 0.7rem;
+        max-width: 218px;
+        padding: 0 1.2rem;
+        width: 218px;
     }
 }
 
@@ -625,12 +623,12 @@ main {
 .message-church-bubble:focus .message-church-icon::after,
 .message-church-bubble:focus-visible .message-church-icon::after,
 .message-church-bubble:focus-within .message-church-icon::after {
-    background: var(--hover-color);
+    background: var(--black-color);
 }
 
 @media (hover: hover) and (pointer: fine) {
     .message-church-bubble:hover .message-church-icon::after {
-        background: var(--hover-color);
+        background: var(--black-color);
     }
 }
 
