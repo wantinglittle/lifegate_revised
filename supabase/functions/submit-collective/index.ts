@@ -13,6 +13,8 @@ const DEFAULT_FROM = "LifeGate Community <messages@lifegatecommunity.com>";
 const ADMIN_PORTAL_URL = "https://lifegatecommunity.com/portal.html";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^\([0-9]{3}\) [0-9]{3}-[0-9]{4}$/;
+const MIN_MAX_SIZE = 1;
+const MAX_MAX_SIZE = 25;
 const HTML_ENTITIES: Record<string, string> = {
   "&": "&amp;",
   "<": "&lt;",
@@ -41,6 +43,7 @@ type Submission = {
   crossStreets: string;
   audience: string;
   childcareOption: string;
+  maxSize: number;
 };
 
 function isAllowedLocalOrigin(origin: string): boolean {
@@ -83,6 +86,16 @@ function normalizeEmail(value: unknown): string {
   return normalizeString(value, 254).toLowerCase();
 }
 
+function readMaxSize(value: unknown): number | null {
+  const number = typeof value === "number"
+    ? value
+    : typeof value === "string" && value.trim() !== ""
+      ? Number(value)
+      : NaN;
+  if (!Number.isInteger(number) || number < MIN_MAX_SIZE || number > MAX_MAX_SIZE) return null;
+  return number;
+}
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => HTML_ENTITIES[char] || char);
 }
@@ -102,7 +115,8 @@ function buildSubmission(body: RequestBody): { submission?: Submission; error?: 
     zipCode: normalizeString(body.zipCode, 5),
     crossStreets: normalizeString(body.crossStreets, 200),
     audience: normalizeString(body.audience, 32),
-    childcareOption: normalizeString(body.childcareOption, 80)
+    childcareOption: normalizeString(body.childcareOption, 80),
+    maxSize: readMaxSize(body.maxSize) || 0
   };
 
   if (!submission.primaryFirstName) return { error: "Primary host first name is required." };
@@ -121,6 +135,9 @@ function buildSubmission(body: RequestBody): { submission?: Submission; error?: 
   }
   if (!VALID_AUDIENCES.has(submission.audience)) return { error: "Audience is invalid." };
   if (!VALID_CHILDCARE_OPTIONS.has(submission.childcareOption)) return { error: "Childcare option is invalid." };
+  if (submission.maxSize < MIN_MAX_SIZE || submission.maxSize > MAX_MAX_SIZE) {
+    return { error: "Max Size must be an integer from 1 to 25." };
+  }
   return { submission };
 }
 
@@ -252,6 +269,7 @@ async function insertCollective(
     formatted_location: coords.formattedLocation,
     audience: submission.audience,
     childcare_option: submission.childcareOption,
+    max_size: submission.maxSize,
     primary_host_phone: submission.primaryPhone,
     latitude: coords.latitude,
     longitude: coords.longitude
@@ -343,6 +361,7 @@ function adminNotification(submission: Submission): { subject: string; html: str
     `Cross streets: ${submission.crossStreets}`,
     `Audience: ${submission.audience}`,
     `Childcare option: ${submission.childcareOption}`,
+    `Max Size: ${submission.maxSize}`,
     "Submission status: Pending Review",
     "",
     `Review in the Lifegate portal: ${ADMIN_PORTAL_URL}`
@@ -359,6 +378,7 @@ function adminNotification(submission: Submission): { subject: string; html: str
       <strong>Cross streets:</strong> ${escapeHtml(submission.crossStreets)}<br>
       <strong>Audience:</strong> ${escapeHtml(submission.audience)}<br>
       <strong>Childcare option:</strong> ${escapeHtml(submission.childcareOption)}<br>
+      <strong>Max Size:</strong> ${submission.maxSize}<br>
       <strong>Submission status:</strong> Pending Review
     </p>
     <p><a href="${ADMIN_PORTAL_URL}">Review in the Lifegate portal</a></p>
@@ -377,7 +397,8 @@ function primaryHostConfirmation(submission: Submission): { subject: string; htm
     `City: ${submission.city}`,
     `Cross streets: ${submission.crossStreets}`,
     `Audience: ${submission.audience}`,
-    `Childcare option: ${submission.childcareOption}`
+    `Childcare option: ${submission.childcareOption}`,
+    `Max Size: ${submission.maxSize}`
   ].join("\n");
   const html = `
     <h2>Your Collective submission was received</h2>
@@ -387,7 +408,8 @@ function primaryHostConfirmation(submission: Submission): { subject: string; htm
       <strong>City:</strong> ${escapeHtml(submission.city)}<br>
       <strong>Cross streets:</strong> ${escapeHtml(submission.crossStreets)}<br>
       <strong>Audience:</strong> ${escapeHtml(submission.audience)}<br>
-      <strong>Childcare option:</strong> ${escapeHtml(submission.childcareOption)}
+      <strong>Childcare option:</strong> ${escapeHtml(submission.childcareOption)}<br>
+      <strong>Max Size:</strong> ${submission.maxSize}
     </p>
   `;
   return { subject, html, text };

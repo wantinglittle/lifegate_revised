@@ -21,6 +21,7 @@ const CHILDCARE_OPTIONS = [
   "Children Welcome | No Sitter Provided",
   "Childcare Not Provided"
 ];
+const MAX_SIZE_OPTIONS = Array.from({ length: 25 }, (_, index) => index + 1);
 const AGE_GROUPS = ["All-ages", "Kids", "Teens", "Adult"];
 const ADMIN_STATUSES = ["pending", "active", "inactive"];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -53,6 +54,7 @@ const fields = {
   meeting_time: document.getElementById("edit-meeting-time"),
   audience: document.getElementById("edit-audience"),
   childcare_option: document.getElementById("edit-childcare-option"),
+  max_size: document.getElementById("edit-max-size"),
   age_group: document.getElementById("edit-age-group"),
   city: document.getElementById("edit-city"),
   zip_code: document.getElementById("edit-zip-code"),
@@ -84,6 +86,7 @@ const errorFields = {
   meeting_time: document.getElementById("edit-meeting-time-error"),
   audience: document.getElementById("edit-audience-error"),
   childcare_option: document.getElementById("edit-childcare-option-error"),
+  max_size: document.getElementById("edit-max-size-error"),
   age_group: document.getElementById("edit-age-group-error"),
   city: document.getElementById("edit-city-error"),
   zip_code: document.getElementById("edit-zip-code-error"),
@@ -122,6 +125,29 @@ function selectedRecordType() {
   return params.get("type") === "collective" ? "collective" : "community";
 }
 
+function isCollectiveRecord() {
+  return recordType === "collective";
+}
+
+function setCollectiveHostControlsHidden(isHidden) {
+  [
+    "edit-primary-host-heading",
+    "edit-primary-host-first-name-group",
+    "edit-primary-host-last-name-group",
+    "edit-primary-host-email-group",
+    "edit-primary-host-phone-group",
+    "edit-secondary-host-heading",
+    "edit-secondary-host-first-name-group",
+    "edit-secondary-host-last-name-group",
+    "edit-secondary-host-email-group",
+    "edit-secondary-host-phone-group",
+    "edit-secondary-host-remove-group"
+  ].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) element.hidden = isHidden;
+  });
+}
+
 function normalizeText(value) {
   return String(value || "").trim();
 }
@@ -152,18 +178,23 @@ function normalizeChildcareOption(record) {
   return "Childcare Not Provided";
 }
 
+function normalizeMaxSize(value) {
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 1 && number <= 25 ? number : 12;
+}
+
 function setSelectOptions(select, values) {
   select.innerHTML = "";
   values.forEach((value) => {
     const option = document.createElement("option");
-    option.value = value;
-    option.textContent = value;
+    option.value = String(value);
+    option.textContent = String(value);
     select.append(option);
   });
 }
 
 function normalizeRecord(record) {
-  if (recordType === "collective") {
+  if (isCollectiveRecord()) {
     const approvalStatus = record.approval_status || "pending";
     const listingStatus = record.listing_status || "inactive";
     return {
@@ -174,6 +205,7 @@ function normalizeRecord(record) {
       formatted_location: normalizeNullableText(record.formatted_location),
       audience: normalizeCollectiveAudience(record.audience),
       childcare_option: normalizeChildcareOption(record),
+      max_size: normalizeMaxSize(record.max_size),
       primary_host_id: record.primary_host_id || null,
       primary_host_user_id: record.primary_host_user_id || null,
       primary_host_is_primary: record.primary_host_is_primary !== false,
@@ -258,8 +290,9 @@ function showErrorSummary(errors) {
 
 function populateForm(record) {
   const statusControl = document.getElementById("status-control");
-  setSelectOptions(fields.audience, recordType === "collective" ? COLLECTIVE_AUDIENCES : COMMUNITY_AUDIENCES);
-  if (recordType === "collective") {
+  setSelectOptions(fields.audience, isCollectiveRecord() ? COLLECTIVE_AUDIENCES : COMMUNITY_AUDIENCES);
+  setSelectOptions(fields.max_size, MAX_SIZE_OPTIONS);
+  if (isCollectiveRecord()) {
     fields.title.value = "Collective Host";
     fields.description.value = "7-week Collective gathering";
     fields.contact_name.value = "Collective Host";
@@ -282,6 +315,7 @@ function populateForm(record) {
     fields.meeting_time.value = "";
     fields.audience.value = record.audience;
     fields.childcare_option.value = record.childcare_option;
+    fields.max_size.value = String(record.max_size);
     fields.age_group.value = "Adult";
     fields.city.value = record.city;
     fields.zip_code.value = record.zip_code;
@@ -311,10 +345,11 @@ function populateForm(record) {
   fields.contact_email.disabled = false;
   fields.secondary_host_email.disabled = false;
   fields.remove_secondary_host.checked = false;
-  fields.remove_secondary_host.closest(".portal-check-row").hidden = true;
+  setCollectiveHostControlsHidden(true);
   fields.day.value = record.day || "";
   fields.meeting_time.value = record.meeting_time || "";
   fields.audience.value = record.audience;
+  fields.max_size.value = "";
   fields.age_group.value = record.age_group;
   fields.city.value = record.city;
   fields.zip_code.value = record.zip_code;
@@ -333,11 +368,13 @@ function populateForm(record) {
 function configureMode(isAdmin) {
   editMode = isAdmin ? "admin" : "contact";
   adminFields.hidden = !isAdmin;
+  const isCollective = isCollectiveRecord();
+  const isCollectiveAdmin = isCollective && editMode === "admin";
 
   const pageTitle = document.getElementById("portal-edit-title");
   const communityLegend = form.querySelector(".portal-edit-section legend");
-  pageTitle.textContent = recordType === "collective" ? "Edit Collective" : "Edit Community";
-  communityLegend.textContent = recordType === "collective" ? "Collective Information" : "Community Information";
+  pageTitle.textContent = isCollective ? "Edit Collective" : "Edit Community";
+  communityLegend.textContent = isCollective ? "Collective Information" : "Community Information";
 
   const communityOnlyFields = [
     fields.title.closest(".form-group"),
@@ -350,6 +387,7 @@ function configureMode(isAdmin) {
   ];
   const isClosedRow = fields.is_closed.closest(".portal-check-row");
   const childcareOptionGroup = fields.childcare_option.closest(".form-group");
+  const maxSizeGroup = fields.max_size.closest(".form-group");
   const primaryHostHeading = document.getElementById("edit-primary-host-heading");
   const secondaryHostHeading = document.getElementById("edit-secondary-host-heading");
   const primaryHostGroups = [
@@ -366,11 +404,12 @@ function configureMode(isAdmin) {
   const secondaryPhoneGroup = fields.secondary_host_phone.closest(".form-group");
   const secondaryRemoveGroup = fields.remove_secondary_host.closest(".portal-check-row");
   isClosedRow.hidden = false;
-  childcareOptionGroup.hidden = recordType !== "collective";
+  childcareOptionGroup.hidden = !isCollective;
+  maxSizeGroup.hidden = !isCollective;
   const isClosedLabel = document.querySelector('label[for="edit-is-closed"]');
   const isClosedHelp = document.getElementById("edit-is-closed-help");
-  isClosedLabel.textContent = recordType === "collective" ? "Collective is Closed" : "Group is Closed";
-  isClosedHelp.textContent = recordType === "collective"
+  isClosedLabel.textContent = isCollective ? "Collective is Closed" : "Group is Closed";
+  isClosedHelp.textContent = isCollective
     ? "Check this when the Collective is not accepting attendee signups. Closed status does not hide the Collective."
     : "Check this when the group is not accepting new members. If the community is visible on the website, visitors will see that it is currently closed. Closed status does not hide the group.";
   const contactFieldset = fields.contact_name.closest("fieldset");
@@ -381,29 +420,29 @@ function configureMode(isAdmin) {
     document.getElementById("edit-coordinates-help")
   ];
   communityOnlyFields.forEach((element) => {
-    if (element) element.hidden = recordType === "collective";
+    if (element) element.hidden = isCollective;
   });
   coordinateFields.forEach((element) => {
-    if (element) element.hidden = recordType === "collective";
+    if (element) element.hidden = isCollective;
   });
   contactFieldset.hidden = false;
-  contactLegend.textContent = recordType === "collective"
+  contactLegend.textContent = isCollective
     ? editMode === "admin" ? "Host Information" : "My Host Information"
     : "Contact Information";
-  fields.contact_name.closest(".form-group").hidden = recordType === "collective";
-  fields.contact_email.closest(".form-group").hidden = recordType === "collective";
-  fields.contact_phone.closest(".form-group").hidden = recordType === "collective";
-  primaryHostHeading.hidden = recordType !== "collective" || editMode !== "admin";
+  fields.contact_name.closest(".form-group").hidden = isCollective;
+  fields.contact_email.closest(".form-group").hidden = isCollective;
+  fields.contact_phone.closest(".form-group").hidden = isCollective;
+  primaryHostHeading.hidden = !isCollectiveAdmin;
   primaryHostHeading.textContent = "Primary Host";
   primaryHostGroups.forEach((element) => {
-    element.hidden = recordType !== "collective";
+    element.hidden = !isCollective;
   });
-  secondaryHostHeading.hidden = recordType !== "collective" || editMode !== "admin";
+  secondaryHostHeading.hidden = !isCollectiveAdmin;
   secondaryNameGroups.forEach((element) => {
-    element.hidden = recordType !== "collective" || editMode !== "admin";
+    element.hidden = !isCollectiveAdmin;
   });
-  secondaryEmailGroup.hidden = recordType !== "collective" || editMode !== "admin";
-  secondaryPhoneGroup.hidden = recordType !== "collective" || editMode !== "admin";
+  secondaryEmailGroup.hidden = !isCollectiveAdmin;
+  secondaryPhoneGroup.hidden = !isCollectiveAdmin;
   secondaryRemoveGroup.hidden = true;
 }
 
@@ -434,6 +473,14 @@ function readRequiredSelect(fieldName, allowedValues, label, errors) {
   return value;
 }
 
+function readRequiredIntegerSelect(fieldName, allowedValues, label, errors) {
+  const value = Number(fields[fieldName].value);
+  if (!Number.isInteger(value) || !allowedValues.includes(value)) {
+    errors[fieldName] = `${label} is not valid.`;
+  }
+  return value;
+}
+
 function readNullableCoordinate(fieldName, min, max, label, errors) {
   const raw = normalizeText(fields[fieldName].value);
   if (!raw) return null;
@@ -455,6 +502,7 @@ function readFormValues() {
       cross_streets: readRequiredText("cross_streets", "Cross streets", null, errors),
       audience: readRequiredSelect("audience", COLLECTIVE_AUDIENCES, "Audience", errors),
       childcare_option: readRequiredSelect("childcare_option", CHILDCARE_OPTIONS, "Childcare", errors),
+      max_size: readRequiredIntegerSelect("max_size", MAX_SIZE_OPTIONS, "Max Size", errors),
       status: readRequiredSelect("status", ADMIN_STATUSES, "Status", errors),
       is_closed: fields.is_closed.checked
     };
@@ -591,6 +639,7 @@ function buildPatch(values) {
       "cross_streets",
       "audience",
       "childcare_option",
+      "max_size",
       "is_closed"
     ];
 

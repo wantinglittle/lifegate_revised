@@ -69,6 +69,11 @@ function isCollectiveClosed(collective) {
   return collective?.is_closed === true;
 }
 
+function capacityLabel(collective) {
+  const maxSize = Number(collective?.max_size);
+  return Number.isInteger(maxSize) && maxSize >= 1 && maxSize <= 25 ? `Up to ${maxSize} people` : "N/A";
+}
+
 function createElement(tagName, className, text) {
   const element = document.createElement(tagName);
   if (className) element.className = className;
@@ -318,6 +323,7 @@ function createInfoWindowContent(collective) {
     createElement("p", "collective-info-cross-streets", fieldValue(collective.cross_streets)),
     detail("Audience", audienceLabel(collective.audience)),
     detail("Childcare", compactChildcareLabel(fullChildcare)),
+    detail("Capacity", capacityLabel(collective)),
     actions
   );
 
@@ -607,7 +613,8 @@ function renderList(collectives, totalCount = collectives.length) {
         "Childcare",
         compactChildcareLabel(fullChildcare),
         fullChildcare
-      )
+      ),
+      detail("Capacity", capacityLabel(collective))
     );
 
     const actions = createElement("div", "collective-card-actions");

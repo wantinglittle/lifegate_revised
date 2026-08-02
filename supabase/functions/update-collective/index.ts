@@ -12,6 +12,8 @@ const VALID_CHILDCARE_OPTIONS = new Set([
 const VALID_APPROVAL_STATUSES = new Set(["pending", "approved"]);
 const VALID_LISTING_STATUSES = new Set(["active", "inactive"]);
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_MAX_SIZE = 1;
+const MAX_MAX_SIZE = 25;
 
 type RequestBody = Record<string, unknown>;
 type JsonObject = Record<string, unknown>;
@@ -42,6 +44,7 @@ type Collective = {
   formatted_location: string | null;
   audience: string;
   childcare_option: string;
+  max_size: number;
   primary_host_phone: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -107,6 +110,16 @@ function normalizeEmail(value: unknown): string {
 function nullableString(value: unknown, maxLength: number): string | null {
   const text = normalizeString(value, maxLength);
   return text || null;
+}
+
+function readMaxSize(value: unknown): number | null {
+  const number = typeof value === "number"
+    ? value
+    : typeof value === "string" && value.trim() !== ""
+      ? Number(value)
+      : NaN;
+  if (!Number.isInteger(number) || number < MIN_MAX_SIZE || number > MAX_MAX_SIZE) return null;
+  return number;
 }
 
 function resolveSupabaseElevatedKey(): string {
@@ -583,6 +596,7 @@ Deno.serve(async (request: Request) => {
         "cross_streets",
         "audience",
         "childcare_option",
+        "max_size",
         "listing_status",
         "approval_status",
         "primary_host_first_name",
@@ -602,6 +616,7 @@ Deno.serve(async (request: Request) => {
         "cross_streets",
         "audience",
         "childcare_option",
+        "max_size",
         "listing_status",
         "is_closed",
         "my_host_first_name",
@@ -649,6 +664,12 @@ Deno.serve(async (request: Request) => {
       const childcareOption = normalizeString(changes.childcare_option, 80);
       if (!VALID_CHILDCARE_OPTIONS.has(childcareOption)) return jsonResponse(origin, 400, { error: "Childcare option is invalid." });
       patch.childcare_option = childcareOption;
+    }
+
+    if ("max_size" in changes) {
+      const maxSize = readMaxSize(changes.max_size);
+      if (maxSize === null) return jsonResponse(origin, 400, { error: "Max Size must be an integer from 1 to 25." });
+      patch.max_size = maxSize;
     }
 
     if ("is_closed" in changes) {

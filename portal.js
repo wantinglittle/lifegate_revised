@@ -637,6 +637,11 @@ function attendeeCount(collective) {
   return Number.isFinite(count) ? count : 0;
 }
 
+function collectiveMaxSizeLabel(collective) {
+  const maxSize = Number(collective?.max_size);
+  return Number.isInteger(maxSize) && maxSize >= 1 && maxSize <= 25 ? String(maxSize) : "N/A";
+}
+
 function formatDateTime(value) {
   if (!value) return "N/A";
   const date = new Date(value);
@@ -697,6 +702,7 @@ function collectiveListCsv(collectives) {
     "Second Host Last Name",
     "Second Host Email",
     "Second Host Phone",
+    "Max Size",
     "Attendee Count"
   ].map(csvField).join(",");
   const rows = collectives.map((collective) => [
@@ -714,6 +720,7 @@ function collectiveListCsv(collectives) {
     collective.secondary_host_last_name,
     collective.secondary_host_email,
     collective.secondary_host_phone,
+    collectiveMaxSizeLabel(collective),
     attendeeCount(collective)
   ].map(csvField).join(","));
   return `\uFEFF${[header, ...rows].join("\r\n")}`;
@@ -727,6 +734,7 @@ function myDashboardCsv() {
     "Cross Streets",
     "Status",
     "Closed",
+    "Max Size",
     "Attendees"
   ].map(csvField).join(",");
   const communityRows = sortedGroups(myCommunitiesCache).map((group) => [
@@ -736,6 +744,7 @@ function myDashboardCsv() {
     group.cross_streets,
     statusLabel(group.status),
     group.is_closed === true ? "Yes" : "No",
+    "",
     ""
   ].map(csvField).join(","));
   const collectiveRows = sortedCollectives(myCollectivesCache).map((collective) => [
@@ -745,6 +754,7 @@ function myDashboardCsv() {
     collective.cross_streets,
     collectiveStatusLabel(collective),
     collective.is_closed === true ? "Yes" : "No",
+    collectiveMaxSizeLabel(collective),
     attendeeCount(collective)
   ].map(csvField).join(","));
   return `\uFEFF${[header, ...communityRows, ...collectiveRows].join("\r\n")}`;
@@ -966,6 +976,7 @@ function renderCollectiveCard(collective, options = {}) {
   addDetail(card, "Cross Streets", fieldValue(collective.cross_streets));
   addDetail(card, "Audience", collectiveAudienceLabel(collective.audience));
   addDetail(card, "Childcare", collectiveChildcareLabel(collective));
+  addDetail(card, "Max Size", collectiveMaxSizeLabel(collective));
   addDetail(card, "Attendees", String(attendeeCount(collective)));
 
   if (showContactDetails) {

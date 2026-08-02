@@ -461,12 +461,14 @@
 }
 
 .collectives-message-bubble:focus-visible,
-.close-church-confirmation:focus-visible {
+.close-church-confirmation:focus-visible,
+.close-collective-confirmation:focus-visible {
   outline: 3px solid rgba(25, 25, 25, 0.35);
   outline-offset: 3px;
 }
 
-.close-church-confirmation {
+.close-church-confirmation,
+.close-collective-confirmation {
   color: var(--black-color);
   cursor: pointer;
   font-size: 34px;

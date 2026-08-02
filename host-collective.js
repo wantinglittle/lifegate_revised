@@ -9,6 +9,8 @@ const CHILDCARE_OPTIONS = [
   "Children Welcome | No Sitter Provided",
   "Childcare Not Provided"
 ];
+const MIN_MAX_SIZE = 1;
+const MAX_MAX_SIZE = 25;
 
 const form = document.getElementById("collective-host-form");
 const submitButton = document.getElementById("collective-submit");
@@ -24,7 +26,8 @@ const fields = {
   zipCode: document.getElementById("collective-zip"),
   crossStreets: document.getElementById("collective-cross-streets"),
   audience: document.getElementById("collective-audience"),
-  childcareOption: document.getElementById("collective-childcare")
+  childcareOption: document.getElementById("collective-childcare"),
+  maxSize: document.getElementById("collective-max-size")
 };
 
 function setFieldError(input, message) {
@@ -48,7 +51,8 @@ function readValues() {
     zipCode: normalizeText(fields.zipCode.value),
     crossStreets: normalizeText(fields.crossStreets.value),
     audience: fields.audience.value,
-    childcareOption: fields.childcareOption.value
+    childcareOption: fields.childcareOption.value,
+    maxSize: Number(fields.maxSize.value)
   };
 }
 
@@ -77,6 +81,9 @@ function validate(values) {
   if (!AUDIENCE_OPTIONS.includes(values.audience)) errors.set(fields.audience, "Select an audience.");
   if (!CHILDCARE_OPTIONS.includes(values.childcareOption)) {
     errors.set(fields.childcareOption, "Select a childcare option.");
+  }
+  if (!Number.isInteger(values.maxSize) || values.maxSize < MIN_MAX_SIZE || values.maxSize > MAX_MAX_SIZE) {
+    errors.set(fields.maxSize, "Select a max size from 1 to 25.");
   }
 
   errors.forEach((message, input) => setFieldError(input, message));
