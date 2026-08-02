@@ -385,6 +385,53 @@ function setSignupConflict(message, token = "") {
   if (message) codeInput?.focus();
 }
 
+function setSignupSuccessState(isVisible) {
+  const form = document.getElementById("collective-signup-form");
+  const success = document.getElementById("collective-signup-success");
+  if (form) form.hidden = isVisible;
+  if (success) success.hidden = !isVisible;
+}
+
+function resetSignupModalState() {
+  const form = document.getElementById("collective-signup-form");
+  const modal = document.getElementById("collective-signup-modal");
+  const title = document.getElementById("collective-signup-title");
+  form?.reset();
+  modal?.setAttribute("aria-labelledby", "collective-signup-title");
+  if (title) title.hidden = false;
+  signupConfirmationToken = "";
+  setSignupSuccessState(false);
+  setSignupConflict("");
+  signupStatus("");
+  resetRecaptcha();
+}
+
+function showSignupSuccess(payload, isReassignment) {
+  signupConfirmationToken = "";
+  setSignupConflict("");
+  signupStatus("");
+  resetRecaptcha();
+
+  const hostLastName = fieldValue(signupCollective?.primary_host_last_name || "Host");
+  const email = payload.email.trim();
+  document.getElementById("collective-signup-title").hidden = true;
+  document.getElementById("collective-signup-modal")?.setAttribute("aria-labelledby", "collective-signup-success-title");
+  document.getElementById("collective-signup-success-title").textContent = isReassignment
+    ? "Your Signup Has Been Updated"
+    : "You’re Signed Up!";
+  document.getElementById("collective-signup-success-body").textContent = isReassignment
+    ? `You are now registered for the ${hostLastName} Collective.`
+    : `Your registration for the ${hostLastName} Collective has been received.`;
+  document.getElementById("collective-signup-success-email").textContent = `A confirmation email has been sent to ${email}.`;
+  document.getElementById("collective-signup-success-followup").textContent = isReassignment
+    ? "The new Collective hosts will follow up with additional details."
+    : "The Collective hosts will follow up with additional details.";
+  setSignupSuccessState(true);
+  requestAnimationFrame(() => {
+    document.getElementById("collective-signup-success-title")?.focus();
+  });
+}
+
 function focusableElements(container) {
   return Array.from(container.querySelectorAll(
     'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -396,7 +443,7 @@ function openSignupModal(collective) {
     const modal = document.getElementById("collective-signup-modal");
     signupCollective = collective;
     signupLastFocused = document.activeElement;
-    document.getElementById("collective-signup-form")?.reset();
+    resetSignupModalState();
     document.getElementById("collective-signup-id").value = collective.id;
     document.getElementById("collective-signup-title").textContent = `Sign Up for ${fieldValue(collective.primary_host_last_name)} Collective`;
     setSignupConflict("");
@@ -408,13 +455,9 @@ function openSignupModal(collective) {
 
   signupCollective = collective;
   signupLastFocused = document.activeElement;
-  signupConfirmationToken = "";
+  resetSignupModalState();
   document.getElementById("collective-signup-id").value = collective.id;
   document.getElementById("collective-signup-title").textContent = `Sign Up for ${fieldValue(collective.primary_host_last_name)} Collective`;
-  document.getElementById("collective-signup-form").reset();
-  setSignupConflict("");
-  signupStatus("");
-  resetRecaptcha();
   document.getElementById("collective-signup-modal").style.display = "block";
   document.getElementById("collective-signup-first-name").focus();
 }
@@ -422,10 +465,7 @@ function openSignupModal(collective) {
 function closeSignupModal() {
   document.getElementById("collective-signup-modal").style.display = "none";
   signupCollective = null;
-  signupConfirmationToken = "";
-  signupStatus("");
-  setSignupConflict("");
-  resetRecaptcha();
+  resetSignupModalState();
   signupLastFocused?.focus?.();
 }
 
@@ -488,10 +528,7 @@ async function submitSignup(confirmationToken = "") {
       return;
     }
     if (!response.ok) throw new Error(result.error || "Signup failed.");
-    setSignupConflict("");
-    signupStatus(result.message || "You're signed up for this Collective.", "success");
-    document.getElementById("collective-signup-form").reset();
-    resetRecaptcha();
+    showSignupSuccess(payload, Boolean(confirmationToken));
   } catch (error) {
     console.error("Collective signup failed:", error);
     signupStatus(error.message || "Signup could not be completed.", "error");
@@ -673,7 +710,7 @@ function setupSignupModal() {
   const form = document.getElementById("collective-signup-form");
   if (!modal || !form) return;
 
-  modal.querySelectorAll(".close-signup, #collective-signup-cancel, #collective-signup-keep").forEach((element) => {
+  modal.querySelectorAll(".close-signup, #collective-signup-cancel, #collective-signup-keep, #collective-signup-success-close").forEach((element) => {
     element.addEventListener("click", closeSignupModal);
     element.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {

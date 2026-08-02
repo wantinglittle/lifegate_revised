@@ -525,6 +525,64 @@
   max-width: 860px;
 }
 
+.portal-confirm-modal {
+  z-index: 1300;
+}
+
+.portal-confirm-panel {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 460px;
+  text-align: left;
+}
+
+.portal-confirm-icon {
+  align-items: center;
+  background: #fff4e6;
+  border: 1px solid #edc27f;
+  border-radius: 50%;
+  color: #8a4b00;
+  display: inline-flex;
+  font-weight: 900;
+  height: 2.25rem;
+  justify-content: center;
+  line-height: 1;
+  width: 2.25rem;
+}
+
+.portal-confirm-panel h3,
+.portal-confirm-panel p {
+  margin: 0;
+}
+
+.portal-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin-top: 0.2rem;
+}
+
+.portal-confirm-actions button {
+  min-width: 8.5rem;
+}
+
+.portal-confirm-actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.portal-confirm-actions .portal-danger-btn {
+  background: #9b1c1c;
+  border-color: #9b1c1c;
+  color: var(--white-color);
+}
+
+.portal-confirm-actions .portal-danger-btn:hover,
+.portal-confirm-actions .portal-danger-btn:focus-visible {
+  background: #7f1717;
+}
+
 .portal-attendees-actions {
   display: flex;
   flex-wrap: wrap;

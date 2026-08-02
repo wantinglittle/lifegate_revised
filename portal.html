@@ -198,6 +198,19 @@
     </div>
   </div>
 
+  <div id="portal-confirm-modal" class="portal-modal portal-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="portal-confirm-title" aria-describedby="portal-confirm-body" hidden>
+    <div class="portal-modal-panel portal-confirm-panel" role="document" tabindex="-1">
+      <div class="portal-confirm-icon" aria-hidden="true">!</div>
+      <h3 id="portal-confirm-title">Confirm Action</h3>
+      <p id="portal-confirm-body"></p>
+      <p id="portal-confirm-status" class="portal-field-error" aria-live="polite"></p>
+      <div class="portal-confirm-actions">
+        <button id="portal-confirm-cancel" type="button" class="portal-secondary-btn">Cancel</button>
+        <button id="portal-confirm-action" type="button" class="portal-secondary-btn portal-danger-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="portal.js"></script>
 </body>
 </html>

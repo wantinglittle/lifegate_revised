@@ -590,6 +590,59 @@
   color: #245b2a;
 }
 
+.collective-signup-success {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.2rem 0.4rem 0.35rem;
+  text-align: center;
+}
+
+.collective-signup-success[hidden] {
+  display: none;
+}
+
+.collective-signup-success-icon {
+  align-items: center;
+  background: #e8f3ea;
+  border: 2px solid #8abf8f;
+  border-radius: 50%;
+  color: #245b2a;
+  display: inline-flex;
+  font-size: 2rem;
+  font-weight: 900;
+  height: 4rem;
+  justify-content: center;
+  line-height: 1;
+  width: 4rem;
+}
+
+.collective-signup-success h3 {
+  margin: 0;
+}
+
+.collective-signup-success p {
+  margin: 0;
+  max-width: 34rem;
+}
+
+#collective-signup-success-close {
+  background: var(--blue-color);
+  border: 0;
+  border-radius: 8px;
+  color: var(--white-color);
+  cursor: pointer;
+  font-weight: 800;
+  margin-top: 0.25rem;
+  padding: 0.75rem 1.8rem;
+}
+
+#collective-signup-success-close:hover,
+#collective-signup-success-close:focus-visible {
+  background: #5a6268;
+}
+
 #collective-signup-website {
   left: -9999px;
   position: absolute;

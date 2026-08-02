@@ -108,6 +108,13 @@ const attendeesStatus = document.getElementById("portal-attendees-status");
 const attendeesList = document.getElementById("portal-attendees-list");
 const attendeesExportButton = document.getElementById("portal-attendees-export");
 const attendeesCloseButton = document.getElementById("portal-attendees-close");
+const confirmModal = document.getElementById("portal-confirm-modal");
+const confirmModalPanel = confirmModal.querySelector(".portal-modal-panel");
+const confirmTitle = document.getElementById("portal-confirm-title");
+const confirmBody = document.getElementById("portal-confirm-body");
+const confirmStatus = document.getElementById("portal-confirm-status");
+const confirmCancelButton = document.getElementById("portal-confirm-cancel");
+const confirmActionButton = document.getElementById("portal-confirm-action");
 
 let authSubscription;
 let adminGroups = [];
@@ -126,6 +133,9 @@ let profileModalReturnFocus = null;
 let attendeesModalReturnFocus = null;
 let activeAttendeeCollective = null;
 let activeAttendees = [];
+let activeConfirmOptions = null;
+let confirmModalReturnFocus = null;
+let isConfirmWorking = false;
 
 function setStatus(message, tone = "info") {
   statusMessage.textContent = message;
@@ -1070,6 +1080,7 @@ function focusableAttendeesModalElements() {
 }
 
 function handleAttendeesModalKeydown(event) {
+  if (confirmModalIsOpen()) return;
   if (!attendeesModalIsOpen()) return;
 
   if (event.key === "Escape") {
@@ -1084,6 +1095,96 @@ function handleAttendeesModalKeydown(event) {
   if (focusableElements.length === 0) {
     event.preventDefault();
     attendeesModalPanel.focus();
+    return;
+  }
+
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+
+  if (event.shiftKey && document.activeElement === firstElement) {
+    event.preventDefault();
+    lastElement.focus();
+  } else if (!event.shiftKey && document.activeElement === lastElement) {
+    event.preventDefault();
+    firstElement.focus();
+  }
+}
+
+function confirmModalIsOpen() {
+  return !confirmModal.hidden;
+}
+
+function focusableConfirmModalElements() {
+  return Array.from(confirmModal.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )).filter((element) => !element.hidden && element.offsetParent !== null);
+}
+
+function setConfirmWorking(isWorking) {
+  isConfirmWorking = isWorking;
+  confirmCancelButton.disabled = isWorking;
+  confirmActionButton.disabled = isWorking;
+  confirmActionButton.textContent = isWorking
+    ? activeConfirmOptions?.workingLabel || "Working..."
+    : activeConfirmOptions?.confirmLabel || "Confirm";
+}
+
+function openPortalConfirm(options) {
+  activeConfirmOptions = options;
+  confirmModalReturnFocus = options.returnFocus || document.activeElement;
+  confirmTitle.textContent = options.title || "Confirm Action";
+  confirmBody.textContent = options.message || "";
+  confirmStatus.textContent = "";
+  confirmActionButton.textContent = options.confirmLabel || "Confirm";
+  confirmModal.hidden = false;
+  attendeesModal.setAttribute("aria-hidden", "true");
+  setConfirmWorking(false);
+  requestAnimationFrame(() => {
+    confirmCancelButton.focus();
+  });
+}
+
+function closePortalConfirm({ restoreFocus = true } = {}) {
+  if (isConfirmWorking) return;
+  confirmModal.hidden = true;
+  attendeesModal.removeAttribute("aria-hidden");
+  confirmStatus.textContent = "";
+  activeConfirmOptions = null;
+  if (restoreFocus && confirmModalReturnFocus && document.contains(confirmModalReturnFocus)) {
+    confirmModalReturnFocus.focus();
+  }
+  confirmModalReturnFocus = null;
+}
+
+async function confirmPortalAction() {
+  if (!activeConfirmOptions || isConfirmWorking) return;
+  setConfirmWorking(true);
+  confirmStatus.textContent = activeConfirmOptions.workingLabel || "Working...";
+  try {
+    await activeConfirmOptions.onConfirm?.();
+    setConfirmWorking(false);
+    closePortalConfirm({ restoreFocus: false });
+  } catch (error) {
+    console.error("Confirmation action failed:", error);
+    confirmStatus.textContent = error.message || "This action could not be completed.";
+    setConfirmWorking(false);
+  }
+}
+
+function handleConfirmModalKeydown(event) {
+  if (!confirmModalIsOpen()) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closePortalConfirm();
+    return;
+  }
+
+  if (event.key !== "Tab") return;
+
+  const focusableElements = focusableConfirmModalElements();
+  if (focusableElements.length === 0) {
+    event.preventDefault();
+    confirmModalPanel.focus();
     return;
   }
 
@@ -1202,7 +1303,7 @@ function renderAttendeeRow(attendee) {
   editButton.addEventListener("click", () => renderAttendeeEditRow(attendee, row));
   const removeButton = createElement("button", "portal-secondary-btn portal-danger-btn", "Remove");
   removeButton.type = "button";
-  removeButton.addEventListener("click", () => removeAttendee(attendee));
+  removeButton.addEventListener("click", () => openRemoveAttendeeConfirm(attendee, removeButton));
   actions.append(copyButton, editButton, removeButton);
   row.append(details, actions);
   return row;
@@ -1270,7 +1371,6 @@ function renderAttendeeEditRow(attendee, row) {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!confirm("Are you sure you want to save these changes?")) return;
 
     const formData = new FormData(form);
     const changes = {
@@ -1302,24 +1402,27 @@ function renderAttendeeEditRow(attendee, row) {
   form.querySelector("input")?.focus();
 }
 
-async function removeAttendee(attendee) {
+function openRemoveAttendeeConfirm(attendee, trigger) {
   const fullName = attendeeFullName(attendee);
-  if (!confirm(`Are you sure you want to remove ‘${fullName}’ from your Collective?`)) return;
+  openPortalConfirm({
+    title: "Remove Attendee?",
+    message: `Are you sure you want to remove "${fullName}" from your Collective?`,
+    confirmLabel: "Remove Attendee",
+    workingLabel: "Removing...",
+    returnFocus: trigger,
+    onConfirm: () => removeAttendee(attendee)
+  });
+}
 
-  setAttendeesStatus("Removing attendee...", "info");
-  try {
-    await removeCollectiveAttendee(attendee.id);
-    activeAttendees = activeAttendees.filter((item) => item.id !== attendee.id);
-    if (activeAttendeeCollective) {
-      updateCollectiveAttendeeCount(activeAttendeeCollective.id, activeAttendees.length);
-      refreshCollectiveCards();
-    }
-    renderAttendees();
-    setAttendeesStatus("Attendee removed.", "success");
-  } catch (error) {
-    console.error("Attendee removal failed:", error);
-    setAttendeesStatus(error.message || "Attendee could not be removed.", "error");
+async function removeAttendee(attendee) {
+  await removeCollectiveAttendee(attendee.id);
+  activeAttendees = activeAttendees.filter((item) => item.id !== attendee.id);
+  if (activeAttendeeCollective) {
+    updateCollectiveAttendeeCount(activeAttendeeCollective.id, activeAttendees.length);
+    refreshCollectiveCards();
   }
+  renderAttendees();
+  setAttendeesStatus("Attendee removed.", "success");
 }
 
 function exportActiveAttendees() {
@@ -1487,6 +1590,14 @@ attendeesModal.addEventListener("click", (event) => {
     closeAttendeesModal();
   }
 });
+confirmCancelButton.addEventListener("click", () => closePortalConfirm());
+confirmActionButton.addEventListener("click", confirmPortalAction);
+confirmModal.addEventListener("click", (event) => {
+  if (event.target === confirmModal) {
+    closePortalConfirm();
+  }
+});
+document.addEventListener("keydown", handleConfirmModalKeydown);
 document.addEventListener("keydown", handleAttendeesModalKeydown);
 
 [profileFirstInput, profileLastInput].forEach((input) => {
