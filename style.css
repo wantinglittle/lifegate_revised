@@ -100,8 +100,9 @@ header p {
 
 .public-switch-header {
     display: grid;
-    grid-template-columns: minmax(150px, 1fr) auto minmax(150px, 1fr);
-    gap: 1rem;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1.5rem;
+    padding: 1.2rem 2rem;
 }
 
 .public-switch-header .header-logo {
@@ -110,40 +111,85 @@ header p {
     justify-content: flex-start;
 }
 
+.public-switch-header.is-collectives-loading [data-collectives-seasonal-link],
+.public-switch-header.is-collectives-loading [data-collectives-seasonal-host] {
+    pointer-events: none;
+    visibility: hidden;
+}
+
 .public-page-switcher {
     align-items: center;
     align-self: center;
-    background: rgba(231, 231, 231, 0.48);
-    border: 1px solid rgba(25, 25, 25, 0.16);
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.48);
+    border: 1px solid rgba(255, 255, 255, 0.68);
+    border-radius: 999px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 18px rgba(25, 25, 25, 0.08);
     display: inline-grid;
-    gap: 0.25rem;
+    gap: 0.3rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-self: center;
-    padding: 0.25rem;
+    min-height: 50px;
+    padding: 0.3rem;
+    width: clamp(360px, 34vw, 440px);
 }
 
 .public-page-switcher.is-collectives-hidden {
     grid-template-columns: 1fr;
+    width: min(100%, 230px);
 }
 
 .public-page-switcher-link {
-    border-radius: 6px;
-    color: var(--black-color);
+    align-items: center;
+    border-radius: 999px;
+    color: #303a40;
+    display: inline-flex;
     font-size: 0.92rem;
     font-weight: 700;
+    gap: 0.55rem;
+    justify-content: center;
     line-height: 1.2;
     min-height: 40px;
-    padding: 0.65rem 0.95rem;
+    padding: 0.58rem 1rem;
     text-align: center;
     text-decoration: none;
     transition: background-color 0.2s ease, color 0.2s ease;
     white-space: nowrap;
 }
 
+.public-switcher-icon {
+    color: currentColor;
+    display: inline-block;
+    height: 18px;
+    position: relative;
+    width: 18px;
+}
+
+.public-switcher-icon::before,
+.public-switcher-icon::after {
+    border: 1.8px solid currentColor;
+    border-radius: 999px;
+    content: "";
+    position: absolute;
+}
+
+.public-switcher-icon::before {
+    height: 6px;
+    left: 5px;
+    top: 1px;
+    width: 6px;
+}
+
+.public-switcher-icon::after {
+    border-top-width: 1.8px;
+    height: 8px;
+    left: 2px;
+    top: 9px;
+    width: 12px;
+}
+
 .public-page-switcher-link:hover,
 .public-page-switcher-link:focus-visible {
-    background: rgba(25, 25, 25, 0.08);
+    background: rgba(255, 255, 255, 0.38);
 }
 
 .public-page-switcher-link:focus-visible,
@@ -153,16 +199,29 @@ header p {
 }
 
 .public-page-switcher-link.is-active {
-    background: var(--black-color);
+    background: #5f707a;
+    box-shadow: 0 4px 10px rgba(25, 25, 25, 0.14);
     color: var(--white-color);
 }
 
 .public-switch-actions {
     align-items: center;
+    gap: 0.8rem;
+    justify-self: end;
+}
+
+.public-switch-actions .add-group-btn {
+    align-items: center;
+    border-radius: 999px;
+    display: inline-flex;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.62rem 1.15rem;
+    white-space: nowrap;
 }
 
 .public-secondary-btn {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.28);
     border: 1px solid rgba(25, 25, 25, 0.4);
     color: var(--black-color);
 }
@@ -877,6 +936,8 @@ main {
     .public-switch-header {
         display: grid;
         grid-template-columns: 1fr auto;
+        gap: 0.8rem 1rem;
+        padding: 1rem;
         text-align: left;
     }
 
@@ -887,12 +948,13 @@ main {
     .public-page-switcher {
         grid-column: 1 / -1;
         order: 3;
-        width: 100%;
+        padding: 0.25rem;
+        width: min(100%, 440px);
     }
 
     .public-page-switcher-link {
-        min-height: 44px;
-        padding: 0.75rem 0.5rem;
+        min-height: 42px;
+        padding: 0.58rem 0.6rem;
     }
 
     .public-switch-actions {
@@ -904,6 +966,7 @@ main {
         justify-self: stretch;
         min-height: 44px;
         order: 4;
+        padding: 0.62rem 1rem;
         text-align: center;
     }
 
@@ -912,7 +975,7 @@ main {
         justify-self: end;
         min-height: 44px;
         order: 2;
-        padding: 10px 14px;
+        padding: 0.62rem 0.95rem;
         text-align: center;
     }
 

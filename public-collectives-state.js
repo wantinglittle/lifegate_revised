@@ -30,25 +30,32 @@ export async function getCollectivesPublicState() {
 }
 
 export async function initPublicCollectivesHeader() {
+  const headers = document.querySelectorAll(".public-switch-header");
   const switchers = document.querySelectorAll(".public-page-switcher");
   const collectivesLinks = document.querySelectorAll("[data-collectives-seasonal-link]");
   const hostActions = document.querySelectorAll("[data-collectives-seasonal-host]");
   if (collectivesLinks.length === 0 && hostActions.length === 0) return;
 
+  function setCollectivesVisible(isVisible) {
+    headers.forEach((header) => {
+      header.classList.remove("is-collectives-loading");
+    });
+    switchers.forEach((switcher) => {
+      switcher.classList.toggle("is-collectives-hidden", !isVisible);
+    });
+    collectivesLinks.forEach((link) => {
+      link.hidden = !isVisible;
+    });
+    hostActions.forEach((action) => {
+      action.hidden = !isVisible;
+    });
+  }
+
   try {
     const state = await getCollectivesPublicState();
-    if (state?.enabled === true) {
-      switchers.forEach((switcher) => {
-        switcher.classList.remove("is-collectives-hidden");
-      });
-      collectivesLinks.forEach((link) => {
-        link.hidden = false;
-      });
-      hostActions.forEach((action) => {
-        action.hidden = false;
-      });
-    }
+    setCollectivesVisible(state?.enabled === true);
   } catch (error) {
+    setCollectivesVisible(false);
     console.warn("Collectives seasonal visibility could not be loaded.", error);
   }
 }
