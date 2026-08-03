@@ -116,16 +116,17 @@
 </head>
 <body>
   <div class="wrapper">
-    <header>
+    <header class="public-switch-header">
       <div class="header-logo">
-        <a href="https://lifegatecommunity.com/"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
+        <a href="index.html"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
       </div>
-      <div class="header-content">
-        <h1>LIFEGATE Community</h1>
-      </div>
-      <div class="header-actions public-header-actions">
-        <a href="portal-login.html" class="add-group-btn" data-dashboard-link>Log In</a>
-        <a href="add-comm.html" class="add-group-btn">Add My Community</a>
+      <nav class="public-page-switcher" aria-label="Communities and Collectives">
+        <a href="find-comm.html" class="public-page-switcher-link is-active" aria-current="page">Communities</a>
+        <a href="collectives.html" class="public-page-switcher-link">Collectives</a>
+      </nav>
+      <div class="header-actions public-header-actions public-switch-actions">
+        <a href="add-comm.html" class="add-group-btn">Add Your Community</a>
+        <a href="portal-login.html" class="add-group-btn public-secondary-btn" data-dashboard-link>Log In</a>
       </div>
     </header>
 
