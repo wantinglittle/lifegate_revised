@@ -967,6 +967,10 @@
 }
 
 @media (max-width: 768px) {
+  .collectives-wrapper > .public-switch-header {
+    padding: 0.85rem;
+  }
+
   .collectives-wrapper .public-switch-header .public-switch-actions {
     display: contents;
   }

@@ -935,26 +935,46 @@ main {
 
     .public-switch-header {
         display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 0.8rem 1rem;
-        padding: 1rem;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.75rem;
+        max-width: 100%;
+        overflow: hidden;
+        padding: 0.85rem;
         text-align: left;
+        width: 100%;
     }
 
     .public-switch-header .header-logo {
         margin-bottom: 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .public-switch-header .header-logo img {
+        height: 34px;
+        max-width: min(58vw, 210px);
     }
 
     .public-page-switcher {
         grid-column: 1 / -1;
+        justify-self: stretch;
+        max-width: 100%;
+        min-width: 0;
         order: 3;
         padding: 0.25rem;
-        width: min(100%, 440px);
+        width: 100%;
     }
 
     .public-page-switcher-link {
+        font-size: 0.86rem;
         min-height: 42px;
-        padding: 0.58rem 0.6rem;
+        min-width: 0;
+        padding: 0.58rem 0.45rem;
+    }
+
+    .public-switcher-icon {
+        height: 17px;
+        width: 17px;
     }
 
     .public-switch-actions {
@@ -975,7 +995,7 @@ main {
         justify-self: end;
         min-height: 44px;
         order: 2;
-        padding: 0.62rem 0.95rem;
+        padding: 0.58rem 0.75rem;
         text-align: center;
     }
 
