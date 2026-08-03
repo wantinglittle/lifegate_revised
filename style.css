@@ -123,6 +123,10 @@ header p {
     padding: 0.25rem;
 }
 
+.public-page-switcher.is-collectives-hidden {
+    grid-template-columns: 1fr;
+}
+
 .public-page-switcher-link {
     border-radius: 6px;
     color: var(--black-color);

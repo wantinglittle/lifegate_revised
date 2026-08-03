@@ -1,6 +1,6 @@
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from './supabase-config.js';
+import { getCollectivesPublicState } from './public-collectives-state.js';
 
-const PUBLIC_STATE_RPC = "get_collectives_public_state";
 const PUBLIC_COLLECTIVES_RPC = "get_public_collectives";
 const CONTACT_FUNCTION_URL = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/contact-collective-hosts`;
 const SIGNUP_FUNCTION_URL = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/signup-collective-attendee`;
@@ -985,8 +985,8 @@ export async function initCollectivesPage(options = {}) {
   setupCollectiveFilters();
 
   try {
-    const stateRows = await callRpc(PUBLIC_STATE_RPC);
-    if (!stateRows[0]?.enabled) {
+    const state = await getCollectivesPublicState();
+    if (!state?.enabled) {
       showOffseason();
       return;
     }

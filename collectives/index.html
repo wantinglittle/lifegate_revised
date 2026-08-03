@@ -27,12 +27,12 @@
       <div class="header-logo">
         <a href="index.html"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
       </div>
-      <nav class="public-page-switcher" aria-label="Communities and Collectives">
+      <nav class="public-page-switcher is-collectives-hidden" aria-label="Communities and Collectives">
         <a href="find-comm.html" class="public-page-switcher-link">Communities</a>
-        <a href="collectives.html" class="public-page-switcher-link is-active" aria-current="page">Collectives</a>
+        <a href="collectives.html" class="public-page-switcher-link is-active" aria-current="page" data-collectives-seasonal-link hidden>Collectives</a>
       </nav>
       <div class="header-actions public-header-actions public-switch-actions">
-        <a href="host-collective.html" class="add-group-btn">Host a Collective</a>
+        <a href="host-collective.html" class="add-group-btn" data-collectives-seasonal-host hidden>Host a Collective</a>
         <a href="portal-login.html" class="add-group-btn public-secondary-btn" data-dashboard-link>Log In</a>
       </div>
     </header>
@@ -260,6 +260,7 @@
 
   <script type="module">
     import { initCollectivesPage } from './collectives.js';
+    import { initPublicCollectivesHeader } from './public-collectives-state.js';
 
     function loadGoogleMaps() {
       return new Promise((resolve, reject) => {
@@ -276,6 +277,8 @@
         document.head.appendChild(script);
       });
     }
+
+    initPublicCollectivesHeader();
 
     loadGoogleMaps()
       .then(initCollectivesPage)
