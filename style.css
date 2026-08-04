@@ -385,7 +385,7 @@ main {
 
 @media (min-width: 769px) {
     :root {
-        --directory-header-height: 59px;
+        --directory-header-height: 70px;
     }
 
     header {
