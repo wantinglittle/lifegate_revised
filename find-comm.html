@@ -116,17 +116,17 @@
 </head>
 <body>
   <div class="wrapper">
-    <header>
+    <header class="public-switch-header is-collectives-loading">
       <div class="header-logo">
-        <a href="https://lifegatedenver.com/"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
+        <a href="index.html"><img src="images/lg_logo.svg" alt="LIFEGATE Church" height="40"></a>
       </div>
-      <div class="header-content">
-        <h1>LIFEGATE Community</h1>
-        <p>Find and connect with church community</p>
-      </div>
-      <div class="header-actions public-header-actions">
-        <a href="portal-login.html" class="add-group-btn" data-dashboard-link>Log In</a>
-        <a href="add-group.html" class="add-group-btn">Add My Community</a>
+      <nav class="public-page-switcher" aria-label="Communities and Collectives">
+        <a href="find-comm.html" class="public-page-switcher-link is-active" aria-current="page"><span class="public-switcher-icon" aria-hidden="true"></span>Communities</a>
+        <a href="collectives.html" class="public-page-switcher-link" data-collectives-seasonal-link><span class="public-switcher-icon" aria-hidden="true"></span>Collectives</a>
+      </nav>
+      <div class="header-actions public-header-actions public-switch-actions">
+        <a href="add-comm.html" class="add-group-btn">Add Your Community</a>
+        <a href="portal-login.html" class="add-group-btn public-secondary-btn" data-dashboard-link>Log In</a>
       </div>
     </header>
 
@@ -323,6 +323,11 @@
         });
     </script>
     <script type="module" src="public-dashboard-link.js"></script>
+    <script type="module">
+      import { initPublicCollectivesHeader } from './public-collectives-state.js';
+
+      initPublicCollectivesHeader();
+    </script>
   </div>
 </body>
 </html>
