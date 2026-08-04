@@ -166,14 +166,18 @@ export async function updateMyCommunity(groupId, changes) {
 }
 
 export async function updateAdminGroup(groupId, changes) {
-  const { data, error } = await supabase.rpc("update_admin_group", {
-    p_group_id: groupId,
-    p_changes: changes
+  ensureSupabaseConfig();
+
+  const { data, error } = await supabase.functions.invoke("update-group", {
+    body: {
+      groupId,
+      changes
+    }
   });
   if (error) {
-    throw error;
+    throw new Error(data?.error || error.context?.error || error.message || "Community update failed.");
   }
-  return Array.isArray(data) ? data[0] : data;
+  return data?.group || null;
 }
 
 export async function updateCollective(collectiveId, changes) {

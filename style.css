@@ -368,17 +368,21 @@ main {
 }
 
 @media (min-width: 769px) {
+    :root {
+        --directory-header-height: 78px;
+    }
+
     header {
-        background: rgba(231, 231, 231, 0.84);
+        background: rgba(231, 231, 231, 0.30);
         border-bottom: 1px solid rgba(25, 25, 25, 0.08);
         box-shadow: 0 8px 20px rgba(25, 25, 25, 0.1);
         left: 0;
-        position: absolute;
+        position: fixed;
         top: 0;
         width: 100%;
         z-index: 3;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
 
     main {
@@ -389,34 +393,37 @@ main {
         align-self: stretch;
         display: grid;
         grid-template-columns: minmax(20px, 2.5%) 280px minmax(0, 1fr);
-        margin: 0 -20px 1rem;
+        height: calc(100vh - var(--directory-header-height));
+        margin: var(--directory-header-height) -20px 1rem;
         position: relative;
         width: auto;
     }
 
     .search-sidebar {
         align-self: start;
-        background: rgba(231, 231, 231, 0.84);
+        background: rgba(231, 231, 231, 0.30);
         border: 1px solid rgba(255, 255, 255, 0.55);
         box-shadow: 0 10px 24px rgba(25, 25, 25, 0.14);
         grid-column: 2;
         grid-row: 1;
+        height: 100%;
         justify-self: start;
-        margin-top: calc(50px + 2.4rem + 20px);
+        overflow-y: auto;
         z-index: 2;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
 
     .map-container {
         grid-column: 1 / -1;
         grid-row: 1;
+        height: 100%;
         width: 100%;
     }
 
     #map {
         border-radius: 0;
-        height: 640px !important;
+        height: 100% !important;
     }
 }
 

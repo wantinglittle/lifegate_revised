@@ -48,8 +48,8 @@ type GroupRow = {
   additional_info: string | null;
   status: "pending";
   submitted_at: string;
-  latitude: null;
-  longitude: null;
+  latitude: number;
+  longitude: number;
 };
 
 function isAllowedLocalOrigin(origin: string): boolean {
@@ -145,7 +145,30 @@ function toMeetingTime(hour: string, minute: string, ampm: string): string | nul
   return `${String(hour24).padStart(2, "0")}:${minute}:00`;
 }
 
-function toGroupRow(submission: Submission): GroupRow {
+async function geocode(submission: Submission): Promise<{ latitude: number; longitude: number }> {
+  const apiKey = Deno.env.get("GOOGLE_GEOCODING_API_KEY") || "";
+  if (!apiKey) throw new Error("GOOGLE_GEOCODING_API_KEY is not configured.");
+
+  const address = `${submission.crossStreets}, ${submission.city}, CO ${submission.zipCode}`;
+  const params = new URLSearchParams({
+    address,
+    key: apiKey,
+    components: "country:US|administrative_area:CO"
+  });
+  const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?${params}`);
+  if (!response.ok) throw new Error("Google geocoding request failed.");
+  const result = await response.json();
+  if (result.status !== "OK" || !result.results?.[0]?.geometry?.location) {
+    throw new Error("We could not place those cross streets on the map. Please check the city, ZIP code, and cross streets.");
+  }
+  const location = result.results[0].geometry.location;
+  return {
+    latitude: location.lat,
+    longitude: location.lng
+  };
+}
+
+function toGroupRow(submission: Submission, coords: { latitude: number; longitude: number }): GroupRow {
   return {
     id: crypto.randomUUID(),
     title: submission.title,
@@ -163,8 +186,8 @@ function toGroupRow(submission: Submission): GroupRow {
     additional_info: submission.additionalInfo || null,
     status: "pending",
     submitted_at: new Date().toISOString(),
-    latitude: null,
-    longitude: null
+    latitude: coords.latitude,
+    longitude: coords.longitude
   };
 }
 
@@ -345,7 +368,8 @@ Deno.serve(async (request: Request) => {
       return jsonResponse(origin, 400, { error: "reCAPTCHA verification failed." });
     }
 
-    const row = toGroupRow(submission);
+    const coords = await geocode(submission);
+    const row = toGroupRow(submission, coords);
     await insertGroup(row);
 
     try {
@@ -360,6 +384,9 @@ Deno.serve(async (request: Request) => {
     return jsonResponse(origin, 200, { ok: true, id: row.id });
   } catch (err) {
     console.error("submit-group failed.", err instanceof Error ? err.message : err);
-    return jsonResponse(origin, 500, { error: "Unable to submit group right now." });
+    const message = err instanceof Error && err.message.startsWith("We could not place")
+      ? err.message
+      : "Unable to submit group right now.";
+    return jsonResponse(origin, message.startsWith("We could not place") ? 400 : 500, { error: message });
   }
 });

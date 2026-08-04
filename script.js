@@ -42,15 +42,12 @@ async function fetchGroupsWithCoords() {
   for (const group of rpcGroups.map(mapSupabaseGroupToLegacyGroup)) {
     if (!group.crossStreets || !group.zipCode) continue;
 
-    const fullAddress = `${group.crossStreets}, ${group.zipCode}`;
-    try {
-      // TODO: Replace temporary browser geocoding with privacy-safe stored
-      // public intersection labels and coordinates after the read cutover.
-      const coords = hasStoredCoords(group) ? group.coords : await geocodeAddress(fullAddress);
-      groups.push({ ...group, coords, id: group.id });
-    } catch (err) {
-      console.warn(`Geocode failed for ${fullAddress}:`, err);
+    if (!hasStoredCoords(group)) {
+      console.warn(`Skipping community without stored coordinates: ${group.id || "unknown"} ${group.title || "Untitled community"}`);
+      continue;
     }
+
+    groups.push({ ...group, id: group.id });
   }
 
   return groups;
