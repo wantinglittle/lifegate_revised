@@ -3,12 +3,6 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from './supabase-config.js';
 const SUPABASE_URL_PLACEHOLDER = "https://YOUR_PROJECT_REF.supabase.co";
 const SUPABASE_ANON_KEY_PLACEHOLDER = "YOUR_SUPABASE_ANON_KEY";
 const PUBLIC_GROUPS_RPC = "get_public_groups";
-const DESKTOP_FILTERS_MEDIA = "(min-width: 769px)";
-const FILTER_PLACEHOLDER_VALUES = new Set([
-  "__placeholder_day__",
-  "__placeholder_audience__",
-  "__placeholder_age__"
-]);
 
 let map;
 let markers = [];
@@ -24,10 +18,9 @@ function setResponsiveFilterDefaults() {
   const ageFilter = document.getElementById("age-filter");
   if (!dayFilter || !audienceFilter || !ageFilter) return;
 
-  const useDesktopPlaceholders = window.matchMedia(DESKTOP_FILTERS_MEDIA).matches;
-  dayFilter.value = useDesktopPlaceholders ? "__placeholder_day__" : "";
-  audienceFilter.value = useDesktopPlaceholders ? "__placeholder_audience__" : "";
-  ageFilter.value = useDesktopPlaceholders ? "__placeholder_age__" : "";
+  dayFilter.value = "";
+  audienceFilter.value = "";
+  ageFilter.value = "";
 }
 
 if (document.readyState === "loading") {
@@ -447,10 +440,7 @@ function setupFilters(AdvancedMarkerElement) {
   const zipInput = document.getElementById("location-search");
   const searchBtn = document.getElementById("search-location-btn");
 
-  const filterValue = (select) => {
-    const value = select.value.toLowerCase();
-    return FILTER_PLACEHOLDER_VALUES.has(value) ? "" : value;
-  };
+  const filterValue = (select) => select.value.toLowerCase();
 
   setResponsiveFilterDefaults();
 

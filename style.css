@@ -384,8 +384,8 @@ main {
         top: 0;
         width: 100%;
         z-index: 3;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
+        backdrop-filter: blur(7px);
+        -webkit-backdrop-filter: blur(7px);
     }
 
     main {
@@ -424,6 +424,13 @@ main {
     .filter-group {
         margin-bottom: 0.7rem;
         position: relative;
+    }
+
+    .filter-group {
+        align-items: center;
+        column-gap: 0.7rem;
+        display: grid;
+        grid-template-columns: 16px minmax(0, 1fr);
     }
 
     .search-group {
@@ -494,8 +501,10 @@ main {
     .filter-icon-calendar,
     .filter-icon-users,
     .filter-icon-age {
-        left: 0.66rem;
-        top: 0.8rem;
+        grid-column: 1;
+        left: auto;
+        position: static;
+        top: auto;
     }
 
     .search-group input,
@@ -525,7 +534,8 @@ main {
     }
 
     .filter-group select {
-        padding-left: 2.25rem;
+        grid-column: 2;
+        padding-left: 0.65rem;
     }
 
     #search-location-btn,
