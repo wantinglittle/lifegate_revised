@@ -380,10 +380,44 @@
     overflow: hidden;
   }
 
+  .collectives-main {
+    padding: 0;
+  }
+
   .collectives-experience {
     --collectives-panel-height: 100%;
-    flex: 1 1 auto;
+    display: block;
+    height: 100dvh;
+    margin: 0;
+    max-width: none;
     min-height: 0;
+    position: relative;
+    width: 100vw;
+  }
+
+  .collectives-list-panel {
+    height: calc(100dvh - var(--directory-header-height) - 2rem);
+    left: 4.75rem;
+    max-height: calc(100dvh - var(--directory-header-height) - 2rem);
+    position: absolute;
+    top: calc(var(--directory-header-height) + 1rem);
+    width: 360px;
+    z-index: 2;
+  }
+
+  .collectives-map-panel {
+    border-radius: 0;
+    box-shadow: none;
+    height: 100dvh;
+    max-height: none;
+    position: static;
+    top: auto;
+    width: 100vw;
+  }
+
+  .collectives-map {
+    height: 100dvh;
+    width: 100vw;
   }
 }
 
