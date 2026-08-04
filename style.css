@@ -409,9 +409,60 @@ main {
         height: 100%;
         justify-self: start;
         overflow-y: auto;
+        padding: 1rem;
         z-index: 2;
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
+    }
+
+    .search-group {
+        gap: 0.45rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .search-group label {
+        font-size: 0.86rem;
+    }
+
+    .search-group input,
+    .filter-group select {
+        border-radius: 5px;
+        border-width: 1px;
+        min-height: 38px;
+        padding: 0.5rem 0.7rem;
+    }
+
+    #search-location-btn,
+    #clear-filters {
+        min-height: 34px;
+        padding: 7px 14px;
+    }
+
+    #search-location-btn {
+        margin-top: 0.25rem;
+    }
+
+    .filter-group {
+        gap: 0;
+        margin-bottom: 0.7rem;
+    }
+
+    .filter-group label {
+        border: 0;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+    }
+
+    .filter-buttons {
+        gap: 0.5rem;
+        margin-top: 0.9rem;
     }
 
     .map-container {
