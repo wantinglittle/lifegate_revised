@@ -375,7 +375,7 @@ main {
 
 @media (min-width: 769px) {
     header {
-        background: rgba(231, 231, 231, 0.52);
+        background: rgba(231, 231, 231, 0.40);
         border: 1px solid rgba(255, 255, 255, 0.45);
         border-radius: 0 0 18px 18px;
         box-shadow: 0 16px 34px rgba(0, 0, 0, 0.10);
@@ -403,7 +403,7 @@ main {
 
     .search-sidebar {
         align-self: start;
-        background: rgba(231, 231, 231, 0.64);
+        background: rgba(231, 231, 231, 0.40);
         border: 1px solid rgba(255, 255, 255, 0.45);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
         grid-column: 2;
