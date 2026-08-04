@@ -358,7 +358,6 @@ main {
 
 .filter-icon,
 .desktop-input-label,
-.desktop-control-label,
 .filter-button-icon {
     display: none;
 }
@@ -376,9 +375,10 @@ main {
 
 @media (min-width: 769px) {
     header {
-        background: rgba(231, 231, 231, 0.60);
+        background: rgba(231, 231, 231, 0.52);
         border: 1px solid rgba(255, 255, 255, 0.45);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        border-radius: 0 0 18px 18px;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.10);
         left: 0;
         position: absolute;
         top: 0;
@@ -448,7 +448,6 @@ main {
 
     .filter-icon,
     .desktop-input-label,
-    .desktop-control-label,
     .filter-button-icon {
         color: #3f4648;
         display: block;
@@ -526,15 +525,7 @@ main {
     }
 
     .filter-group select {
-        padding-left: 6.75rem;
-    }
-
-    .desktop-control-label {
-        font-size: 0.78rem;
-        font-weight: 700;
-        left: 2.05rem;
-        line-height: 1;
-        top: 0.88rem;
+        padding-left: 2.25rem;
     }
 
     #search-location-btn,

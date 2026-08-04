@@ -3,6 +3,12 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from './supabase-config.js';
 const SUPABASE_URL_PLACEHOLDER = "https://YOUR_PROJECT_REF.supabase.co";
 const SUPABASE_ANON_KEY_PLACEHOLDER = "YOUR_SUPABASE_ANON_KEY";
 const PUBLIC_GROUPS_RPC = "get_public_groups";
+const DESKTOP_FILTERS_MEDIA = "(min-width: 769px)";
+const FILTER_PLACEHOLDER_VALUES = new Set([
+  "__placeholder_day__",
+  "__placeholder_audience__",
+  "__placeholder_age__"
+]);
 
 let map;
 let markers = [];
@@ -11,6 +17,24 @@ let allGroups = [];
 const initialCenter = { lat: 39.7392, lng: -104.9903 };
 const initialZoom = 9;
 let geocoder;
+
+function setResponsiveFilterDefaults() {
+  const dayFilter = document.getElementById("day-filter");
+  const audienceFilter = document.getElementById("audience-filter");
+  const ageFilter = document.getElementById("age-filter");
+  if (!dayFilter || !audienceFilter || !ageFilter) return;
+
+  const useDesktopPlaceholders = window.matchMedia(DESKTOP_FILTERS_MEDIA).matches;
+  dayFilter.value = useDesktopPlaceholders ? "__placeholder_day__" : "";
+  audienceFilter.value = useDesktopPlaceholders ? "__placeholder_audience__" : "";
+  ageFilter.value = useDesktopPlaceholders ? "__placeholder_age__" : "";
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setResponsiveFilterDefaults);
+} else {
+  setResponsiveFilterDefaults();
+}
 
 export async function initMap() {
   const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
@@ -423,10 +447,17 @@ function setupFilters(AdvancedMarkerElement) {
   const zipInput = document.getElementById("location-search");
   const searchBtn = document.getElementById("search-location-btn");
 
+  const filterValue = (select) => {
+    const value = select.value.toLowerCase();
+    return FILTER_PLACEHOLDER_VALUES.has(value) ? "" : value;
+  };
+
+  setResponsiveFilterDefaults();
+
   const applyFilters = () => {
-    const dayVal = dayFilter.value.toLowerCase();
-    const audienceVal = audienceFilter.value.toLowerCase();
-    const ageVal = ageFilter.value.toLowerCase();
+    const dayVal = filterValue(dayFilter);
+    const audienceVal = filterValue(audienceFilter);
+    const ageVal = filterValue(ageFilter);
 
     const filtered = allGroups.filter(group => {
       const dayMatch = !dayVal || (group.day && group.day.toLowerCase().includes(dayVal));
@@ -460,9 +491,7 @@ function setupFilters(AdvancedMarkerElement) {
   });
 
   document.getElementById("clear-filters").addEventListener("click", () => {
-    dayFilter.value = "";
-    audienceFilter.value = "";
-    ageFilter.value = "";
+    setResponsiveFilterDefaults();
     zipInput.value = "";
 
     map.setCenter(initialCenter);
