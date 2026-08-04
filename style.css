@@ -27,7 +27,7 @@ body {
 header {
     background: var(--blue-color);
     color: var(--black-color);
-    padding: 0.75rem 2rem;
+    padding: 0.375rem 2rem;
     box-shadow: 0 2px 10px var(--grey-color);
     position: relative;
     display: flex;
@@ -102,7 +102,7 @@ header p {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     gap: 1.5rem;
-    padding: 1.2rem 2rem;
+    padding: 0.6rem 2rem;
 }
 
 .public-switch-header .header-logo {
@@ -383,7 +383,7 @@ main {
 
 @media (min-width: 769px) {
     :root {
-        --directory-header-height: 78px;
+        --directory-header-height: 59px;
     }
 
     header {
