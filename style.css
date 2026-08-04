@@ -375,7 +375,7 @@ main {
 
 @media (min-width: 769px) {
     header {
-        background: rgba(231, 231, 231, 0.40);
+        background: rgba(231, 231, 231, 0.30);
         border: 1px solid rgba(255, 255, 255, 0.45);
         border-radius: 0 0 18px 18px;
         box-shadow: 0 16px 34px rgba(0, 0, 0, 0.10);
@@ -384,8 +384,8 @@ main {
         top: 0;
         width: 100%;
         z-index: 3;
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
     }
 
     main {
