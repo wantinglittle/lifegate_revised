@@ -10,6 +10,8 @@
     --blue-color: #8c9eaa;
     --grey-color: #c1c0bd;
     --hover-color: #5a6268;
+    --public-switch-active-bg: #5f707a;
+    --public-switch-active-color: var(--white-color);
 }
 
 html, body {
@@ -199,9 +201,9 @@ header p {
 }
 
 .public-page-switcher-link.is-active {
-    background: #5f707a;
+    background: var(--public-switch-active-bg);
     box-shadow: 0 4px 10px rgba(25, 25, 25, 0.14);
-    color: var(--white-color);
+    color: var(--public-switch-active-color);
 }
 
 .public-switch-actions {
@@ -1067,20 +1069,26 @@ main {
     }
 
     .public-switch-header {
+        --mobile-header-inline-padding: 0.85rem;
+        --mobile-header-action-size: 50px;
+        --mobile-header-column-gap: 0.7rem;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 0.75rem;
+        grid-template-columns: minmax(0, calc(100vw - 89px)) var(--mobile-header-action-size);
+        gap: 0.55rem var(--mobile-header-column-gap);
         max-width: 100%;
         overflow: hidden;
-        padding: 0.85rem;
+        padding: 0.85rem var(--mobile-header-inline-padding) 0.6rem;
         text-align: left;
-        width: 100%;
+        width: 100vw;
     }
 
     .public-switch-header .header-logo {
+        grid-column: 1;
+        grid-row: 1;
         margin-bottom: 0;
         min-width: 0;
         overflow: hidden;
+        order: 1;
     }
 
     .public-switch-header .header-logo img {
@@ -1090,19 +1098,22 @@ main {
 
     .public-page-switcher {
         grid-column: 1 / -1;
+        grid-row: 2;
         justify-self: stretch;
-        max-width: 100%;
+        margin-right: calc(var(--mobile-header-action-size) + var(--mobile-header-column-gap));
+        max-width: none;
         min-width: 0;
-        order: 3;
         padding: 0.25rem;
-        width: 100%;
+        order: 3;
+        width: auto;
     }
 
     .public-page-switcher-link {
-        font-size: 0.86rem;
+        font-size: clamp(0.74rem, 3.2vw, 0.86rem);
+        gap: 0.35rem;
         min-height: 42px;
         min-width: 0;
-        padding: 0.58rem 0.45rem;
+        padding: 0.58rem 0.32rem;
     }
 
     .public-switcher-icon {
@@ -1115,21 +1126,55 @@ main {
     }
 
     .public-switch-actions .add-group-btn:not([data-dashboard-link]) {
-        grid-column: 1 / -1;
-        justify-self: stretch;
-        min-height: 44px;
-        order: 4;
-        padding: 0.62rem 1rem;
-        text-align: center;
+        align-self: center;
+        background: var(--public-switch-active-bg);
+        border: 1px solid rgba(255, 255, 255, 0.68);
+        border-radius: 50%;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 18px rgba(25, 25, 25, 0.08);
+        color: var(--public-switch-active-color);
+        font-size: 0;
+        bottom: 0.6rem;
+        height: 50px;
+        min-height: 50px;
+        min-width: 50px;
+        order: 3;
+        padding: 0;
+        position: absolute;
+        right: var(--mobile-header-inline-padding);
+        width: 50px;
+    }
+
+    .public-switch-actions .add-group-btn:not([data-dashboard-link])::before,
+    .public-switch-actions .add-group-btn:not([data-dashboard-link])::after {
+        background: currentColor;
+        border-radius: 999px;
+        content: "";
+        left: 50%;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .public-switch-actions .add-group-btn:not([data-dashboard-link])::before {
+        height: 2px;
+        width: 18px;
+    }
+
+    .public-switch-actions .add-group-btn:not([data-dashboard-link])::after {
+        height: 18px;
+        width: 2px;
     }
 
     .public-switch-actions [data-dashboard-link] {
         align-self: center;
+        grid-column: 2;
+        grid-row: 1;
         justify-self: end;
         min-height: 44px;
         order: 2;
         padding: 0.58rem 0.75rem;
         text-align: center;
+        width: max-content;
     }
 
     .main-content {

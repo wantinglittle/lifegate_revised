@@ -1002,7 +1002,7 @@
 
 @media (max-width: 768px) {
   .collectives-wrapper > .public-switch-header {
-    padding: 0.85rem;
+    padding: 0.85rem 0.85rem 0.6rem;
   }
 
   .collectives-wrapper .public-switch-header .public-switch-actions {
