@@ -1,6 +1,7 @@
 const ALLOWED_PRODUCTION_ORIGINS = new Set([
   "https://lifegatecommunity.com",
-  "https://www.lifegatecommunity.com"
+  "https://www.lifegatecommunity.com",
+  "https://wantinglittle.github.io"
 ]);
 
 const VALID_DAYS = new Set(["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]);

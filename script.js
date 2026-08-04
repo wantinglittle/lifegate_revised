@@ -20,7 +20,9 @@ export async function initMap() {
   map = new google.maps.Map(document.getElementById("map"), {
     center: initialCenter,
     zoom: initialZoom,
-    mapId: "8f453e71c329ac123f8540c9"
+    mapId: "8f453e71c329ac123f8540c9",
+    mapTypeControl: false,
+    mapTypeId: "roadmap"
   });
 
   try {
