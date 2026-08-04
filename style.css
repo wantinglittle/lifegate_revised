@@ -392,7 +392,7 @@ main {
     .main-content {
         align-self: stretch;
         display: grid;
-        grid-template-columns: minmax(20px, 2.5%) 280px minmax(0, 1fr);
+        grid-template-columns: minmax(20px, 2.5%) 168px minmax(0, 1fr);
         margin: var(--directory-header-height) -20px 1rem;
         position: relative;
         width: auto;
@@ -406,7 +406,9 @@ main {
         grid-column: 2;
         grid-row: 1;
         justify-self: start;
+        margin-top: 1rem;
         padding: 1rem;
+        width: 100%;
         z-index: 2;
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
@@ -426,7 +428,7 @@ main {
         border-radius: 5px;
         border-width: 1px;
         min-height: 38px;
-        padding: 0.5rem 0.7rem;
+        padding: 0.5rem 0.55rem;
     }
 
     #search-location-btn,
