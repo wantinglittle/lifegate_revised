@@ -7,7 +7,7 @@
   align-items: center;
   margin: 0 auto;
   max-width: none;
-  padding: 1.2rem 2rem;
+  padding: 0.6rem 2rem;
   width: 100%;
 }
 
@@ -396,11 +396,11 @@
   }
 
   .collectives-list-panel {
-    height: calc(100dvh - var(--directory-header-height) - 2rem);
+    height: calc(100dvh - var(--directory-header-height) - 1.5rem);
     left: 4.75rem;
-    max-height: calc(100dvh - var(--directory-header-height) - 2rem);
+    max-height: calc(100dvh - var(--directory-header-height) - 1.5rem);
     position: absolute;
-    top: calc(var(--directory-header-height) + 1rem);
+    top: calc(var(--directory-header-height) + 0.75rem);
     width: 360px;
     z-index: 2;
   }
