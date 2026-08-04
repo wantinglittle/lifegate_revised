@@ -1026,6 +1026,10 @@ main {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+
     header {
         flex-direction: column;
         text-align: center;
@@ -1123,6 +1127,15 @@ main {
         color: var(--black-color);
         width: min(100%, 320px);
         margin-bottom: 1rem;
+    }
+
+    .map-container {
+        left: 50%;
+        margin-left: 0;
+        margin-right: 0;
+        position: relative;
+        transform: translateX(-50%);
+        width: 100vw;
     }
 
     .search-group {
