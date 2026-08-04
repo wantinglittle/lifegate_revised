@@ -43,7 +43,7 @@
   <link rel="preconnect" href="https://cdn.emailjs.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   
-  <link href="style.css?v=20260804-mobile-filter-row" rel="stylesheet" type="text/css" />
+  <link href="style.css?v=20260804-mobile-filter-card" rel="stylesheet" type="text/css" />
   
   <!-- Structured Data for SEO -->
   <script type="application/ld+json">
@@ -135,46 +135,80 @@
       <section class="main-content">
         <div class="search-sidebar">
           <div class="search-group">
-            <input type="text" id="location-search" placeholder="Enter zip code" aria-label="Location Search">
-            <button id="search-location-btn" aria-label="Search by ZIP code">Search</button>
+            <div class="location-search-row">
+              <span class="location-search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"></path>
+                  <circle cx="12" cy="9" r="2.6"></circle>
+                </svg>
+              </span>
+              <input type="text" id="location-search" placeholder="Enter zip code" aria-label="Location Search">
+              <button id="search-location-btn" aria-label="Search by ZIP code">Search</button>
+            </div>
           </div>
 
           <div class="filter-group">
             <label for="day-filter">Day:</label>
-            <select id="day-filter">
-              <option value="">All Days</option>
-              <option value="Monday">Monday</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Wednesday">Wednesday</option>
-              <option value="Thursday">Thursday</option>
-              <option value="Friday">Friday</option>
-              <option value="Saturday">Saturday</option>
-              <option value="Sunday">Sunday</option>
-            </select>
+            <span class="filter-select-wrap">
+              <span class="filter-control-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <rect x="4" y="5.5" width="16" height="14.5" rx="2"></rect>
+                  <path d="M8 3.5v4M16 3.5v4M4 10h16"></path>
+                </svg>
+              </span>
+              <select id="day-filter">
+                <option value="">All Days</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+              </select>
+            </span>
           </div>
 
           <div class="filter-group">
             <label for="audience-filter">Audience:</label>
-            <select id="audience-filter">
-              <option value="">All</option>
-              <option value="Men">Men</option>
-              <option value="Women">Women</option>
-            </select>
+            <span class="filter-select-wrap">
+              <span class="filter-control-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <circle cx="9" cy="8" r="3"></circle>
+                  <circle cx="16.5" cy="9" r="2.5"></circle>
+                  <path d="M3.5 19c.8-3.6 3-5.4 5.5-5.4s4.7 1.8 5.5 5.4"></path>
+                  <path d="M13.5 14.2c2.5.2 4.2 1.8 5 4.8"></path>
+                </svg>
+              </span>
+              <select id="audience-filter">
+                <option value="">All</option>
+                <option value="Men">Men</option>
+                <option value="Women">Women</option>
+              </select>
+            </span>
           </div>
 
           <div class="filter-group">
             <label for="age-filter">Age Group:</label>
-            <select id="age-filter">
-              <option value="">All Ages</option>
-              <option value="Kids">Kids</option>
-              <option value="Teens">Teens</option>
-              <option value="Adult">Adult</option>
-            </select>
+            <span class="filter-select-wrap">
+              <span class="filter-control-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <circle cx="12" cy="7.5" r="3"></circle>
+                  <path d="M6 20c.8-4.2 3.1-6.2 6-6.2s5.2 2 6 6.2"></path>
+                </svg>
+              </span>
+              <select id="age-filter">
+                <option value="">All Ages</option>
+                <option value="Kids">Kids</option>
+                <option value="Teens">Teens</option>
+                <option value="Adult">Adult</option>
+              </select>
+            </span>
           </div>
 
           <div class="filter-buttons">
             <button id="apply-filters">Apply Filters</button>
-            <button id="clear-filters">Clear Filters</button>
+            <button id="clear-filters"><span class="clear-filter-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M5 12a7 7 0 1 0 2.1-5"></path><path d="M5 4v5h5"></path></svg></span><span>Clear Filters</span></button>
           </div>
         </div>
 

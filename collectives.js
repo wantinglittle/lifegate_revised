@@ -996,7 +996,9 @@ export async function initCollectivesPage(options = {}) {
       map = new google.maps.Map(document.getElementById("collectives-map"), {
         center: initialCenter,
         zoom: initialZoom,
-        mapId: "8f453e71c329ac123f8540c9"
+        mapId: "8f453e71c329ac123f8540c9",
+        fullscreenControl: false,
+        streetViewControl: false
       });
       map.addListener("click", closeInfoWindow);
     }

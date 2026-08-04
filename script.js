@@ -21,8 +21,10 @@ export async function initMap() {
     center: initialCenter,
     zoom: initialZoom,
     mapId: "8f453e71c329ac123f8540c9",
+    fullscreenControl: false,
     mapTypeControl: false,
-    mapTypeId: "roadmap"
+    mapTypeId: "roadmap",
+    streetViewControl: false
   });
 
   try {
