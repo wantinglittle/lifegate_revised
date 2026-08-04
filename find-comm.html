@@ -136,12 +136,16 @@
         <div class="search-sidebar">
           <div class="search-group">
             <label for="location-search">📍 Location Search:</label>
+            <span class="filter-icon filter-icon-location" aria-hidden="true"></span>
             <input type="text" id="location-search" placeholder="Enter zip code">
-            <button id="search-location-btn">Search</button>
+            <span class="desktop-input-label" aria-hidden="true">Location Search (zip)</span>
+            <button id="search-location-btn"><span class="filter-button-icon filter-button-icon-search" aria-hidden="true"></span>Search</button>
           </div>
 
           <div class="filter-group">
             <label for="day-filter">Day:</label>
+            <span class="filter-icon filter-icon-calendar" aria-hidden="true"></span>
+            <span class="desktop-control-label" aria-hidden="true">Day:</span>
             <select id="day-filter">
               <option value="">All Days</option>
               <option value="Monday">Monday</option>
@@ -156,6 +160,8 @@
 
           <div class="filter-group">
             <label for="audience-filter">Audience:</label>
+            <span class="filter-icon filter-icon-users" aria-hidden="true"></span>
+            <span class="desktop-control-label" aria-hidden="true">Audience:</span>
             <select id="audience-filter">
               <option value="">All</option>
               <option value="Men">Men</option>
@@ -165,6 +171,8 @@
 
           <div class="filter-group">
             <label for="age-filter">Age Group:</label>
+            <span class="filter-icon filter-icon-age" aria-hidden="true"></span>
+            <span class="desktop-control-label" aria-hidden="true">Age Group:</span>
             <select id="age-filter">
               <option value="">All Ages</option>
               <option value="Kids">Kids</option>
@@ -175,7 +183,7 @@
 
           <div class="filter-buttons">
             <button id="apply-filters">Apply Filters</button>
-            <button id="clear-filters">Clear Filters</button>
+            <button id="clear-filters"><span class="filter-button-icon filter-button-icon-reset" aria-hidden="true"></span>Clear Filters</button>
           </div>
         </div>
 
