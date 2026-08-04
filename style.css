@@ -1109,14 +1109,93 @@ main {
     }
 
     .main-content {
+        box-sizing: border-box;
         flex-direction: column;
-        width: 100%;
-        padding: 0 1rem;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0;
+        width: calc(100% - 2rem);
     }
 
     .search-sidebar {
-        width: 100%;
+        align-self: center;
+        box-sizing: border-box;
+        color: var(--black-color);
+        width: min(100%, 320px);
         margin-bottom: 1rem;
+    }
+
+    .search-group {
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: minmax(0, 1fr) 42px;
+        margin-bottom: 1rem;
+    }
+
+    .search-group input {
+        color: var(--black-color);
+        min-width: 0;
+        min-height: 42px;
+        width: 100%;
+    }
+
+    .search-group input::placeholder {
+        color: var(--black-color);
+        opacity: 0.65;
+    }
+
+    #search-location-btn {
+        align-items: center;
+        display: flex;
+        font-size: 0;
+        height: 42px;
+        justify-content: center;
+        margin-top: 0;
+        min-width: 42px;
+        padding: 0;
+        position: relative;
+        width: 42px;
+    }
+
+    #search-location-btn::before {
+        border: 2px solid currentColor;
+        border-radius: 50%;
+        content: "";
+        height: 13px;
+        width: 13px;
+    }
+
+    #search-location-btn::after {
+        background: currentColor;
+        content: "";
+        height: 8px;
+        position: absolute;
+        transform: translate(7px, 7px) rotate(45deg);
+        transform-origin: center;
+        width: 2px;
+    }
+
+    .filter-group {
+        gap: 0;
+        margin-bottom: 0.7rem;
+    }
+
+    .filter-group label {
+        border: 0;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+    }
+
+    .filter-group select {
+        color: var(--black-color);
+        min-height: 42px;
     }
 
     .filter-buttons {
