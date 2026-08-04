@@ -1047,6 +1047,7 @@ main {
     main {
         padding-left: 0;
         padding-right: 0;
+        padding-top: 0;
     }
 
     header {
@@ -1134,6 +1135,7 @@ main {
     .main-content {
         box-sizing: border-box;
         flex-direction: column;
+        gap: 0.25rem;
         margin-left: auto;
         margin-right: auto;
         padding: 0;
@@ -1152,7 +1154,7 @@ main {
         gap: 0.75rem 0.5rem;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         justify-content: start;
-        margin-bottom: 1rem;
+        margin-bottom: 0;
         margin-left: 0;
         margin-right: 0;
         padding: 1.25rem 1rem;
@@ -1408,7 +1410,7 @@ main {
 
 @media (max-width: 480px) {
     main {
-        padding: 1rem 0;
+        padding: 0 0 1rem;
     }
 
     .search-section {
